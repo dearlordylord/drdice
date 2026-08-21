@@ -40,4 +40,9 @@ _Avoid_: Rolls, history
 **Dice Evaluation**:
 The deterministic result containing a total, Roll Trace, and successor Generator
 State for a Dice Expression and initial Generator State.
-_Avoid_: Roll, result
+_Avoid_: Roll, result, Evaluation Result
+
+**Evaluation Result**:
+The outcome of attempting to evaluate a Dice Expression: either a Dice Evaluation
+or a structured failure without a total.
+_Avoid_: Dice Evaluation, result
