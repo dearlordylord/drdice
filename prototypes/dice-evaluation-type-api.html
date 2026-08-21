@@ -37,7 +37,7 @@
   <div class="question">
     <strong>Issue #10 question</strong>
     <p>What rough type-level API and diagnostic artifact makes valid Dice Evaluations, Roll Traces, successor states, parse failures, resource-limit failures, and composition with the PRNG package concrete enough for a human to accept or revise?</p>
-    <p class="muted">This is a throwaway planning artifact. The page is a pure in-memory model around an intentionally thin DOM shell; the TypeScript file carries the literal aliases and an independent internal oracle.</p>
+    <p class="muted">This is a throwaway planning artifact. The page is a pure in-memory model around an intentionally thin DOM shell; the TypeScript file carries the literal aliases and an independent internal oracle. The public type evaluator intentionally materializes a bounded literal corpus; arbitrary-source execution and production checker support remain #11 implementation work.</p>
   </div>
 
   <h2>Proposed public shape</h2>
@@ -120,7 +120,7 @@ type MaterializedInvalidFuel = {
   <div id="guides"></div>
 
   <h2>Diagnostic contract visible in this sketch</h2>
-  <p>Preflight is deterministic and first-diagnostic-wins: source length → scanning/parsing → domain → static resource preflight → Generator State and fuel validation → depth-first, left-to-right evaluation. Source offsets are zero-based UTF-16 code-unit offsets in the original source; EOF is <code>source.length</code>. ASCII space, tab, LF, and CR are the only whitespace.</p>
+  <p>Preflight is deterministic and first-diagnostic-wins: source length → scanning/parsing → full-AST domain validation → static resource preflight → Generator State and fuel validation → depth-first, left-to-right evaluation. Supported-side checks belong to static resources only after the complete domain traversal. Within static resources, the earliest source offset wins; ties use <code>ast-node-count → dice-term-count → die-sample-count → supported-side-count → arithmetic-magnitude → evaluation-steps</code>. Constant-only subexpressions are checked before any sample. Source offsets are zero-based UTF-16 code-unit offsets in the original source; EOF is <code>source.length</code>. ASCII space, tab, LF, and CR are the only whitespace.</p>
   <pre><code>syntax: expected-expression · expected-die-sides · expected-closing-parenthesis · leading-zero · unexpected-token
 domain: dice-count-zero · side-count-zero
 resource: resource-limit-exceeded
@@ -251,15 +251,20 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
         cursor = right.end;
       }
     }
-    const modelDomainValidation = (ast, limits) => {
+    const modelDomainValidation = (ast) => {
       if (ast.kind === "dice") {
         if (ast.count === 0) return domainDiagnostic("dice-count-zero", ast.offset, "dice-count");
         if (ast.sides === 0) return domainDiagnostic("side-count-zero", ast.sideOffset, "side-count");
-        if (ast.sides > limits.supportedSideCount) return resourceDiagnostic(ast.sideOffset, "supported-side-count", limits.supportedSideCount, ast.sides);
         return null;
       }
-      if (ast.kind === "group") return modelDomainValidation(ast.child, limits);
-      if (ast.kind === "binary") return modelDomainValidation(ast.left, limits) || modelDomainValidation(ast.right, limits);
+      if (ast.kind === "group") return modelDomainValidation(ast.child);
+      if (ast.kind === "binary") return modelDomainValidation(ast.left) || modelDomainValidation(ast.right);
+      return null;
+    };
+    const modelSupportedSideCandidate = (ast, limits) => {
+      if (ast.kind === "dice") return ast.sides > limits.supportedSideCount ? { offset: ast.sideOffset, dimension: "supported-side-count", limit: limits.supportedSideCount, actual: ast.sides } : null;
+      if (ast.kind === "group") return modelSupportedSideCandidate(ast.child, limits);
+      if (ast.kind === "binary") return modelSupportedSideCandidate(ast.left, limits) || modelSupportedSideCandidate(ast.right, limits);
       return null;
     };
     const astCounts = (ast) => {
@@ -267,19 +272,49 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
       if (ast.kind === "dice") return { nodes: 1, diceTerms: 1, samples: ast.count, steps: ast.count * 2 + 1, nodeOffsets: [ast.offset], diceOffsets: [ast.offset], sampleOffsets: Array.from({ length: ast.count }, () => ast.offset), stepOffsets: [ast.offset, ...Array.from({ length: ast.count * 2 }, () => ast.offset)], integerValues: [] };
       if (ast.kind === "group") { const child = astCounts(ast.child); return { ...child, nodes: child.nodes + 1, steps: child.steps + 1, nodeOffsets: [ast.offset, ...child.nodeOffsets], stepOffsets: [ast.offset, ...child.stepOffsets] }; }
       const left = astCounts(ast.left); const right = astCounts(ast.right);
-      return { nodes: left.nodes + right.nodes + 1, diceTerms: left.diceTerms + right.diceTerms, samples: left.samples + right.samples, steps: left.steps + right.steps + 1, nodeOffsets: [ast.offset, ...left.nodeOffsets, ...right.nodeOffsets], diceOffsets: [...left.diceOffsets, ...right.diceOffsets], sampleOffsets: [...left.sampleOffsets, ...right.sampleOffsets], stepOffsets: [ast.offset, ...left.stepOffsets, ...right.stepOffsets], integerValues: [...left.integerValues, ...right.integerValues] };
+      return { nodes: left.nodes + right.nodes + 1, diceTerms: left.diceTerms + right.diceTerms, samples: left.samples + right.samples, steps: left.steps + right.steps + 1, nodeOffsets: [...left.nodeOffsets, ast.offset, ...right.nodeOffsets], diceOffsets: [...left.diceOffsets, ...right.diceOffsets], sampleOffsets: [...left.sampleOffsets, ...right.sampleOffsets], stepOffsets: [...left.stepOffsets, ast.offset, ...right.stepOffsets], integerValues: [...left.integerValues, ...right.integerValues] };
+    };
+    const MODEL_STATIC_RESOURCE_TIE_ORDER = ["ast-node-count", "dice-term-count", "die-sample-count", "supported-side-count", "arithmetic-magnitude", "evaluation-steps"];
+    const sourceOrder = (offsets) => [...offsets].sort((left, right) => left - right);
+    const firstExcess = (offsets, limit) => {
+      if (offsets.length <= limit) return null;
+      const ordered = sourceOrder(offsets);
+      return { offset: ordered[limit] ?? ordered[ordered.length - 1] ?? 0, actual: limit + 1 };
+    };
+    const modelConstantValue = (ast) => {
+      if (ast.kind === "integer") return ast.value;
+      if (ast.kind === "group") return modelConstantValue(ast.child);
+      if (ast.kind !== "binary") return null;
+      const left = modelConstantValue(ast.left); const right = modelConstantValue(ast.right);
+      if (left === null || right === null) return null;
+      return ast.op === "+" ? left + right : left - right;
+    };
+    const modelConstantResourceCandidates = (ast, limit) => {
+      const candidates = [];
+      const value = modelConstantValue(ast);
+      if (value !== null && Math.abs(value) > limit) candidates.push({ offset: ast.offset, dimension: "arithmetic-magnitude", limit, actual: Math.abs(value) });
+      if (ast.kind === "group") candidates.push(...modelConstantResourceCandidates(ast.child, limit));
+      if (ast.kind === "binary") {
+        candidates.push(...modelConstantResourceCandidates(ast.left, limit));
+        candidates.push(...modelConstantResourceCandidates(ast.right, limit));
+      }
+      return candidates;
     };
     const modelPreflight = (ast, limits) => {
       const counts = astCounts(ast);
-      const firstExcess = (offsets, limit) => offsets.length > limit ? offsets[limit] ?? offsets[offsets.length - 1] ?? 0 : null;
-      for (const [dimension, limit, offsets] of [["ast-node-count", limits.astNodeCount, counts.nodeOffsets], ["dice-term-count", limits.diceTermCount, counts.diceOffsets], ["die-sample-count", limits.dieSampleCount, counts.sampleOffsets]]) {
-        const offset = firstExcess(offsets, limit);
-        if (offset !== null) return resourceDiagnostic(offset, dimension, limit, offsets.length);
+      const candidates = [];
+      for (const [dimension, limit, offsets] of [["ast-node-count", limits.astNodeCount, counts.nodeOffsets], ["dice-term-count", limits.diceTermCount, counts.diceOffsets], ["die-sample-count", limits.dieSampleCount, counts.sampleOffsets], ["evaluation-steps", limits.evaluationSteps, counts.stepOffsets]]) {
+        const excess = firstExcess(offsets, limit);
+        if (excess) candidates.push({ ...excess, dimension, limit });
       }
-      for (const integer of counts.integerValues) if (Math.abs(integer.value) > limits.arithmeticMagnitude) return resourceDiagnostic(integer.offset, "arithmetic-magnitude", limits.arithmeticMagnitude, Math.abs(integer.value));
-      const stepOffset = firstExcess(counts.stepOffsets, limits.evaluationSteps);
-      if (stepOffset !== null) return resourceDiagnostic(stepOffset, "evaluation-steps", limits.evaluationSteps, counts.stepOffsets.length);
-      return null;
+      const supportedSide = modelSupportedSideCandidate(ast, limits);
+      if (supportedSide) candidates.push(supportedSide);
+      for (const integer of counts.integerValues) if (Math.abs(integer.value) > limits.arithmeticMagnitude) candidates.push({ offset: integer.offset, dimension: "arithmetic-magnitude", limit: limits.arithmeticMagnitude, actual: Math.abs(integer.value) });
+      candidates.push(...modelConstantResourceCandidates(ast, limits.arithmeticMagnitude));
+      if (candidates.length === 0) return null;
+      const tieIndex = (dimension) => { const index = MODEL_STATIC_RESOURCE_TIE_ORDER.indexOf(dimension); return index < 0 ? MODEL_STATIC_RESOURCE_TIE_ORDER.length : index; };
+      const chosen = candidates.reduce((best, candidate) => !best || candidate.offset < best.offset || (candidate.offset === best.offset && tieIndex(candidate.dimension) < tieIndex(best.dimension)) ? candidate : best, null);
+      return resourceDiagnostic(chosen.offset, chosen.dimension, chosen.limit, chosen.actual);
     };
     const modelStepFailure = (offset, limit, actual, trace, state) => failure("resource-limit-exceeded", { kind: "resource", code: "resource-limit-exceeded", offset, dimension: "evaluation-steps", limit, actual, partialTrace: trace, successorState: state });
     const evalAst = (ast, state, maximumAttempts, limits, trace, consumedSteps = 0) => {
@@ -336,7 +371,7 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
       if (!parsed.result.ok) return parsed.result;
       const end = skipWhitespace(source, parsed.end);
       if (end !== source.length) return parseDiagnostic("unexpected-token", end, source[end], ["EOF"]);
-      const domain = modelDomainValidation(parsed.result.value, limits);
+      const domain = modelDomainValidation(parsed.result.value);
       if (domain) return domain;
       const planned = modelPreflight(parsed.result.value, limits);
       if (planned) return planned;
@@ -344,7 +379,9 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
       if (invalid) return failure(invalid.code, { ...invalid.details, partialTrace: [], successorState: null });
       if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) return failure("invalid-attempt-fuel", { maximumAttempts, partialTrace: [], successorState: state });
       if (maximumAttempts > limits.rejectionSamplingAttempts) return resourceDiagnostic(0, "rejection-sampling-attempts", limits.rejectionSamplingAttempts, maximumAttempts);
-      return evalAst(parsed.result.value, state, maximumAttempts, limits, []);
+      const evaluated = evalAst(parsed.result.value, state, maximumAttempts, limits, []);
+      if (!evaluated.ok) return evaluated;
+      return success({ total: evaluated.value.total, rollTrace: evaluated.value.rollTrace, successorState: evaluated.value.successorState });
     };
     const modelReset = (source = "2d6 + 3", stateWords = GOLDEN, maximumAttempts = 1, limits = PROTOTYPE_LIMITS) => {
       const initialized = modelInitialize(stateWords);
@@ -380,9 +417,9 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
         ["1. Reset to 0d6", () => { app = modelReset("0d6", GOLDEN, 1); }],
         ["2. Evaluate and observe dice-count-zero", () => { applyEvaluation(modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits)); app.history.push("evaluate illegal domain"); }],
       ] },
-      bound: { title: "Bound 1 · one output still consumes one attempt", text: "d1 uses a zero-width high-bit sample, but still advances the Generator State once and reports attempts: 1.", steps: [
+      bound: { title: "Bound 1 · one output still advances state", text: "d1 uses a zero-width high-bit sample, but still advances the Generator State once; attempts remain an internal Sample observation.", steps: [
         ["1. Reset to d1", () => { app = modelReset("d1", GOLDEN, 1); }],
-        ["2. Evaluate d1 and inspect attempts/state", () => { applyEvaluation(modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits)); app.history.push("evaluate bound-one d1"); }],
+        ["2. Evaluate d1 and inspect state", () => { applyEvaluation(modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits)); app.history.push("evaluate bound-one d1"); }],
       ] },
       invalid: { title: "Invalid Generator State · rejected before fuel", text: "A Seed-tagged or malformed Generator State is rejected before sampling; no state is fabricated and no consumption occurs.", steps: [
         ["1. Reset to d6", () => { app = modelReset("d6", GOLDEN, 1); app.state = { kind: "GeneratorState", words: ["0000000A", "00000000", "00000000", "00000001"] }; }],

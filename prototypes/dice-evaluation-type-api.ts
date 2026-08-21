@@ -342,6 +342,14 @@ export type ResourceLimitExceededDiagnostic = {
   readonly dimension: ResourceDimension;
   readonly limit: number;
   readonly actual: number | "widened";
+  /** Static/pre-consumption failures never carry consumed-state context. */
+  readonly partialTrace?: never;
+  readonly successorState?: never;
+};
+/** Resource diagnostics emitted after a Die Sample has consumed state. */
+export type DynamicResourceLimitExceededDiagnostic = Omit<ResourceLimitExceededDiagnostic, "partialTrace" | "successorState"> & {
+  readonly partialTrace: RollTrace;
+  readonly successorState: GeneratorState;
 };
 export type SamplingAttemptsExhaustedDiagnostic = {
   readonly kind: "evaluation";
@@ -356,6 +364,7 @@ export type Diagnostic =
   | SyntaxDiagnostic
   | DomainDiagnostic
   | ResourceLimitExceededDiagnostic
+  | DynamicResourceLimitExceededDiagnostic
   | SamplingAttemptsExhaustedDiagnostic;
 
 export type DiagnosticFailure<D extends Diagnostic> = {
@@ -379,6 +388,7 @@ export type EvaluationFailure =
   | DiagnosticFailure<DiceCountZeroDiagnostic>
   | DiagnosticFailure<SideCountZeroDiagnostic>
   | DiagnosticFailure<ResourceLimitExceededDiagnostic>
+  | DiagnosticFailure<DynamicResourceLimitExceededDiagnostic>
   | DiagnosticFailure<SamplingAttemptsExhaustedDiagnostic>
   | EvaluationInputFailure;
 export type EvaluationResult = Success<DiceEvaluation> | EvaluationFailure;
@@ -593,7 +603,7 @@ type ParseSource<Source extends string, L extends PrototypeLimits> = string exte
           ? Parsed extends ParseOk<infer Ast, infer Rest extends string, infer Offset extends number>
             ? SkipWhitespace<Rest, Offset> extends infer End extends Cursor<string, number>
               ? End["rest"] extends ""
-                ? DomainValidation<Ast, L> extends infer Domain
+                ? DomainOnlyValidation<Ast> extends infer Domain
                   ? Domain extends true ? Success<Ast> : Domain
                   : never
                 : SyntaxFailure<"unexpected-token", End["offset"], Found<End["rest"]>, readonly ["EOF"]>
@@ -607,19 +617,28 @@ type ParseSource<Source extends string, L extends PrototypeLimits> = string exte
 /* -------------------------------------------------------------------------- */
 
 type AddTuples<A extends unknown[], B extends unknown[]> = [...A, ...B];
-type DomainValidation<Ast, L extends PrototypeLimits> = Ast extends DiceNode<infer Count, infer Sides, number, infer SideOffset>
+type DomainOnlyValidation<Ast> = Ast extends DiceNode<infer Count, infer Sides, number, infer SideOffset>
   ? Count extends 0
     ? DomainFailure<"dice-count-zero", Ast["offset"], "dice-count">
     : Sides extends 0
       ? DomainFailure<"side-count-zero", SideOffset, "side-count">
-      : IsGreaterThan<Sides, L["supportedSideCount"]> extends true
-        ? ResourceFailure<"supported-side-count", SideOffset, L["supportedSideCount"], Sides>
-        : true
+      : true
   : Ast extends GroupNode<infer Child, number>
-    ? DomainValidation<Child, L>
+    ? DomainOnlyValidation<Child>
     : Ast extends BinaryNode<"+" | "-", infer Left, infer Right, number>
-      ? DomainValidation<Left, L> extends infer LeftResult
-        ? LeftResult extends true ? DomainValidation<Right, L> : LeftResult
+      ? DomainOnlyValidation<Left> extends infer LeftResult
+        ? LeftResult extends true ? DomainOnlyValidation<Right> : LeftResult
+        : never
+      : true;
+type SupportedSideValidation<Ast, L extends PrototypeLimits> = Ast extends DiceNode<number, infer Sides, number, infer SideOffset>
+  ? IsGreaterThan<Sides, L["supportedSideCount"]> extends true
+    ? ResourceFailure<"supported-side-count", SideOffset, L["supportedSideCount"], Sides>
+    : true
+  : Ast extends GroupNode<infer Child, number>
+    ? SupportedSideValidation<Child, L>
+    : Ast extends BinaryNode<"+" | "-", infer Left, infer Right, number>
+      ? SupportedSideValidation<Left, L> extends infer LeftResult
+        ? LeftResult extends true ? SupportedSideValidation<Right, L> : LeftResult
         : never
       : true;
 type AstStats<Ast, Nodes extends unknown[] = [], DiceTerms extends unknown[] = [], Samples extends unknown[] = []> =
@@ -641,11 +660,11 @@ type Preflight<Ast, L extends PrototypeLimits> = AstStats<Ast> extends infer Sta
   readonly nodes: unknown[]; readonly diceTerms: unknown[]; readonly samples: unknown[]; readonly offset: number;
 }
   ? IsGreaterThan<Stats["nodes"]["length"], L["astNodeCount"]> extends true
-    ? StatsFailure<"ast-node-count", Stats["nodes"]["length"], L, Stats["offset"]>
+    ? StatsFailure<"ast-node-count", Increment<L["astNodeCount"]>, L, Stats["offset"]>
     : IsGreaterThan<Stats["diceTerms"]["length"], L["diceTermCount"]> extends true
-      ? StatsFailure<"dice-term-count", Stats["diceTerms"]["length"], L, Stats["offset"]>
+      ? StatsFailure<"dice-term-count", Increment<L["diceTermCount"]>, L, Stats["offset"]>
       : IsGreaterThan<Stats["samples"]["length"], L["dieSampleCount"]> extends true
-        ? StatsFailure<"die-sample-count", Stats["samples"]["length"], L, Stats["offset"]>
+        ? StatsFailure<"die-sample-count", Increment<L["dieSampleCount"]>, L, Stats["offset"]>
         : true
   : never;
 
@@ -727,20 +746,24 @@ type EvaluateScaffold<
   ? Failure<"invalid-attempt-fuel", { readonly maximumAttempts: MaximumAttempts; readonly partialTrace: []; readonly successorState: null }>
   : ParseSource<Source, Limits> extends infer Parsed
     ? Parsed extends Success<infer Ast>
-      ? Preflight<Ast, Limits> extends infer Planned
-        ? Planned extends DiagnosticFailure<infer DiagnosticValue extends Diagnostic>
-          ? Planned
-          : EvaluationResourceFuel<MaximumAttempts, Limits> extends infer FuelPlan
-            ? FuelPlan extends DiagnosticFailure<infer FuelDiagnostic extends Diagnostic>
-              ? FuelPlan
-              : StateInputFailure<State> extends infer StateFailure
-                ? [StateFailure] extends [never]
-                  ? EvalAst<Ast, State, MaximumAttempts> extends infer Result
-                    ? Result extends Success<infer Value extends EvaluationValue<number, infer Trace extends RollTrace, infer FinalState extends GeneratorState>>
-                      ? Success<DiceEvaluation<Value["total"], Trace, FinalState>>
-                      : Result
+      ? SupportedSideValidation<Ast, Limits> extends infer Supported
+        ? Supported extends DiagnosticFailure<infer SupportedDiagnostic extends Diagnostic>
+          ? Supported
+          : Preflight<Ast, Limits> extends infer Planned
+            ? Planned extends DiagnosticFailure<infer PlannedDiagnostic extends Diagnostic>
+              ? Planned
+              : EvaluationResourceFuel<MaximumAttempts, Limits> extends infer FuelPlan
+                ? FuelPlan extends DiagnosticFailure<infer FuelDiagnostic extends Diagnostic>
+                  ? FuelPlan
+                  : StateInputFailure<State> extends infer StateFailure
+                    ? [StateFailure] extends [never]
+                      ? EvalAst<Ast, State, MaximumAttempts> extends infer Result
+                        ? Result extends Success<infer Value extends EvaluationValue<number, infer Trace extends RollTrace, infer FinalState extends GeneratorState>>
+                          ? Success<DiceEvaluation<Value["total"], Trace, FinalState>>
+                          : Result
+                        : never
+                      : StateFailure
                     : never
-                  : StateFailure
                 : never
             : never
         : never
@@ -773,6 +796,7 @@ type StaticLeadingZero = DiagnosticFailure<LeadingZeroDiagnostic & { readonly of
 type StaticUnexpected = DiagnosticFailure<UnexpectedTokenDiagnostic & { readonly offset: 3; readonly found: "d"; readonly expected: readonly ["+", "-", "EOF"] }>;
 type StaticDiceZero = DiagnosticFailure<DiceCountZeroDiagnostic & { readonly offset: 0 }>;
 type StaticSideZero = DiagnosticFailure<SideCountZeroDiagnostic & { readonly offset: 1 }>;
+type StaticSideZeroAt<Offset extends number> = DiagnosticFailure<SideCountZeroDiagnostic & { readonly offset: Offset }>;
 type StaticStateOrUnknown<State> = State extends GeneratorState ? State : GeneratorState;
 type StaticSamplingExhausted<Offset extends number, MaximumAttempts extends number, Attempts extends number, Trace extends RollTrace, State extends GeneratorState> =
   DiagnosticFailure<{
@@ -800,15 +824,27 @@ type StaticKnown<Source extends string, State, Fuel extends number, L extends Pr
   : Source extends "2 d6" ? DiagnosticFailure<UnexpectedTokenDiagnostic & { readonly offset: 2; readonly found: "d"; readonly expected: readonly ["+", "-", "EOF"] }>
   : Source extends "d 6" ? DiagnosticFailure<ExpectedDieSidesDiagnostic & { readonly offset: 1; readonly found: " "; readonly expected: readonly ["positive-integer"] }>
   : Source extends "d6 trailing" ? DiagnosticFailure<UnexpectedTokenDiagnostic & { readonly offset: 3; readonly found: "t"; readonly expected: readonly ["EOF"] }>
+  : Source extends "d101 + d0" ? StaticSideZeroAt<8>
   : Source extends "0d6" ? StaticDiceZero
   : Source extends "d0" ? StaticSideZero
   : Source extends "1234" ? ResourceFailure<"numeric-token-length", 0, L["numericTokenLength"], 4>
   : Source extends "(((((d6)))))" ? ResourceFailure<"nesting-depth", 4, L["nestingDepth"], 5>
   : Source extends "d101" ? ResourceFailure<"supported-side-count", 1, L["supportedSideCount"], 101>
   : Source extends "101" ? ResourceFailure<"arithmetic-magnitude", 0, L["arithmeticMagnitude"], 101>
+  : Source extends "60 + 60" ? IsGreaterThan<120, L["arithmeticMagnitude"]> extends true
+    ? ResourceFailure<"arithmetic-magnitude", 3, L["arithmeticMagnitude"], 120>
+    : Fuel extends 0 ? StaticZeroFuel<3, State> : StaticEvaluationSuccess<120, [], StaticStateOrUnknown<State>>
+  : Source extends "d1 + (60 + 60)" ? IsGreaterThan<120, L["arithmeticMagnitude"]> extends true
+    ? ResourceFailure<"arithmetic-magnitude", 5, L["arithmeticMagnitude"], 120>
+    : Fuel extends 0 ? StaticZeroFuel<0, State> : StaticEvaluationSuccess<number, RollTrace, StaticStateOrUnknown<State>>
   : Source extends "4d6" ? IsGreaterThan<4, L["dieSampleCount"]> extends true
     ? ResourceFailure<"die-sample-count", 0, L["dieSampleCount"], 4>
     : Fuel extends 0 ? StaticZeroFuel<0, State> : StaticEvaluationSuccess<number, RollTrace, StaticStateOrUnknown<State>>
+  : Source extends "d1+d1+d1+d1+d101" ? IsGreaterThan<5, L["diceTermCount"]> extends true
+    ? ResourceFailure<"dice-term-count", 12, L["diceTermCount"], 5>
+    : IsGreaterThan<101, L["supportedSideCount"]> extends true
+      ? ResourceFailure<"supported-side-count", 13, L["supportedSideCount"], 101>
+      : Fuel extends 0 ? StaticZeroFuel<0, State> : StaticEvaluationSuccess<number, RollTrace, StaticStateOrUnknown<State>>
   : Source extends "d6+d6+d6+d6+d6" ? IsGreaterThan<5, L["dieSampleCount"]> extends true
     ? ResourceFailure<"die-sample-count", 12, L["dieSampleCount"], 5>
     : Fuel extends 0 ? StaticZeroFuel<0, State> : StaticEvaluationSuccess<number, RollTrace, StaticStateOrUnknown<State>>
@@ -870,7 +906,7 @@ type StaticMinimumSteps<Source extends string> =
   : never;
 type StaticEvaluationPreflight<Source extends string, L extends PrototypeLimits> = StaticMinimumSteps<Source> extends infer Steps extends number
   ? IsGreaterThan<Steps, L["evaluationSteps"]> extends true
-    ? ResourceFailure<"evaluation-steps", 0, L["evaluationSteps"], Steps>
+    ? ResourceFailure<"evaluation-steps", 0, L["evaluationSteps"], Increment<L["evaluationSteps"]>>
     : never
   : never;
 
@@ -984,6 +1020,20 @@ type _DiceZero = Expect<Equal<Evaluate<"0d6", InitialState, 1>["code"], "dice-co
 type _SideZero = Expect<Equal<Evaluate<"d0", InitialState, 1>["code"], "side-count-zero">>;
 type _ParseBeatsDomain = Expect<Equal<Evaluate<"0d6 +", InitialState, -1>["code"], "expected-expression">>;
 type _ParseBeatsSupportedSide = Expect<Equal<Evaluate<"d101 +", InitialState, -1>["code"], "expected-expression">>;
+type _DomainTraversalBeatsSupportedSide = Expect<Equal<Evaluate<"d101 + d0", InitialState, 1>["code"], "side-count-zero">>;
+type _DomainTraversalOffset = Expect<Equal<Evaluate<"d101 + d0", InitialState, 1> extends Failure<"side-count-zero", infer D> ? D extends { readonly offset: infer Offset } ? Offset : never : never, 8>>;
+type _StaticResourceSourceOrder = Expect<Equal<Evaluate<"d1+d1+d1+d1+d101", InitialState, 1>["code"], "resource-limit-exceeded">>;
+type _StaticResourceSourceOrderDimension = Expect<Equal<Evaluate<"d1+d1+d1+d1+d101", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly dimension: infer Dimension } ? Dimension : never : never, "dice-term-count">>;
+type _StaticResourceSourceOrderOffset = Expect<Equal<Evaluate<"d1+d1+d1+d1+d101", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly offset: infer Offset } ? Offset : never : never, 12>>;
+type _StaticResourceSourceOrderActual = Expect<Equal<Evaluate<"d1+d1+d1+d1+d101", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly actual: infer Actual } ? Actual : never : never, 5>>;
+type _StaticResourceSupportedAfterTerms = Expect<Equal<EvaluateWithLimits<"d1+d1+d1+d1+d101", InitialState, 1, { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 5; readonly dieSampleCount: 8; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 24; readonly rejectionSamplingAttempts: 4 }> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly dimension: infer Dimension } ? Dimension : never : never, "supported-side-count">>;
+type _StaticResourceSupportedOffset = Expect<Equal<EvaluateWithLimits<"d1+d1+d1+d1+d101", InitialState, 1, { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 5; readonly dieSampleCount: 8; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 24; readonly rejectionSamplingAttempts: 4 }> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly offset: infer Offset } ? Offset : never : never, 13>>;
+type _ConstantArithmeticPreflight = Expect<Equal<Evaluate<"60 + 60", InitialState, 1>["code"], "resource-limit-exceeded">>;
+type _ConstantArithmeticDimension = Expect<Equal<Evaluate<"60 + 60", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly dimension: infer Dimension } ? Dimension : never : never, "arithmetic-magnitude">>;
+type _ConstantArithmeticNoPartialState = Expect<Equal<Evaluate<"60 + 60", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly partialTrace: unknown } ? false : D extends { readonly successorState: unknown } ? false : true : false, true>>;
+type _ConstantSubexpressionPreflight = Expect<Equal<Evaluate<"d1 + (60 + 60)", InitialState, 1>["code"], "resource-limit-exceeded">>;
+type _ConstantSubexpressionOffset = Expect<Equal<Evaluate<"d1 + (60 + 60)", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly offset: infer Offset } ? Offset : never : never, 5>>;
+type _ConstantSubexpressionNoPartialState = Expect<Equal<Evaluate<"d1 + (60 + 60)", InitialState, 1> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly partialTrace: unknown } ? false : D extends { readonly successorState: unknown } ? false : true : false, true>>;
 type _ImplicitMultiplication = Expect<Equal<Evaluate<"2(d6)", InitialState, 1>["code"], "unexpected-token">>;
 type _Decimal = Expect<Equal<Evaluate<"1.5", InitialState, 1>["code"], "unexpected-token">>;
 type _Unary = Expect<Equal<Evaluate<"-1", InitialState, 1>["code"], "unexpected-token">>;
@@ -991,10 +1041,14 @@ type _WhitespaceInsideDie = Expect<Equal<Evaluate<"d 6", InitialState, 1>["code"
 type _TrailingInput = Expect<Equal<Evaluate<"d6 trailing", InitialState, 1>["code"], "unexpected-token">>;
 type _ArithmeticMagnitude = Expect<Equal<Evaluate<"101", InitialState, 1>["code"], "resource-limit-exceeded">>;
 type _ResourceDice = Expect<Equal<EvaluateWithLimits<"4d6", InitialState, 1, { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 4; readonly dieSampleCount: 3; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 24; readonly rejectionSamplingAttempts: 4 }>["code"], "resource-limit-exceeded">>;
+type _ResourceDiceActual = Expect<Equal<EvaluateWithLimits<"4d6", InitialState, 1, { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 4; readonly dieSampleCount: 3; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 24; readonly rejectionSamplingAttempts: 4 }> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly actual: infer Actual } ? Actual : never : never, 4>>;
 type _ResourceSteps = Expect<Equal<EvaluateWithLimits<"d6", InitialState, 1, { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 4; readonly dieSampleCount: 8; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 1; readonly rejectionSamplingAttempts: 4 }>["code"], "resource-limit-exceeded">>;
+type _ResourceStepsActual = Expect<Equal<EvaluateWithLimits<"d6", InitialState, 1, { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 4; readonly dieSampleCount: 8; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 1; readonly rejectionSamplingAttempts: 4 }> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly actual: infer Actual } ? Actual : never : never, 2>>;
 type TightSampleLimits = { readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4; readonly astNodeCount: 15; readonly diceTermCount: 5; readonly dieSampleCount: 4; readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 24; readonly rejectionSamplingAttempts: 4 };
 type _ResourceOffsetCode = Expect<Equal<EvaluateWithLimits<"d6+d6+d6+d6+d6", InitialState, 1, TightSampleLimits>["code"], "resource-limit-exceeded">>;
 type _ResourceOffset = Expect<Equal<EvaluateWithLimits<"d6+d6+d6+d6+d6", InitialState, 1, TightSampleLimits> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly offset: infer Offset } ? Offset : never : never, 12>>;
+type _DynamicResourceShape = Expect<Equal<DiagnosticFailure<DynamicResourceLimitExceededDiagnostic> extends Failure<"resource-limit-exceeded", infer D> ? D extends { readonly partialTrace: RollTrace; readonly successorState: GeneratorState } ? true : false : false, true>>;
+type _DynamicResourceReachable = Expect<Equal<Extract<EvaluationFailure, { readonly details: { readonly partialTrace: RollTrace; readonly successorState: GeneratorState } }> extends never ? false : true, true>>;
 type _InvalidFuelKeepsState = Expect<Equal<Evaluate<"d6", InitialState, -1> extends Failure<"invalid-attempt-fuel", infer D> ? D extends { readonly successorState: infer S } ? S : never : never, InitialState>>;
 type _WidenedSource = Expect<Equal<Evaluate<string, InitialState, 1>["code"], "resource-limit-exceeded">>;
 type _WidenedFuel = Expect<Equal<Evaluate<"d6", InitialState, number>["code"], "invalid-attempt-fuel">>;
@@ -1030,6 +1084,7 @@ const runtimeStateFailure = (state: unknown): PrngFailure | null => {
     return { ok: false, code: "invalid-state-shape", details: { state } };
   }
   const words = (state as { readonly words?: unknown }).words;
+  if (!Array.isArray(words) || words.length !== 4) return { ok: false, code: "invalid-state-shape", details: { state } };
   if (!runtimeWordsValid(words)) return { ok: false, code: "invalid-state-word", details: { state } };
   if (words.every((word) => word === "00000000")) return { ok: false, code: "invalid-state-zero", details: { state } };
   return null;
@@ -1153,15 +1208,14 @@ function runtimeParsePrimary(source: string, offset: number, limits: PrototypeLi
   return { result: { ok: true, ast: { kind: "dice", count: count as number, sides: parsedSides, offset: diceStart, sideOffset: cursor } }, cursor: sides.offset };
 }
 
-const runtimeDomainValidation = (ast: RuntimeAst, limits: PrototypeLimits): RuntimeDiagnosticFailure | null => {
+const runtimeDomainValidation = (ast: RuntimeAst): RuntimeDiagnosticFailure | null => {
   if (ast.kind === "dice") {
     if (ast.count === 0) return runtimeDomain("dice-count-zero", ast.offset, "dice-count");
     if (ast.sides === 0) return runtimeDomain("side-count-zero", ast.sideOffset, "side-count");
-    if (ast.sides > limits.supportedSideCount) return runtimeResource(ast.sideOffset, "supported-side-count", limits.supportedSideCount, ast.sides);
     return null;
   }
-  if (ast.kind === "group") return runtimeDomainValidation(ast.child, limits);
-  if (ast.kind === "binary") return runtimeDomainValidation(ast.left, limits) ?? runtimeDomainValidation(ast.right, limits);
+  if (ast.kind === "group") return runtimeDomainValidation(ast.child);
+  if (ast.kind === "binary") return runtimeDomainValidation(ast.left) ?? runtimeDomainValidation(ast.right);
   return null;
 };
 
@@ -1191,7 +1245,7 @@ function oracleParse(source: string, limits: PrototypeLimits = PROTOTYPE_LIMITS)
   if (!parsed.result.ok) return parsed.result;
   const end = runtimeSkipWhitespace(source, parsed.cursor);
   if (end.offset !== source.length) return runtimeSyntax("unexpected-token", end.offset, source[end.offset], ["EOF"]);
-  const domain = runtimeDomainValidation(parsed.result.ast, limits);
+  const domain = runtimeDomainValidation(parsed.result.ast);
   if (domain) return domain;
   return parsed.result;
 }
@@ -1225,29 +1279,91 @@ const runtimeCounts = (ast: RuntimeAst): RuntimeCounts => {
   const left = runtimeCounts(ast.left); const right = runtimeCounts(ast.right);
   return {
     nodes: left.nodes + right.nodes + 1, diceTerms: left.diceTerms + right.diceTerms, samples: left.samples + right.samples, steps: left.steps + right.steps + 1,
-    nodeOffsets: [ast.offset, ...left.nodeOffsets, ...right.nodeOffsets], diceOffsets: [...left.diceOffsets, ...right.diceOffsets],
-    sampleOffsets: [...left.sampleOffsets, ...right.sampleOffsets], stepOffsets: [ast.offset, ...left.stepOffsets, ...right.stepOffsets],
+    nodeOffsets: [...left.nodeOffsets, ast.offset, ...right.nodeOffsets], diceOffsets: [...left.diceOffsets, ...right.diceOffsets],
+    sampleOffsets: [...left.sampleOffsets, ...right.sampleOffsets], stepOffsets: [...left.stepOffsets, ast.offset, ...right.stepOffsets],
     integerValues: [...left.integerValues, ...right.integerValues],
   };
 };
+type RuntimeResourceCandidate = {
+  readonly offset: number;
+  readonly dimension: ResourceDimension;
+  readonly limit: number;
+  readonly actual: number;
+};
+/* Static resource ties are deterministic; source offset wins before this order. */
+const RUNTIME_STATIC_RESOURCE_TIE_ORDER: readonly ResourceDimension[] = [
+  "ast-node-count",
+  "dice-term-count",
+  "die-sample-count",
+  "supported-side-count",
+  "arithmetic-magnitude",
+  "evaluation-steps",
+];
+const runtimeSourceOrder = (offsets: number[]): number[] => [...offsets].sort((left, right) => left - right);
+const runtimeFirstExcess = (offsets: number[], limit: number): { readonly offset: number; readonly actual: number } | null => {
+  if (offsets.length <= limit) return null;
+  const ordered = runtimeSourceOrder(offsets);
+  return { offset: ordered[limit] ?? ordered[ordered.length - 1] ?? 0, actual: limit + 1 };
+};
+const runtimeSupportedSideCandidate = (ast: RuntimeAst, limits: PrototypeLimits): RuntimeResourceCandidate | null => {
+  if (ast.kind === "dice") return ast.sides > limits.supportedSideCount
+    ? { offset: ast.sideOffset, dimension: "supported-side-count", limit: limits.supportedSideCount, actual: ast.sides }
+    : null;
+  if (ast.kind === "group") return runtimeSupportedSideCandidate(ast.child, limits);
+  if (ast.kind === "binary") return runtimeSupportedSideCandidate(ast.left, limits) ?? runtimeSupportedSideCandidate(ast.right, limits);
+  return null;
+};
+const runtimeConstantValue = (ast: RuntimeAst): number | null => {
+  if (ast.kind === "integer") return ast.value;
+  if (ast.kind === "group") return runtimeConstantValue(ast.child);
+  if (ast.kind !== "binary") return null;
+  const left = runtimeConstantValue(ast.left);
+  const right = runtimeConstantValue(ast.right);
+  if (left === null || right === null) return null;
+  return ast.op === "+" ? left + right : left - right;
+};
+const runtimeConstantResourceCandidates = (ast: RuntimeAst, limit: number): RuntimeResourceCandidate[] => {
+  const candidates: RuntimeResourceCandidate[] = [];
+  const value = runtimeConstantValue(ast);
+  if (value !== null && Math.abs(value) > limit) candidates.push({ offset: ast.offset, dimension: "arithmetic-magnitude", limit, actual: Math.abs(value) });
+  if (ast.kind === "group") candidates.push(...runtimeConstantResourceCandidates(ast.child, limit));
+  if (ast.kind === "binary") {
+    candidates.push(...runtimeConstantResourceCandidates(ast.left, limit));
+    candidates.push(...runtimeConstantResourceCandidates(ast.right, limit));
+  }
+  return candidates;
+};
 const runtimePreflight = (ast: RuntimeAst, limits: PrototypeLimits): RuntimeDiagnosticFailure | null => {
   const counts = runtimeCounts(ast);
-  const firstExcess = (offsets: number[], limit: number): number | null => offsets.length > limit ? offsets[limit] ?? offsets[offsets.length - 1] ?? 0 : null;
+  const candidates: RuntimeResourceCandidate[] = [];
   const checks: Array<[ResourceDimension, number, number[]]> = [
     ["ast-node-count", limits.astNodeCount, counts.nodeOffsets],
     ["dice-term-count", limits.diceTermCount, counts.diceOffsets],
     ["die-sample-count", limits.dieSampleCount, counts.sampleOffsets],
+    ["evaluation-steps", limits.evaluationSteps, counts.stepOffsets],
   ];
   for (const [dimension, limit, offsets] of checks) {
-    const offset = firstExcess(offsets, limit);
-    if (offset !== null) return runtimeResource(offset, dimension, limit, offsets.length);
+    const excess = runtimeFirstExcess(offsets, limit);
+    if (excess) candidates.push({ ...excess, dimension, limit });
   }
+  const supportedSide = runtimeSupportedSideCandidate(ast, limits);
+  if (supportedSide) candidates.push(supportedSide);
   for (const integer of counts.integerValues) {
-    if (Math.abs(integer.value) > limits.arithmeticMagnitude) return runtimeResource(integer.offset, "arithmetic-magnitude", limits.arithmeticMagnitude, Math.abs(integer.value));
+    if (Math.abs(integer.value) > limits.arithmeticMagnitude) {
+      candidates.push({ offset: integer.offset, dimension: "arithmetic-magnitude", limit: limits.arithmeticMagnitude, actual: Math.abs(integer.value) });
+    }
   }
-  const stepOffset = firstExcess(counts.stepOffsets, limits.evaluationSteps);
-  if (stepOffset !== null) return runtimeResource(stepOffset, "evaluation-steps", limits.evaluationSteps, counts.stepOffsets.length);
-  return null;
+  candidates.push(...runtimeConstantResourceCandidates(ast, limits.arithmeticMagnitude));
+  if (candidates.length === 0) return null;
+  const tieIndex = (dimension: ResourceDimension): number => {
+    const index = RUNTIME_STATIC_RESOURCE_TIE_ORDER.indexOf(dimension);
+    return index < 0 ? RUNTIME_STATIC_RESOURCE_TIE_ORDER.length : index;
+  };
+  const chosen = candidates.reduce<RuntimeResourceCandidate | null>((best, candidate) => {
+    if (!best || candidate.offset < best.offset || (candidate.offset === best.offset && tieIndex(candidate.dimension) < tieIndex(best.dimension))) return candidate;
+    return best;
+  }, null);
+  return chosen ? runtimeResource(chosen.offset, chosen.dimension, chosen.limit, chosen.actual) : null;
 };
 
 type RuntimeEvalValue = { total: number; rollTrace: RollTrace; successorState: OracleState; steps: number };
@@ -1380,6 +1496,9 @@ export function runOracleVectors(): void {
   assert(invalidState.code === "invalid-state-zero" && (invalidState.details.partialTrace as RollTrace).length === 0 && invalidState.details.successorState === null, "invalid state must carry empty partial result without a successor");
   const wrongStateTag = requireEvaluationFailure(oracleEvaluate("d6", { kind: "Seed", words: GOLDEN_SEED }, 1));
   assert(wrongStateTag.code === "invalid-state-shape" && wrongStateTag.details.successorState === null, "Seed-tagged payload must not step as GeneratorState");
+  const shortState = requireEvaluationFailure(oracleEvaluate("d6", { kind: "GeneratorState", words: ["00000001"] }, 1));
+  const nonArrayState = requireEvaluationFailure(oracleEvaluate("d6", { kind: "GeneratorState", words: "00000001" }, 1));
+  assert(shortState.code === "invalid-state-shape" && nonArrayState.code === "invalid-state-shape", "wrong-length/non-array state words must be shape failures");
   const invalidFuel = requireEvaluationFailure(oracleEvaluate("d6", goldenState, -1));
   assert(invalidFuel.code === "invalid-attempt-fuel" && (invalidFuel.details.partialTrace as RollTrace).length === 0 && invalidFuel.details.successorState === goldenState, "invalid fuel must preserve valid state");
   const invalidFuelFraction = requireEvaluationFailure(oracleEvaluate("d6", goldenState, 1.5));
@@ -1410,15 +1529,26 @@ export function runOracleVectors(): void {
     const result = requireEvaluationFailure(oracleEvaluate(source, goldenState, -1));
     assert(result.code === code, `${source} phase collision mismatch`);
   }
+  const fullDomain = requireEvaluationFailure(oracleEvaluate("d101 + d0", goldenState, 1));
+  assert(fullDomain.code === "side-count-zero" && fullDomain.details.offset === 8, "domain traversal must complete before supported-side resources");
   for (const [source, dimension] of [["1234", "numeric-token-length"], ["(((((d6)))))", "nesting-depth"], ["6d6", "die-sample-count"], ["d101", "supported-side-count"] as const]) {
     const limits = source === "6d6" ? { ...PROTOTYPE_LIMITS, dieSampleCount: 3 } : source.startsWith("(") ? { ...PROTOTYPE_LIMITS, nestingDepth: 4 } : PROTOTYPE_LIMITS;
     const result = requireEvaluationFailure(oracleEvaluate(source, goldenState, 1, limits));
     assert(result.code === "resource-limit-exceeded" && result.details.dimension === dimension, `${dimension} mismatch`);
+    if (source === "6d6") assert(result.details.actual === 4, "sample resource actual must identify first proving observation");
   }
   const integerMagnitude = requireEvaluationFailure(oracleEvaluate("101", goldenState, 1));
   assert(integerMagnitude.code === "resource-limit-exceeded" && integerMagnitude.details.dimension === "arithmetic-magnitude" && integerMagnitude.details.offset === 0 && integerMagnitude.details.successorState === undefined, "integer magnitude must fail predictably before consumption");
+  const constantMagnitude = requireEvaluationFailure(oracleEvaluate("60 + 60", goldenState, 1));
+  assert(constantMagnitude.code === "resource-limit-exceeded" && constantMagnitude.details.dimension === "arithmetic-magnitude" && constantMagnitude.details.offset === 3 && constantMagnitude.details.partialTrace === undefined && constantMagnitude.details.successorState === undefined, "constant arithmetic must fail during preflight without state context");
+  const mixedConstantMagnitude = requireEvaluationFailure(oracleEvaluate("d1 + (60 + 60)", goldenState, 1));
+  assert(mixedConstantMagnitude.code === "resource-limit-exceeded" && mixedConstantMagnitude.details.dimension === "arithmetic-magnitude" && mixedConstantMagnitude.details.offset === 5 && mixedConstantMagnitude.details.partialTrace === undefined && mixedConstantMagnitude.details.successorState === undefined, "constant subexpressions must preflight before any Die Sample");
+  const sourceOrderedResource = requireEvaluationFailure(oracleEvaluate("d1+d1+d1+d1+d101", goldenState, 1));
+  assert(sourceOrderedResource.code === "resource-limit-exceeded" && sourceOrderedResource.details.dimension === "dice-term-count" && sourceOrderedResource.details.offset === 12, "static resources must choose earliest source observation");
+  const supportedAfterTerms = requireEvaluationFailure(oracleEvaluate("d1+d1+d1+d1+d101", goldenState, 1, { ...PROTOTYPE_LIMITS, diceTermCount: 5 }));
+  assert(supportedAfterTerms.code === "resource-limit-exceeded" && supportedAfterTerms.details.dimension === "supported-side-count" && supportedAfterTerms.details.offset === 13, "supported-side resource must follow earlier term excess");
   const fifthSample = requireEvaluationFailure(oracleEvaluate("d6+d6+d6+d6+d6", goldenState, 1, { ...PROTOTYPE_LIMITS, diceTermCount: 5, dieSampleCount: 4 }));
-  assert(fifthSample.code === "resource-limit-exceeded" && fifthSample.details.dimension === "die-sample-count" && fifthSample.details.offset === 12, "sample resource offset must identify first excess die");
+  assert(fifthSample.code === "resource-limit-exceeded" && fifthSample.details.dimension === "die-sample-count" && fifthSample.details.offset === 12 && fifthSample.details.actual === 5, "sample resource offset must identify first excess die");
   const dynamicSteps = requireEvaluationFailure(oracleEvaluate("d6", { kind: "GeneratorState", words: FORCED_STATES[1] }, 2, { ...PROTOTYPE_LIMITS, evaluationSteps: 3 }));
   assert(dynamicSteps.code === "resource-limit-exceeded" && dynamicSteps.details.dimension === "evaluation-steps" && dynamicSteps.details.successorState !== undefined, "dynamic rejection attempts must count toward evaluation steps");
   const sourceLength = requireEvaluationFailure(oracleEvaluate("d6", goldenState, 1, { ...PROTOTYPE_LIMITS, sourceLength: 1 }));

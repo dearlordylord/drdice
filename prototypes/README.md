@@ -28,6 +28,11 @@ The type artifact copies the fixed-width #9 step/sample core, so arbitrary
 canonical states receive exact literal successors rather than a fixture-table
 or generic fallback.
 
+The public evaluator is deliberately a bounded literal corpus in this
+throwaway artifact. Its phase order, failure context, Roll Trace, and successor
+state semantics are the proposed decision; arbitrary-source type execution and
+production checker support remain implementation work for issue #11.
+
 ## Check the type artifact and independent oracle
 
 From this directory:
@@ -92,8 +97,15 @@ The prototype suggests accepting this as the public design direction:
 - Validate in the visible order source length, full parsing, domain, predictable
   resources, Generator State, fuel, then depth-first left-to-right evaluation.
   Parsing completes before domain/static checks, so `0d6 +` and `d101 +`
-  report `expected-expression`. Source diagnostics use zero-based UTF-16 offsets
-  and report only the first failure; a first excess resource points at the
+  report `expected-expression`; domain validation completes across the full AST
+  before supported-side/resource checks, so `d101 + d0` reports the later
+  `side-count-zero`. Within static resources, the earliest source offset wins;
+  ties use `ast-node-count → dice-term-count → die-sample-count →
+  supported-side-count → arithmetic-magnitude → evaluation-steps`. The first
+  proving count observation reports `limit + 1` as `actual`, while the offset
+  identifies the excess token/sample. Constant-only subexpressions are checked
+  before any Die Sample. Source diagnostics use zero-based UTF-16 offsets and
+  report only the first failure; a first excess resource points at the
   offending token/sample rather than the AST root.
 - Keep syntax, domain, resource, and evaluation-resource codes structured. The
   sketch materializes every syntax code, both domain codes, and every resource
