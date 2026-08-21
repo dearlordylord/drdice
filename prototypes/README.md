@@ -57,4 +57,6 @@ Both HTML files are self-contained and open directly in a browser. The bounded
 literal corpus remains illustrative. The supported limits and compiler
 budgets are recorded in
 [`benchmarks/issue-11/README.md`](../benchmarks/issue-11/README.md); issues #12
-and #13 own the verification gates and release contract.
+and #13 own the verification gates and release contract. The accepted issue
+#12 correctness and exact runtime-parity obligations are recorded in
+[`verification/issue-12/README.md`](../verification/issue-12/README.md).
