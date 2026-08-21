@@ -493,23 +493,33 @@ type OracleStateFailure = Extract<OracleBoundedResult, { readonly ok: false; rea
 export type OracleStateResult = Success<OracleState> | OracleStateFailure;
 export type OracleSerializedResult = Success<OracleSerializedState> | OracleStateFailure;
 export type OracleStepResult = Success<OracleStep> | OracleStateFailure;
+export type OracleSeedFailure =
+  | Failure<"invalid-seed-shape", { readonly seed: unknown }>
+  | Failure<"invalid-seed-word", { readonly seed: unknown }>
+  | Failure<"invalid-seed-zero", { readonly seed: unknown }>;
+export type OracleInitializeResult = Success<OracleState> | OracleSeedFailure;
+export type OracleReplayResult = OracleInitializeResult | {
+  readonly ok: false;
+  readonly code: "invalid-replay-token";
+  readonly details: { readonly token: unknown };
+};
 
 const normalize = (value: number): number => value >>> 0;
 const hex = (value: number): string => normalize(value).toString(16).padStart(8, "0");
 const parseWord = (value: string): number => Number.parseInt(value, 16) >>> 0;
 
-/** Internal correctness oracle only; this is not part of a public runtime API. */
-export function oracleInitialize(words: unknown): OracleState {
+/** Internal correctness oracle only; invalid seeds stay in the discriminated result. */
+export function oracleInitialize(words: unknown): OracleInitializeResult {
   if (!Array.isArray(words) || words.length !== 4) {
-    throw new Error("oracle received invalid seed shape");
+    return { ok: false, code: "invalid-seed-shape", details: { seed: words } };
   }
   if (words.some((word) => typeof word !== "string" || !/^[0-9a-f]{8}$/.test(word))) {
-    throw new Error("oracle received invalid seed word");
+    return { ok: false, code: "invalid-seed-word", details: { seed: words } };
   }
   if (words.every((word) => word === "00000000")) {
-    throw new Error("oracle received the all-zero seed");
+    return { ok: false, code: "invalid-seed-zero", details: { seed: words } };
   }
-  return { words: words as unknown as SeedWords };
+  return { ok: true, value: { words: words as unknown as SeedWords } };
 }
 
 /** Internal correctness oracle only; xoshiro128** 1.1, output scrambles s1. */
@@ -555,11 +565,19 @@ export function oracleSerializeState(state: unknown): OracleSerializedResult {
   };
 }
 
-export function oracleRestoreReplay(token: OracleReplayToken): OracleState {
-  if (token.schemaVersion !== 1 || token.sequenceProfile !== SEQUENCE_PROFILE) {
-    throw new Error("oracle received an unsupported replay token");
+export function oracleRestoreReplay(token: unknown): OracleReplayResult {
+  if (typeof token !== "object" || token === null) {
+    return { ok: false, code: "invalid-replay-token", details: { token } };
   }
-  return oracleInitialize(token.seed);
+  const candidate = token as {
+    readonly schemaVersion?: unknown;
+    readonly sequenceProfile?: unknown;
+    readonly seed?: unknown;
+  };
+  if (candidate.schemaVersion !== 1 || candidate.sequenceProfile !== SEQUENCE_PROFILE) {
+    return { ok: false, code: "invalid-replay-token", details: { token } };
+  }
+  return oracleInitialize(candidate.seed);
 }
 
 export function oracleRestoreState(snapshot: unknown): OracleStateResult {
@@ -684,8 +702,13 @@ const assert = (condition: unknown, message: string): void => {
   if (!condition) throw new Error(message);
 };
 
+const unwrapOracleInitialization = (result: OracleInitializeResult): OracleState => {
+  if (!result.ok) throw new Error(`valid oracle initialization failed: ${result.code}`);
+  return result.value;
+};
+
 function runOracleVectors(): void {
-  let state = oracleInitialize(GOLDEN_SEED);
+  let state = unwrapOracleInitialization(oracleInitialize(GOLDEN_SEED));
   for (const [index, expected] of GOLDEN_STEPS.entries()) {
     const actual = oracleNext(state);
     if (!actual.ok) throw new Error(`step ${index} unexpectedly rejected its valid state`);
@@ -693,9 +716,9 @@ function runOracleVectors(): void {
     assert(JSON.stringify(actual.value.state.words) === JSON.stringify(expected.state), `step ${index} state mismatch`);
     state = actual.value.state;
   }
-  const d1 = oracleSample(oracleInitialize(GOLDEN_SEED), 1, 1);
+  const d1 = oracleSample(unwrapOracleInitialization(oracleInitialize(GOLDEN_SEED)), 1, 1);
   assert(d1.ok && d1.value === 0 && d1.attempts === 1, "d1 must consume one output");
-  const exhausted = oracleSample(oracleInitialize(GOLDEN_SEED), 100, 0);
+  const exhausted = oracleSample(unwrapOracleInitialization(oracleInitialize(GOLDEN_SEED)), 100, 0);
   assert(!exhausted.ok && exhausted.code === "sampling-attempts-exhausted", "fuel zero must exhaust");
   const invalidState = oracleSample(
     { words: ["00000000", "00000000", "00000000", "00000000"] },
@@ -707,26 +730,32 @@ function runOracleVectors(): void {
   assert(!invalidNext.ok && invalidNext.code === "invalid-state-word", "raw stepping must reject non-canonical words");
   const invalidNextShape = oracleNext(null);
   assert(!invalidNextShape.ok && invalidNextShape.code === "invalid-state-shape", "raw stepping must reject malformed state shape");
-  let rejectedNumericSeed = false;
-  let numericSeedMessage = "";
-  try {
-    oracleInitialize([1, "00000000", "00000000", "00000001"] as unknown as SeedWords);
-  } catch (error) {
-    rejectedNumericSeed = true;
-    numericSeedMessage = error instanceof Error ? error.message : String(error);
-  }
-  assert(rejectedNumericSeed && numericSeedMessage.includes("word"), "seed validation must reject numeric words without coercion");
-  let rejectedSeedShape = false;
-  let seedShapeMessage = "";
-  try {
-    oracleInitialize(["00000000"]);
-  } catch (error) {
-    rejectedSeedShape = true;
-    seedShapeMessage = error instanceof Error ? error.message : String(error);
-  }
-  assert(rejectedSeedShape && seedShapeMessage.includes("shape"), "seed validation must distinguish malformed shape");
+  const numericSeed: unknown = [1, "00000000", "00000000", "00000001"];
+  const rejectedNumericSeed = oracleInitialize(numericSeed);
+  assert(
+    !rejectedNumericSeed.ok
+      && rejectedNumericSeed.code === "invalid-seed-word"
+      && rejectedNumericSeed.details.seed === numericSeed,
+    "seed validation must reject numeric words without coercion",
+  );
+  const malformedSeed: unknown = ["00000000"];
+  const rejectedSeedShape = oracleInitialize(malformedSeed);
+  assert(
+    !rejectedSeedShape.ok
+      && rejectedSeedShape.code === "invalid-seed-shape"
+      && rejectedSeedShape.details.seed === malformedSeed,
+    "seed validation must distinguish malformed shape",
+  );
+  const zeroSeed: unknown = ["00000000", "00000000", "00000000", "00000000"];
+  const rejectedZeroSeed = oracleInitialize(zeroSeed);
+  assert(
+    !rejectedZeroSeed.ok
+      && rejectedZeroSeed.code === "invalid-seed-zero"
+      && rejectedZeroSeed.details.seed === zeroSeed,
+    "seed validation must reject the all-zero seed structurally",
+  );
   for (const invalidFuel of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-    const result = oracleSample(oracleInitialize(GOLDEN_SEED), 6, invalidFuel);
+    const result = oracleSample(unwrapOracleInitialization(oracleInitialize(GOLDEN_SEED)), 6, invalidFuel);
     assert(!result.ok && result.code === "invalid-attempt-fuel", `invalid fuel ${invalidFuel} must fail structurally`);
   }
   const replayToken: OracleReplayToken = {
@@ -735,7 +764,8 @@ function runOracleVectors(): void {
     seed: GOLDEN_SEED,
   };
   const replayed = oracleRestoreReplay(replayToken);
-  const first = oracleNext(replayed);
+  if (!replayed.ok) throw new Error("valid replay token must restore a valid state");
+  const first = oracleNext(replayed.value);
   if (!first.ok) throw new Error("replay token must restore a valid state");
   assert(first.value.word === GOLDEN_STEPS[0].word, "replay token must restart at the first word");
   const snapshot = oracleSerializeState(first.value.state);
@@ -762,6 +792,16 @@ function runOracleVectors(): void {
   assert(!invalidRestored.ok && invalidRestored.code === "invalid-state-zero", "zero serialized state must not restore");
   const invalidRestoreShape = oracleRestoreState(null);
   assert(!invalidRestoreShape.ok && invalidRestoreShape.code === "invalid-state-shape", "malformed serialized state must not restore");
+  const invalidReplay = oracleRestoreReplay({
+    ...replayToken,
+    seed: zeroSeed,
+  });
+  assert(
+    !invalidReplay.ok
+      && invalidReplay.code === "invalid-seed-zero"
+      && invalidReplay.details.seed === zeroSeed,
+    "replay restoration must preserve structured seed failures",
+  );
   console.log("PRNG prototype vectors passed; type-level assertions compiled.");
 }
 
