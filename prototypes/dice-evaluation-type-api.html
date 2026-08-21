@@ -1,0 +1,364 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>DRDice issue #10 · dice evaluation type API prototype</title>
+<style>
+  :root { color-scheme: light; font: 15px/1.45 system-ui, sans-serif; color: #17202a; background: #f4f6f8; }
+  body { max-width: 1160px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1, h2 { line-height: 1.15; }
+  h1 { margin-bottom: 8px; }
+  h2 { margin-top: 28px; }
+  .question, .panel, .guide { background: white; border: 1px solid #d9e0e7; border-radius: 10px; padding: 16px; box-shadow: 0 2px 8px #17202a0d; }
+  .question { border-left: 5px solid #1864ab; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .field { display: grid; gap: 5px; margin: 8px 0; }
+  label { font-weight: 650; }
+  input, button { font: inherit; }
+  input { box-sizing: border-box; width: 100%; padding: 7px 9px; border: 1px solid #b7c3cf; border-radius: 6px; }
+  button { border: 1px solid #1864ab; border-radius: 6px; padding: 7px 10px; color: #124b80; background: #e7f1fb; cursor: pointer; margin: 3px 4px 3px 0; }
+  button:hover { background: #d5e8fa; }
+  button:disabled { cursor: default; opacity: .5; }
+  .tabs button[aria-selected="true"] { color: white; background: #1864ab; }
+  pre { overflow: auto; margin: 8px 0 0; padding: 10px; border-radius: 6px; background: #17202a; color: #eaf2f8; }
+  code { color: #124b80; }
+  pre code { color: inherit; }
+  .muted { color: #536273; }
+  .status { white-space: pre-wrap; word-break: break-word; }
+  .trace { display: flex; flex-wrap: wrap; gap: 6px; }
+  .trace span { padding: 3px 7px; border-radius: 999px; background: #e8f5e9; }
+  .history { max-height: 180px; overflow: auto; }
+  .history li { margin: 3px 0; }
+  .guide { margin-top: 12px; }
+  .guide[hidden] { display: none; }
+  .warning { color: #7a4a00; background: #fff4d6; padding: 9px 11px; border-radius: 6px; }
+</style>
+
+<body>
+  <h1>Dice Evaluation type API · logic prototype</h1>
+  <div class="question">
+    <strong>Issue #10 question</strong>
+    <p>What rough type-level API and diagnostic artifact makes valid Dice Evaluations, Roll Traces, successor states, parse failures, resource-limit failures, and composition with the PRNG package concrete enough for a human to accept or revise?</p>
+    <p class="muted">This is a throwaway planning artifact. The page is a pure in-memory model around an intentionally thin DOM shell; the TypeScript file carries the literal aliases and an independent internal oracle.</p>
+  </div>
+
+  <h2>Proposed public shape</h2>
+  <pre><code>type Evaluate&lt;Source, GeneratorState, MaximumAttempts&gt;
+  = { ok: true; value: {
+      total: number; rollTrace: DieSample[]; successorState: GeneratorState
+    }}
+  | { ok: false; code: DiagnosticCode; details: Diagnostic }
+
+type DieSample = { sideCount: number; face: number };
+type Sample&lt;GeneratorState, SideCount, MaximumAttempts&gt;
+  = #9 PRNG result, composed once per Die Sample;</code></pre>
+  <pre><code>type MaterializedHappy = {
+  ok: true; value: {
+    total: 5;
+    rollTrace: [{ sideCount: 6; face: 1 }, { sideCount: 6; face: 1 }];
+    successorState: GeneratorState&lt;["00003007", "00000405", "00000405", "01800000"]&gt;;
+  }
+};
+type MaterializedExhaustion = {
+  ok: false; code: "sampling-attempts-exhausted"; details: {
+    attempts: 1; partialTrace: [{ sideCount: 6; face: 1 }];
+    successorState: GeneratorState&lt;["ffffffff", "00000000", "000001ff", "ffffffff"]&gt;;
+  }
+};</code></pre>
+  <p>Successful Dice Evaluations have exactly <code>total</code>, <code>rollTrace</code>, and <code>successorState</code>. A failure has no total. Sampling exhaustion includes the exact attempts, completed partial trace, and advanced state; parse/domain/predictable resource failures leave state unchanged.</p>
+  <p class="muted">The HTML model owns no DOM access. The TypeScript file's <code>oracleEvaluate</code> is an independent runtime correctness oracle; neither implementation is a production package or a parity gate.</p>
+  <p class="warning">Thresholds below are prototype-only placeholders. Issue #11 must measure the checker and replace them.</p>
+
+  <h2>Current model state</h2>
+  <section class="panel grid">
+    <div>
+      <div class="field"><label for="source">Dice Expression</label><input id="source" value="2d6 + 3"></div>
+      <div class="field"><label for="fuel">maximumAttempts per Die Sample</label><input id="fuel" value="1" inputmode="numeric"></div>
+      <button id="evaluate">Evaluate</button>
+      <button id="reset">Deterministic reset</button>
+      <button id="golden">Use Golden Generator State</button>
+      <button id="forced">Use Rejection Generator State</button>
+      <button id="invalid-state">Use Invalid Generator State</button>
+      <button id="tighten">Set die-sample limit to 3</button>
+      <button id="normal-limits">Restore prototype limits</button>
+    </div>
+    <div>
+      <strong>Full state after every action</strong>
+      <div id="state" class="status"></div>
+    </div>
+  </section>
+
+  <h2>Guided transitions</h2>
+  <p>Each ordered step is a separate button. Pressing one transition updates the full state above and the result below; there is no run-all control.</p>
+  <div class="tabs">
+    <button data-tab="happy" aria-selected="true">Happy</button>
+    <button data-tab="parse">Parse failure</button>
+    <button data-tab="predictable">Predictable resource</button>
+    <button data-tab="exhaustion">Partial exhaustion</button>
+    <button data-tab="late">Late arithmetic</button>
+    <button data-tab="illegal">Illegal domain</button>
+  </div>
+  <div id="guides"></div>
+
+  <h2>Diagnostic contract visible in this sketch</h2>
+  <p>Preflight is deterministic and first-diagnostic-wins: source length → scanning/parsing → domain → static resource preflight → Generator State and fuel validation → depth-first, left-to-right evaluation. Source offsets are zero-based UTF-16 code-unit offsets in the original source; EOF is <code>source.length</code>. ASCII space, tab, LF, and CR are the only whitespace.</p>
+  <pre><code>syntax: expected-expression · expected-die-sides · expected-closing-parenthesis · leading-zero · unexpected-token
+domain: dice-count-zero · side-count-zero
+resource: resource-limit-exceeded
+  dimensions: source-length · numeric-token-length · nesting-depth · ast-node-count
+              dice-term-count · die-sample-count · supported-side-count
+              arithmetic-magnitude · evaluation-steps · rejection-sampling-attempts
+evaluation resource: sampling-attempts-exhausted</code></pre>
+
+  <script>
+    /* PURE MODEL START: no DOM references belong above the DOM shell marker. */
+    const SEQUENCE_PROFILE = "xoshiro128ss-1.1/direct128-msb-rejection-1";
+    const GOLDEN = ["00000001", "00000002", "00000003", "00000004"];
+    const FORCED = ["00000000", "00000000", "ffffffff", "00000000"];
+    const PROTOTYPE_LIMITS = {
+      sourceLength: 64, numericTokenLength: 3, nestingDepth: 4, astNodeCount: 15,
+      diceTermCount: 4, dieSampleCount: 8, supportedSideCount: 100,
+      arithmeticMagnitude: 100, evaluationSteps: 24, rejectionSamplingAttempts: 4,
+    };
+    const success = (value) => ({ ok: true, value });
+    const failure = (code, details) => ({ ok: false, code, details });
+    const diagnostic = (kind, code, details) => failure(code, { kind, code, ...details });
+    const normalize = (value) => value >>> 0;
+    const parseWord = (value) => Number.parseInt(value, 16) >>> 0;
+    const hex = (value) => normalize(value).toString(16).padStart(8, "0");
+    const wordIsValid = (word) => typeof word === "string" && /^[0-9a-f]{8}$/.test(word);
+    const wordsAreValid = (words) => Array.isArray(words) && words.length === 4 && words.every(wordIsValid);
+    const stateIsZero = (words) => words.every((word) => word === "00000000");
+    const stateFailure = (state) => {
+      if (typeof state !== "object" || state === null || state.kind !== "GeneratorState" || !Array.isArray(state.words)) return failure("invalid-state-shape", { state });
+      if (state.words.length !== 4) return failure("invalid-state-shape", { state });
+      if (!state.words.every(wordIsValid)) return failure("invalid-state-word", { state });
+      if (stateIsZero(state.words)) return failure("invalid-state-zero", { state });
+      return null;
+    };
+    const modelInitialize = (seed) => {
+      if (!Array.isArray(seed) || seed.length !== 4) return failure("invalid-seed-shape", { seed });
+      if (!seed.every(wordIsValid)) return failure("invalid-seed-word", { seed });
+      if (stateIsZero(seed)) return failure("invalid-seed-zero", { seed });
+      return success({ kind: "GeneratorState", words: seed.slice() });
+    };
+    const modelNext = (state) => {
+      const invalid = stateFailure(state);
+      if (invalid) return invalid;
+      const [s0, s1, s2, s3] = state.words.map(parseWord);
+      const result = normalize(Math.imul(normalize(Math.imul(s1, 5) << 7 | Math.imul(s1, 5) >>> 25), 9));
+      const t = normalize(s1 << 9);
+      const n2 = normalize(s2 ^ s0);
+      const n3 = normalize(s3 ^ s1);
+      const n1 = normalize(s1 ^ n2);
+      const n0 = normalize(s0 ^ n3);
+      const n2b = normalize(n2 ^ t);
+      const n3b = normalize((n3 << 11) | (n3 >>> 21));
+      return success({ word: hex(result), state: { kind: "GeneratorState", words: [hex(n0), hex(n1), hex(n2b), hex(n3b)] } });
+    };
+    const modelSample = (state, bound, maximumAttempts) => {
+      const invalid = stateFailure(state);
+      if (invalid) return invalid;
+      if (!Number.isInteger(bound) || bound < 1 || bound > 100) return failure("invalid-bound", { bound });
+      if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) return failure("invalid-attempt-fuel", { maximumAttempts });
+      const width = bound === 1 ? 0 : Math.ceil(Math.log2(bound));
+      let current = state;
+      let attempts = 0;
+      while (attempts < maximumAttempts) {
+        const step = modelNext(current);
+        if (!step.ok) return step;
+        attempts += 1;
+        current = step.value.state;
+        const candidate = width === 0 ? 0 : parseWord(step.value.word) >>> (32 - width);
+        if (candidate < bound) return success({ value: candidate, state: current, attempts });
+      }
+      return failure("sampling-attempts-exhausted", { maximumAttempts, attempts, state: current });
+    };
+
+    const whitespace = (char) => char === " " || char === "\t" || char === "\n" || char === "\r";
+    const skipWhitespace = (source, offset) => { let cursor = offset; while (cursor < source.length && whitespace(source[cursor])) cursor += 1; return cursor; };
+    const parseDiagnostic = (code, offset, found, expected) => diagnostic("syntax", code, { offset, found, expected });
+    const resourceDiagnostic = (offset, dimension, limit, actual) => diagnostic("resource", "resource-limit-exceeded", { offset, dimension, limit, actual });
+    const domainDiagnostic = (code, offset, subject) => diagnostic("domain", code, { offset, subject, value: "0" });
+    const scanDigits = (source, offset) => { let cursor = offset; while (cursor < source.length && /[0-9]/.test(source[cursor])) cursor += 1; return { raw: source.slice(offset, cursor), end: cursor }; };
+    const parseNumber = (raw, offset, limits) => {
+      if (raw.length > limits.numericTokenLength) return resourceDiagnostic(offset, "numeric-token-length", limits.numericTokenLength, raw.length);
+      if (raw.length > 1 && raw.startsWith("0")) return parseDiagnostic("leading-zero", offset, raw[1], ["canonical-integer"]);
+      return Number(raw);
+    };
+    function parsePrimary(source, offset, limits, depth) {
+      const start = skipWhitespace(source, offset);
+      if (start >= source.length) return { result: parseDiagnostic("expected-expression", start, "eof", ["dice", "integer", "("]), end: start };
+      const head = source[start];
+      if (head === "(") {
+        if (depth + 1 > limits.nestingDepth) return { result: resourceDiagnostic(start, "nesting-depth", limits.nestingDepth, depth + 1), end: start };
+        const inner = parseExpression(source, start + 1, limits, depth + 1);
+        if (!inner.result.ok) return inner;
+        const close = skipWhitespace(source, inner.end);
+        if (source[close] !== ")") return { result: parseDiagnostic("expected-closing-parenthesis", close, close >= source.length ? "eof" : source[close], [")"]), end: close };
+        return { result: success({ kind: "group", child: inner.result.value, offset: start }), end: close + 1 };
+      }
+      let count;
+      const expressionStart = start;
+      let cursor = start;
+      if (head === "d" || head === "D") { count = 1; cursor += 1; }
+      else if (/[0-9]/.test(head)) {
+        const scanned = scanDigits(source, cursor);
+        const parsed = parseNumber(scanned.raw, cursor, limits);
+        if (typeof parsed !== "number") return { result: parsed, end: cursor };
+        cursor = scanned.end;
+        if (source[cursor] === "d" || source[cursor] === "D") { count = parsed; cursor += 1; }
+        else return { result: success({ kind: "integer", value: parsed, offset: expressionStart }), end: cursor };
+      } else return { result: parseDiagnostic("unexpected-token", start, head, ["dice", "integer", "("]), end: start };
+      const sides = scanDigits(source, cursor);
+      if (sides.raw === "") return { result: parseDiagnostic("expected-die-sides", cursor, cursor >= source.length ? "eof" : source[cursor], ["positive-integer"]), end: cursor };
+      const parsedSides = parseNumber(sides.raw, cursor, limits);
+      if (typeof parsedSides !== "number") return { result: parsedSides, end: cursor };
+      if (count === 0) return { result: domainDiagnostic("dice-count-zero", expressionStart, "dice-count"), end: cursor };
+      if (parsedSides === 0) return { result: domainDiagnostic("side-count-zero", cursor, "side-count"), end: cursor };
+      if (parsedSides > limits.supportedSideCount) return { result: resourceDiagnostic(cursor, "supported-side-count", limits.supportedSideCount, parsedSides), end: cursor };
+      return { result: success({ kind: "dice", count, sides: parsedSides, offset: expressionStart }), end: sides.end };
+    }
+    function parseExpression(source, offset, limits, depth) {
+      const first = parsePrimary(source, offset, limits, depth);
+      if (!first.result.ok) return first;
+      let left = first.result.value;
+      let cursor = first.end;
+      while (true) {
+        cursor = skipWhitespace(source, cursor);
+        if (cursor >= source.length || source[cursor] === ")") return { result: success(left), end: cursor };
+        const op = source[cursor];
+        if (op !== "+" && op !== "-") return { result: parseDiagnostic("unexpected-token", cursor, op, ["+", "-", "EOF"]), end: cursor };
+        const right = parsePrimary(source, cursor + 1, limits, depth);
+        if (!right.result.ok) return right;
+        left = { kind: "binary", op, left, right: right.result.value, offset: cursor };
+        cursor = right.end;
+      }
+    }
+    const astCounts = (ast) => {
+      if (ast.kind === "integer") return { nodes: 1, diceTerms: 0, samples: 0, steps: 1, offset: ast.offset };
+      if (ast.kind === "dice") return { nodes: 1, diceTerms: 1, samples: ast.count, steps: ast.count + 1, offset: ast.offset };
+      if (ast.kind === "group") { const child = astCounts(ast.child); return { nodes: child.nodes + 1, diceTerms: child.diceTerms, samples: child.samples, steps: child.steps + 1, offset: ast.offset }; }
+      const left = astCounts(ast.left); const right = astCounts(ast.right);
+      return { nodes: left.nodes + right.nodes + 1, diceTerms: left.diceTerms + right.diceTerms, samples: left.samples + right.samples, steps: left.steps + right.steps + 1, offset: ast.offset };
+    };
+    const modelPreflight = (ast, limits) => {
+      const counts = astCounts(ast);
+      for (const [dimension, limit, actual] of [["ast-node-count", limits.astNodeCount, counts.nodes], ["dice-term-count", limits.diceTermCount, counts.diceTerms], ["die-sample-count", limits.dieSampleCount, counts.samples], ["evaluation-steps", limits.evaluationSteps, counts.steps]]) {
+        if (actual > limit) return resourceDiagnostic(counts.offset, dimension, limit, actual);
+      }
+      return null;
+    };
+    const evalAst = (ast, state, maximumAttempts, limits, trace) => {
+      if (ast.kind === "integer") return success({ total: ast.value, rollTrace: trace, successorState: state });
+      if (ast.kind === "group") return evalAst(ast.child, state, maximumAttempts, limits, trace);
+      if (ast.kind === "dice") {
+        let current = state; let currentTrace = trace; let total = 0;
+        for (let index = 0; index < ast.count; index += 1) {
+          const sampled = modelSample(current, ast.sides, maximumAttempts);
+          if (!sampled.ok) {
+            if (sampled.code === "sampling-attempts-exhausted") return failure("sampling-attempts-exhausted", { kind: "evaluation", code: "sampling-attempts-exhausted", offset: ast.offset, maximumAttempts: sampled.details.maximumAttempts, attempts: sampled.details.attempts, partialTrace: currentTrace, successorState: sampled.details.state });
+            return failure(sampled.code, { ...sampled.details, partialTrace: currentTrace, successorState: current });
+          }
+          current = sampled.value.state;
+          const face = sampled.value.value + 1;
+          currentTrace = [...currentTrace, { sideCount: ast.sides, face }];
+          total += face;
+          if (Math.abs(total) > limits.arithmeticMagnitude) {
+            const detail = resourceDiagnostic(ast.offset, "arithmetic-magnitude", limits.arithmeticMagnitude, Math.abs(total)).details;
+            return failure("resource-limit-exceeded", { ...detail, partialTrace: currentTrace, successorState: current });
+          }
+        }
+        return success({ total, rollTrace: currentTrace, successorState: current });
+      }
+      const left = evalAst(ast.left, state, maximumAttempts, limits, trace);
+      if (!left.ok) return left;
+      const right = evalAst(ast.right, left.value.successorState, maximumAttempts, limits, left.value.rollTrace);
+      if (!right.ok) return right;
+      const total = ast.op === "+" ? left.value.total + right.value.total : left.value.total - right.value.total;
+      if (Math.abs(total) > limits.arithmeticMagnitude) {
+        const detail = resourceDiagnostic(ast.offset, "arithmetic-magnitude", limits.arithmeticMagnitude, Math.abs(total)).details;
+        return failure("resource-limit-exceeded", { ...detail, partialTrace: right.value.rollTrace, successorState: right.value.successorState });
+      }
+      return success({ total, rollTrace: right.value.rollTrace, successorState: right.value.successorState });
+    };
+    const modelEvaluate = (source, state, maximumAttempts, limits = PROTOTYPE_LIMITS) => {
+      if (source.length > limits.sourceLength) return resourceDiagnostic(0, "source-length", limits.sourceLength, source.length);
+      const start = skipWhitespace(source, 0);
+      if (start >= source.length) return parseDiagnostic("expected-expression", start, "eof", ["dice", "integer", "("]);
+      const parsed = parseExpression(source, start, limits, 0);
+      if (!parsed.result.ok) return parsed.result;
+      const end = skipWhitespace(source, parsed.end);
+      if (end !== source.length) return parseDiagnostic("unexpected-token", end, source[end], ["EOF"]);
+      const planned = modelPreflight(parsed.result.value, limits);
+      if (planned) return planned;
+      const invalid = stateFailure(state);
+      if (invalid) return failure(invalid.code, { ...invalid.details, partialTrace: [], successorState: null });
+      if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) return failure("invalid-attempt-fuel", { maximumAttempts, partialTrace: [], successorState: state });
+      if (maximumAttempts > limits.rejectionSamplingAttempts) return resourceDiagnostic(0, "rejection-sampling-attempts", limits.rejectionSamplingAttempts, maximumAttempts);
+      return evalAst(parsed.result.value, state, maximumAttempts, limits, []);
+    };
+    const modelReset = (source = "2d6 + 3", stateWords = GOLDEN, maximumAttempts = 1, limits = PROTOTYPE_LIMITS) => {
+      const initialized = modelInitialize(stateWords);
+      return { source, maximumAttempts, limits: { ...limits }, state: initialized.ok ? initialized.value : null, lastResult: initialized, history: ["reset"] };
+    };
+    /* PURE MODEL END */
+
+    /* DOM SHELL START: only this section may touch the page. */
+    const $ = (id) => document.getElementById(id);
+    let app = modelReset();
+    const guides = {
+      happy: { title: "Happy evaluation · trace and successor state", text: "Two samples are consumed left-to-right; the integer consumes none.", steps: [
+        ["1. Reset to 2d6 + 3", () => { app = modelReset("2d6 + 3", GOLDEN, 1); }],
+        ["2. Evaluate the Dice Expression", () => { app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("evaluate happy"); }],
+      ] },
+      parse: { title: "Parse failure · no consumption", text: "The trailing operator fails before evaluation; the original state and empty trace remain visible.", steps: [
+        ["1. Reset to d6 +", () => { app = modelReset("d6 +", GOLDEN, 1); }],
+        ["2. Evaluate and observe expected-expression", () => { app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("evaluate parse failure"); }],
+      ] },
+      predictable: { title: "Predictable resource failure · no consumption", text: "Four requested samples exceed the illustrative die-sample-count limit of three during preflight.", steps: [
+        ["1. Reset to 4d6", () => { app = modelReset("4d6", GOLDEN, 1, { ...PROTOTYPE_LIMITS, dieSampleCount: 3 }); }],
+        ["2. Preflight and observe resource-limit-exceeded", () => { app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("evaluate predictable resource failure"); }],
+      ] },
+      exhaustion: { title: "Sampling exhaustion · partial trace, no rollback", text: "The forced state accepts the first d6 and rejects the second with one attempt of fuel; the second state is advanced and no incomplete sample is added.", steps: [
+        ["1. Reset to d6 + d6 with rejection state", () => { app = modelReset("d6 + d6", FORCED, 1); }],
+        ["2. Evaluate and observe partial sampling-attempts-exhausted", () => { app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("evaluate sampling exhaustion"); }],
+      ] },
+      late: { title: "Late arithmetic resource failure · state is retained", text: "d100 consumes one sample, then adding 100 exceeds the illustrative arithmetic magnitude; the completed trace and successor state remain.", steps: [
+        ["1. Reset to d100 + 100", () => { app = modelReset("d100 + 100", GOLDEN, 1); }],
+        ["2. Evaluate and observe late resource failure", () => { app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("evaluate late arithmetic failure"); }],
+      ] },
+      illegal: { title: "Illegal domain input · no consumption", text: "0d6 is recognizable syntax with a precise dice-count-zero domain diagnostic.", steps: [
+        ["1. Reset to 0d6", () => { app = modelReset("0d6", GOLDEN, 1); }],
+        ["2. Evaluate and observe dice-count-zero", () => { app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("evaluate illegal domain"); }],
+      ] },
+    };
+    let activeGuide = "happy";
+    const render = () => {
+      $("source").value = app.source;
+      $("fuel").value = String(app.maximumAttempts);
+      const trace = app.lastResult && app.lastResult.ok ? app.lastResult.value.rollTrace : app.lastResult && app.lastResult.details && app.lastResult.details.partialTrace;
+      $("state").innerHTML = `<strong>Source:</strong> ${JSON.stringify(app.source)}<br><strong>maximumAttempts:</strong> ${app.maximumAttempts}<br><strong>profile:</strong> ${SEQUENCE_PROFILE}<br><strong>limits:</strong> <code>${JSON.stringify(app.limits)}</code><br><strong>Generator State:</strong> <code>${JSON.stringify(app.state)}</code><br><strong>Roll Trace:</strong> <span class="trace">${(trace || []).map((sample) => `<span>d${sample.sideCount} → ${sample.face}</span>`).join("") || "empty"}</span><br><strong>Result:</strong><pre>${JSON.stringify(app.lastResult, null, 2)}</pre><strong>History:</strong><ol class="history">${app.history.map((entry) => `<li>${entry}</li>`).join("")}</ol>`;
+    };
+    const renderGuide = () => {
+      const root = $("guides"); root.innerHTML = "";
+      const guide = guides[activeGuide];
+      const panel = document.createElement("section"); panel.className = "guide";
+      panel.innerHTML = `<h3>${guide.title}</h3><p>${guide.text}</p>`;
+      guide.steps.forEach(([label, action], index) => {
+        const button = document.createElement("button"); button.textContent = label; button.disabled = index !== app.guideStep && app.guideName === activeGuide;
+        button.addEventListener("click", () => { action(); app.guideName = activeGuide; app.guideStep = index + 1; render(); renderGuide(); }); panel.appendChild(button);
+      });
+      root.appendChild(panel);
+    };
+    const resetGuide = (name) => { activeGuide = name; app.guideName = name; app.guideStep = 0; renderGuide(); };
+    document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll("[data-tab]").forEach((tab) => tab.setAttribute("aria-selected", String(tab === button))); resetGuide(button.dataset.tab); }));
+    $("evaluate").addEventListener("click", () => { app.source = $("source").value; app.maximumAttempts = Number($("fuel").value); app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("free-play evaluate"); render(); });
+    $("reset").addEventListener("click", () => { app = modelReset(); render(); resetGuide("happy"); });
+    $("golden").addEventListener("click", () => { const next = modelInitialize(GOLDEN); app.state = next.ok ? next.value : null; app.lastResult = next; app.history.push("set golden state"); render(); });
+    $("forced").addEventListener("click", () => { const next = modelInitialize(FORCED); app.state = next.ok ? next.value : null; app.lastResult = next; app.history.push("set rejection state"); render(); });
+    $("invalid-state").addEventListener("click", () => { app.state = { kind: "GeneratorState", words: ["0000000A", "00000000", "00000000", "00000001"] }; app.lastResult = modelEvaluate(app.source, app.state, app.maximumAttempts, app.limits); app.history.push("set invalid Generator State"); render(); });
+    $("tighten").addEventListener("click", () => { app.limits = { ...app.limits, dieSampleCount: 3 }; app.history.push("set die-sample limit 3"); render(); });
+    $("normal-limits").addEventListener("click", () => { app.limits = { ...PROTOTYPE_LIMITS }; app.history.push("restore prototype limits"); render(); });
+    resetGuide("happy"); render();
+    /* DOM SHELL END */
+  </script>
+</body>
