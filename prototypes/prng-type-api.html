@@ -253,6 +253,7 @@ type First = { ok: true; value: {
           <li><strong>Replay Token:</strong> profile + schema version + canonical Seed; it restarts from the beginning.</li>
           <li><strong>Serialized Generator State:</strong> profile + schema version + complete current State; it resumes at the next word.</li>
           <li><strong>Runtime oracle:</strong> the pure model below is a separate number-based mirror of the fixed-width type-level operations; the golden output/state is a literal review fixture, not generated from TypeScript types at runtime.</li>
+          <li><strong>Preflight order:</strong> state validity, then bound validity, then maximumAttempts validity, then stepping/rejection. Earlier failures consume no state.</li>
           <li><strong>Failure state:</strong> exhaustion returns consumed attempts and successor State; preflight failures return no consumed State.</li>
         </ul>
       </section>
@@ -270,15 +271,14 @@ type First = { ok: true; value: {
       const ZERO = ["00000000", "00000000", "00000000", "00000000"];
 
       const cloneWords = (words) => words.slice();
-      const wordIsValid = (word) => /^[0-9a-f]{8}$/.test(word);
+      const wordIsValid = (word) => typeof word === "string" && /^[0-9a-f]{8}$/.test(word);
       const stateIsZero = (words) => words.every((word) => word === "00000000");
       const failure = (code, details) => ({ ok: false, code, details });
       const success = (value) => ({ ok: true, value });
 
       function modelInitialize(words) {
-        if (!Array.isArray(words) || words.length !== 4 || words.some((word) => !wordIsValid(word))) {
-          return failure("invalid-seed-word", { seed: words });
-        }
+        if (!Array.isArray(words) || words.length !== 4) return failure("invalid-seed-shape", { seed: words });
+        if (words.some((word) => !wordIsValid(word))) return failure("invalid-seed-word", { seed: words });
         if (stateIsZero(words)) return failure("invalid-seed-zero", { seed: words });
         return success({ kind: "GeneratorState", words: cloneWords(words) });
       }
@@ -337,6 +337,27 @@ type First = { ok: true; value: {
         });
       }
 
+      function modelRestoreReplay(seed) {
+        // Replay restoration has the same initialization boundary as a fresh Seed.
+        return modelInitialize(seed);
+      }
+
+      function modelSerializeState(state) {
+        const invalidState = modelStateFailure(state);
+        if (invalidState) return invalidState;
+        return success({ schemaVersion: 1, sequenceProfile: PROFILE, state: cloneWords(state.words) });
+      }
+
+      function modelRestoreState(snapshot) {
+        if (!snapshot || typeof snapshot !== "object" || snapshot.schemaVersion !== 1 || snapshot.sequenceProfile !== PROFILE) {
+          return failure("invalid-state-shape", { state: snapshot });
+        }
+        const state = { kind: "GeneratorState", words: snapshot.state };
+        const invalidState = modelStateFailure(state);
+        if (invalidState) return invalidState;
+        return success(state);
+      }
+
       // -------------------------------------------------------------------
       // Controller / rendering. The model above does not depend on this.
       // -------------------------------------------------------------------
@@ -358,7 +379,8 @@ type First = { ok: true; value: {
         $("result").className = "result " + resultClass;
         $("result").innerHTML = "<h3>Last operation</h3><pre>" + json(lastResult) + "</pre>";
         $("replay-token").textContent = json({ schemaVersion: 1, sequenceProfile: PROFILE, seed: currentSeed });
-        $("serialized-state").textContent = json({ schemaVersion: 1, sequenceProfile: PROFILE, state: currentState ? currentState.words : null });
+        const serialized = modelSerializeState(currentState);
+        $("serialized-state").textContent = json(serialized.ok ? serialized.value : { schemaVersion: 1, sequenceProfile: PROFILE, state: null });
       }
 
       function reset(seed) {
@@ -390,19 +412,16 @@ type First = { ok: true; value: {
       });
 
       $("restore-replay").addEventListener("click", () => {
-        const restored = modelInitialize(currentSeed);
+        const restored = modelRestoreReplay(currentSeed);
         currentState = restored.ok ? restored.value : null;
-        lastResult = success({ operation: "restore-replay-token", state: currentState });
+        lastResult = restored.ok ? success({ operation: "restore-replay-token", state: restored.value }) : restored;
         render();
       });
       $("restore-state").addEventListener("click", () => {
-        const restored = currentState ? modelStateFailure(currentState) : failure("invalid-state-shape", { state: null });
-        if (restored) {
-          lastResult = restored;
-        } else {
-          currentState = { kind: "GeneratorState", words: cloneWords(currentState.words) };
-          lastResult = success({ operation: "restore-serialized-state", state: currentState });
-        }
+        const serialized = modelSerializeState(currentState);
+        const restored = serialized.ok ? modelRestoreState(serialized.value) : serialized;
+        currentState = restored.ok ? restored.value : null;
+        lastResult = restored.ok ? success({ operation: "restore-serialized-state", state: restored.value }) : restored;
         render();
       });
 

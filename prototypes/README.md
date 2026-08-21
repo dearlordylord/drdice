@@ -82,12 +82,16 @@ domain types, representing words canonically as lowercase eight-digit hex at the
 boundary, and making all state advancement visible in every success or
 exhaustion result. It also suggests that the release implementation should retain
 the fixed-width bit-tuple arithmetic used here while moving the oracle and vectors
-to internal test modules.
+to internal test modules. Preflight order is state validity, bound validity,
+maximumAttempts validity, then stepping/rejection; this order is shared by the
+type-level sampler, HTML model, and runtime oracle.
 
 `ReplayToken<W>` and `SerializedGeneratorState<W>` only materialize for a literal
 four-word tuple that passes the lowercase eight-hex validation; arbitrary string
 tuples and all-zero tuples resolve to `never` in this prototype. Runtime restore
-probes check the profile and schema version before restoring.
+probes check the profile and schema version before restoring. The runtime
+serializer and restorer return structured success/invalid-state results rather
+than emitting or accepting a malformed snapshot.
 
 This does not choose final package exports, checker budgets, compiler support, or
 dice integration; those remain implementation/release decisions for later issues.
