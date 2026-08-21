@@ -43,18 +43,6 @@ export type GeneratorState<W extends StateWords = StateWords> = {
   readonly words: W;
 };
 
-export type ReplayToken<W extends SeedWords = SeedWords> = {
-  readonly schemaVersion: 1;
-  readonly sequenceProfile: SequenceProfile;
-  readonly seed: W;
-};
-
-export type SerializedGeneratorState<W extends StateWords = StateWords> = {
-  readonly schemaVersion: 1;
-  readonly sequenceProfile: SequenceProfile;
-  readonly state: W;
-};
-
 export type FailureCode =
   | "invalid-seed-shape"
   | "invalid-seed-word"
@@ -74,8 +62,45 @@ export type Failure<Code extends FailureCode, Details extends object = object> =
 
 export type Success<Value> = { readonly ok: true; readonly value: Value };
 
-export type InvalidSeed<Code extends FailureCode = FailureCode> = Failure<Code>;
-export type InvalidState<Code extends FailureCode = FailureCode> = Failure<Code>;
+export type InvalidSeedFailure =
+  | Failure<"invalid-seed-shape">
+  | Failure<"invalid-seed-word">
+  | Failure<"invalid-seed-zero">;
+
+export type InvalidStateFailure =
+  | Failure<"invalid-state-shape">
+  | Failure<"invalid-state-word">
+  | Failure<"invalid-state-zero">;
+
+export type InvalidBoundFailure = Failure<"invalid-bound">;
+export type InvalidAttemptFuelFailure = Failure<"invalid-attempt-fuel">;
+
+/** These schemas only materialize for a literal tuple of canonical words. */
+export type ReplayToken<W extends readonly unknown[]> =
+  ValidWords<W> extends true
+    ? W extends SeedWords
+      ? IsZeroState<W> extends true
+        ? never
+        : {
+            readonly schemaVersion: 1;
+            readonly sequenceProfile: SequenceProfile;
+            readonly seed: W;
+          }
+      : never
+    : never;
+
+export type SerializedGeneratorState<W extends readonly unknown[]> =
+  ValidWords<W> extends true
+    ? W extends StateWords
+      ? IsZeroState<W> extends true
+        ? never
+        : {
+            readonly schemaVersion: 1;
+            readonly sequenceProfile: SequenceProfile;
+            readonly state: W;
+          }
+      : never
+    : never;
 
 export type StepSuccess<W extends Word32Text, S extends GeneratorState> = Success<{
   readonly word: W;
@@ -84,7 +109,7 @@ export type StepSuccess<W extends Word32Text, S extends GeneratorState> = Succes
 
 export type StepResult =
   | StepSuccess<Word32Text, GeneratorState>
-  | InvalidState;
+  | InvalidStateFailure;
 
 export type BoundedSuccess<
   Value extends number = number,
@@ -99,12 +124,18 @@ export type BoundedSuccess<
 export type SamplingExhausted<S extends GeneratorState = GeneratorState> = Failure<
   "sampling-attempts-exhausted",
   {
+    readonly maximumAttempts: number;
     readonly attempts: number;
     readonly state: S;
   }
 >;
 
-export type BoundedResult = BoundedSuccess | SamplingExhausted | InvalidState | Failure<"invalid-bound">;
+export type BoundedResult =
+  | BoundedSuccess
+  | InvalidStateFailure
+  | InvalidBoundFailure
+  | InvalidAttemptFuelFailure
+  | SamplingExhausted;
 
 /* -------------------------------------------------------------------------- */
 /* Fixed-width type-level arithmetic                                          */
@@ -285,6 +316,8 @@ type ValidWords<W extends readonly unknown[]> = W extends readonly [
 /* Public type operations                                                     */
 /* -------------------------------------------------------------------------- */
 
+export type InitializeResult = Success<GeneratorState> | InvalidSeedFailure;
+
 export type Initialize<S extends readonly unknown[]> =
   SeedShape<S> extends true
     ? ValidWords<S> extends true
@@ -413,14 +446,45 @@ export type Sample<
 
 export type OracleState = { readonly words: StateWords };
 export type OracleStep = { readonly word: string; readonly state: OracleState };
+export type OracleReplayToken = {
+  readonly schemaVersion: 1;
+  readonly sequenceProfile: SequenceProfile;
+  readonly seed: SeedWords;
+};
+export type OracleSerializedState = {
+  readonly schemaVersion: 1;
+  readonly sequenceProfile: SequenceProfile;
+  readonly state: StateWords;
+};
 export type OracleBoundedResult =
   | { readonly ok: true; readonly value: number; readonly state: OracleState; readonly attempts: number }
+  | {
+      readonly ok: false;
+      readonly code: "invalid-state-shape";
+      readonly details: { readonly state: unknown };
+    }
+  | {
+      readonly ok: false;
+      readonly code: "invalid-state-word";
+      readonly details: { readonly state: unknown };
+    }
+  | {
+      readonly ok: false;
+      readonly code: "invalid-state-zero";
+      readonly details: { readonly state: unknown };
+    }
   | { readonly ok: false; readonly code: "invalid-bound"; readonly details: { readonly bound: number } }
+  | {
+      readonly ok: false;
+      readonly code: "invalid-attempt-fuel";
+      readonly details: { readonly maximumAttempts: number };
+    }
   | {
       readonly ok: false;
       readonly code: "sampling-attempts-exhausted";
       readonly details: { readonly maximumAttempts: number; readonly attempts: number; readonly state: OracleState };
     };
+type OracleStateFailure = Extract<OracleBoundedResult, { readonly ok: false; readonly code: `invalid-state-${string}` }>;
 
 const normalize = (value: number): number => value >>> 0;
 const hex = (value: number): string => normalize(value).toString(16).padStart(8, "0");
@@ -452,13 +516,56 @@ export function oracleNext(state: OracleState): OracleStep {
   return { word: hex(result), state: { words: [hex(n0), hex(n1), hex(n2b), hex(n3b)] } };
 }
 
+function oracleStateFailure(state: unknown): OracleStateFailure | null {
+  if (typeof state !== "object" || state === null || !("words" in state)) {
+    return { ok: false, code: "invalid-state-shape", details: { state } };
+  }
+  const words = (state as { readonly words?: unknown }).words;
+  if (!Array.isArray(words) || words.length !== 4) {
+    return { ok: false, code: "invalid-state-shape", details: { state } };
+  }
+  if (words.some((word) => typeof word !== "string" || !/^[0-9a-f]{8}$/.test(word))) {
+    return { ok: false, code: "invalid-state-word", details: { state } };
+  }
+  if (words.every((word) => word === "00000000")) {
+    return { ok: false, code: "invalid-state-zero", details: { state } };
+  }
+  return null;
+}
+
+export function oracleSerializeState(state: OracleState): OracleSerializedState {
+  return { schemaVersion: 1, sequenceProfile: SEQUENCE_PROFILE, state: state.words };
+}
+
+export function oracleRestoreReplay(token: OracleReplayToken): OracleState {
+  if (token.schemaVersion !== 1 || token.sequenceProfile !== SEQUENCE_PROFILE) {
+    throw new Error("oracle received an unsupported replay token");
+  }
+  return oracleInitialize(token.seed);
+}
+
+export function oracleRestoreState(snapshot: OracleSerializedState): OracleState {
+  if (snapshot.schemaVersion !== 1 || snapshot.sequenceProfile !== SEQUENCE_PROFILE) {
+    throw new Error("oracle received an unsupported serialized state");
+  }
+  const state = { words: snapshot.state };
+  const invalid = oracleStateFailure(state);
+  if (invalid) throw new Error(`oracle received invalid serialized state: ${invalid.code}`);
+  return state;
+}
+
 export function oracleSample(
   state: OracleState,
   bound: number,
   maximumAttempts: number,
 ): OracleBoundedResult {
+  const invalidState = oracleStateFailure(state);
+  if (invalidState) return invalidState;
   if (!Number.isInteger(bound) || bound < 1 || bound > 100) {
     return { ok: false, code: "invalid-bound", details: { bound } };
+  }
+  if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) {
+    return { ok: false, code: "invalid-attempt-fuel", details: { maximumAttempts } };
   }
   let current = state;
   let attempts = 0;
@@ -515,10 +622,20 @@ type _Step2Word = Expect<Step2 extends Success<infer V> ? V extends { word: "000
 type _Step3Word = Expect<Step3 extends Success<infer V> ? V extends { word: "005a7080" } ? true : false : false>;
 type _InvalidSeed = Expect<Equal<Initialize<["00000000", "00000000", "00000000", "00000000"]>["code"], "invalid-seed-zero">>;
 type _InvalidState = Expect<Equal<Next<{ kind: "GeneratorState"; words: ["00000000", "00000000", "00000000", "00000000"] }>["code"], "invalid-state-zero">>;
+type _InvalidSampleState = Expect<Equal<Sample<null, 6, 0>["code"], "invalid-state-shape">>;
 type _InvalidBound = Expect<Equal<Sample<InitialState, 101, 1>["code"], "invalid-bound">>;
 type _InvalidFuel = Expect<Equal<Sample<InitialState, 6, -1>["code"], "invalid-attempt-fuel">>;
 type _Exhausted = Expect<Equal<Sample<InitialState, 100, 0>["code"], "sampling-attempts-exhausted">>;
 type _D1 = Expect<Equal<Sample<InitialState, 1, 1> extends Success<infer V> ? V extends { value: infer N } ? N : never : never, 0>>;
+type _D1Attempts = Expect<Equal<Sample<InitialState, 1, 1> extends Success<infer V> ? V extends { attempts: infer N } ? N : never : never, 1>>;
+type _Replay = ReplayToken<typeof GOLDEN_SEED>;
+type _Serialized = SerializedGeneratorState<typeof GOLDEN_STEPS[0]["state"]>;
+type _ReplayCanonical = Expect<Equal<_Replay["seed"], typeof GOLDEN_SEED>>;
+type _SerializedCanonical = Expect<Equal<_Serialized["state"], typeof GOLDEN_STEPS[0]["state"]>>;
+type _ReplayRejectsArbitraryWords = Expect<Equal<ReplayToken<[string, string, string, string]>, never>>;
+type _SerializedRejectsUppercase = Expect<Equal<SerializedGeneratorState<["0000000A", "00000000", "00000000", "00000001"]>, never>>;
+type _ReplayRejectsZero = Expect<Equal<ReplayToken<["00000000", "00000000", "00000000", "00000000"]>, never>>;
+type _SerializedRejectsZero = Expect<Equal<SerializedGeneratorState<["00000000", "00000000", "00000000", "00000000"]>, never>>;
 
 const assert = (condition: unknown, message: string): void => {
   if (!condition) throw new Error(message);
@@ -536,6 +653,29 @@ function runOracleVectors(): void {
   assert(d1.ok && d1.value === 0 && d1.attempts === 1, "d1 must consume one output");
   const exhausted = oracleSample(oracleInitialize(GOLDEN_SEED), 100, 0);
   assert(!exhausted.ok && exhausted.code === "sampling-attempts-exhausted", "fuel zero must exhaust");
+  const invalidState = oracleSample(
+    { words: ["00000000", "00000000", "00000000", "00000000"] },
+    6,
+    0,
+  );
+  assert(!invalidState.ok && invalidState.code === "invalid-state-zero", "state validation must precede zero-fuel exhaustion");
+  for (const invalidFuel of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+    const result = oracleSample(oracleInitialize(GOLDEN_SEED), 6, invalidFuel);
+    assert(!result.ok && result.code === "invalid-attempt-fuel", `invalid fuel ${invalidFuel} must fail structurally`);
+  }
+  const replayToken: OracleReplayToken = {
+    schemaVersion: 1,
+    sequenceProfile: SEQUENCE_PROFILE,
+    seed: GOLDEN_SEED,
+  };
+  const replayed = oracleRestoreReplay(replayToken);
+  const first = oracleNext(replayed);
+  assert(first.word === GOLDEN_STEPS[0].word, "replay token must restart at the first word");
+  const snapshot = oracleSerializeState(first.state);
+  const resumed = oracleRestoreState(snapshot);
+  const resumedStep = oracleNext(resumed);
+  const expectedResumedStep = oracleNext(first.state);
+  assert(resumedStep.word === expectedResumedStep.word, "serialized state must resume at the next word");
   console.log("PRNG prototype vectors passed; type-level assertions compiled.");
 }
 

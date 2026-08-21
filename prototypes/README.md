@@ -3,6 +3,11 @@
 This directory is a throwaway issue #9 artifact on branch
 `prototype/prng-type-api`. It is intentionally not a package implementation.
 
+Issue #9 asks: what is the smallest rough type-level API artifact that makes
+initialization, stepping, bounded sampling, explicit state threading, invalid
+states, failures, and the runtime-oracle relationship concrete enough to accept
+or revise?
+
 ## Open the logic walkthrough
 
 Open [prng-type-api.html](./prng-type-api.html) directly in a browser. The page
@@ -12,9 +17,12 @@ drives a pure in-memory model through:
 - initialization, raw stepping, d6 bounded sampling, and explicit successor
   state;
 - high-bit rejection and attempt-fuel exhaustion;
-- all-zero seed and invalid-bound failures;
+- all-zero Seed and Generator State failures, invalid bounds, and bound-one
+  consumption;
+- invalid attempt-fuel values;
 - deterministic reset and free-play controls;
-- Replay Token (restart) versus Serialized Generator State (resume); and
+- ordered one-button guided transitions, plus Replay Token (restart) versus
+  Serialized Generator State (resume); and
 - the internal runtime-oracle boundary.
 
 ## Check the type artifact
@@ -61,8 +69,12 @@ Next<GeneratorState>
 
 Sample<GeneratorState, Bound, MaximumAttempts>
   -> Success<{ value: number; state: GeneratorState; attempts: number }>
-   | SamplingAttemptsExhausted<{ attempts: number; state: GeneratorState }>
+   | InvalidStateFailure
    | InvalidBoundFailure
+   | InvalidAttemptFuelFailure
+   | SamplingAttemptsExhausted<{
+       maximumAttempts: number; attempts: number; state: GeneratorState
+     }>
 ```
 
 The prototype suggests keeping Seed and Generator State as distinct tagged
@@ -71,6 +83,11 @@ boundary, and making all state advancement visible in every success or
 exhaustion result. It also suggests that the release implementation should retain
 the fixed-width bit-tuple arithmetic used here while moving the oracle and vectors
 to internal test modules.
+
+`ReplayToken<W>` and `SerializedGeneratorState<W>` only materialize for a literal
+four-word tuple that passes the lowercase eight-hex validation; arbitrary string
+tuples and all-zero tuples resolve to `never` in this prototype. Runtime restore
+probes check the profile and schema version before restoring.
 
 This does not choose final package exports, checker budgets, compiler support, or
 dice integration; those remain implementation/release decisions for later issues.

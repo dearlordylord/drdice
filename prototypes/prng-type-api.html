@@ -110,6 +110,7 @@
         <strong>Throwaway decision artifact.</strong> This is a non-cryptographic model for games, tests, and type-system
         experimentation. It does not publish a package and it never asks the browser for entropy.
       </div>
+      <p class="small"><strong>Issue #9 question:</strong> What is the smallest rough type-level API artifact that makes initialization, stepping, bounded sampling, explicit state threading, invalid states, failures, and the runtime-oracle relationship concrete enough to accept or revise?</p>
 
       <section class="card">
         <h2>Sequence profile and type-level proposal</h2>
@@ -117,11 +118,14 @@
         <p class="small">The profile freezes the generator, direct four-word initialization, high-bit rejection, and attempt-fuel behavior.</p>
         <pre aria-label="Proposed TypeScript aliases">type Seed = { kind: "Seed"; words: [Word32, Word32, Word32, Word32] }
 type GeneratorState = { kind: "GeneratorState"; words: [Word32, Word32, Word32, Word32] }
-type Next&lt;S&gt; = Success&lt;{ word: Word32; state: GeneratorState }&gt; | InvalidState
+type Initialize&lt;SeedWords&gt; = Success&lt;GeneratorState&gt; | InvalidSeedFailure
+type Next&lt;S&gt; = Success&lt;{ word: Word32; state: GeneratorState }&gt; | InvalidStateFailure
 type Sample&lt;S, Bound, MaximumAttempts&gt; =
   | Success&lt;{ value: number; state: GeneratorState; attempts: number }&gt;
-  | SamplingAttemptsExhausted&lt;{ attempts: number; state: GeneratorState }&gt;
-  | InvalidBound
+  | InvalidStateFailure
+  | InvalidBoundFailure
+  | InvalidAttemptFuelFailure
+  | SamplingAttemptsExhausted&lt;{ maximumAttempts: number; attempts: number; state: GeneratorState }&gt;
 
 // Materialized probe (seed 00000001/00000002/00000003/00000004):
 type First = { ok: true; value: {
@@ -166,10 +170,12 @@ type First = { ok: true; value: {
           <div>
             <h3>Replay Token (restart)</h3>
             <pre id="replay-token"></pre>
+            <button id="restore-replay">Restore Replay Token</button>
           </div>
           <div>
             <h3>Serialized Generator State (resume)</h3>
             <pre id="serialized-state"></pre>
+            <button id="restore-state">Restore Serialized State</button>
           </div>
         </div>
       </section>
@@ -190,8 +196,13 @@ type First = { ok: true; value: {
             <li>Step once: output <code>00002d00</code> and retain the successor state.</li>
             <li>Sample bound 6 with one attempt: consume one output and return a value in <code>[0, 6)</code>.</li>
           </ol>
-          <button class="primary" data-guide="happy">Run happy path</button>
-          <button data-guide-reset="happy">Reset case</button>
+          <div class="controls">
+            <button class="primary" data-guide-step="happy" data-guide-phase="0">1. Initialize</button>
+            <button data-guide-step="happy" data-guide-phase="1" disabled>2. Raw step</button>
+            <button data-guide-step="happy" data-guide-phase="2" disabled>3. Sample d6</button>
+            <button data-guide-reset="happy">Reset case</button>
+          </div>
+          <div id="guided-state-happy" class="state" aria-live="polite"></div>
           <pre id="guided-output-happy" class="result neutral">Not run.</pre>
         </article>
 
@@ -199,12 +210,18 @@ type First = { ok: true; value: {
           <h3>2. Rejections are state consumption; fuel is explicit</h3>
           <ol class="step-list">
             <li>Initialize all-ones state (valid and nonzero).</li>
-            <li>For bound 100, the first three high-bit candidates are 127, 127, and 127: all reject.</li>
+            <li>For bound 100, the first two high-bit candidates are 127 and 127: both reject.</li>
             <li>With <code>maximumAttempts = 2</code>, return exhaustion with attempts 2 and the advanced state.</li>
-            <li>With fuel 8, continue from a reset and eventually accept; no modulo fallback occurs.</li>
+            <li>Restore the Replay Token, then sample with fuel 8 and eventually accept; no modulo fallback occurs.</li>
           </ol>
-          <button class="primary" data-guide="reject">Run rejection then exhaustion</button>
-          <button data-guide-reset="reject">Reset case</button>
+          <div class="controls">
+            <button class="primary" data-guide-step="reject" data-guide-phase="0">1. Initialize</button>
+            <button data-guide-step="reject" data-guide-phase="1" disabled>2. Sample 100 / fuel 2</button>
+            <button data-guide-step="reject" data-guide-phase="2" disabled>3. Restore Replay Token</button>
+            <button data-guide-step="reject" data-guide-phase="3" disabled>4. Sample 100 / fuel 8</button>
+            <button data-guide-reset="reject">Reset case</button>
+          </div>
+          <div id="guided-state-reject" class="state" aria-live="polite"></div>
           <pre id="guided-output-reject" class="result neutral">Not run.</pre>
         </article>
 
@@ -212,11 +229,19 @@ type First = { ok: true; value: {
           <h3>3. Invalid states and bounds are structured failures</h3>
           <ol class="step-list">
             <li>All-zero Seed initialization fails before a Generator State exists.</li>
-            <li>A valid State with bound 0 or 101 returns <code>invalid-bound</code> and consumes no output.</li>
-            <li>Only a successful step or sample advances the explicit State.</li>
+            <li>An all-zero Generator State is rejected independently of Seed initialization.</li>
+            <li>A valid State with bound 0 returns <code>invalid-bound</code> and consumes no output.</li>
+            <li>Bound 1 still consumes one output and returns 0.</li>
           </ol>
-          <button class="primary" data-guide="illegal">Run illegal cases</button>
-          <button data-guide-reset="illegal">Reset case</button>
+          <div class="controls">
+            <button class="primary" data-guide-step="illegal" data-guide-phase="0">1. Initialize all-zero Seed</button>
+            <button data-guide-step="illegal" data-guide-phase="1" disabled>2. Check all-zero State</button>
+            <button data-guide-step="illegal" data-guide-phase="2" disabled>3. Initialize valid Seed</button>
+            <button data-guide-step="illegal" data-guide-phase="3" disabled>4. Sample bound 0</button>
+            <button data-guide-step="illegal" data-guide-phase="4" disabled>5. Sample bound 1</button>
+            <button data-guide-reset="illegal">Reset case</button>
+          </div>
+          <div id="guided-state-illegal" class="state" aria-live="polite"></div>
           <pre id="guided-output-illegal" class="result neutral">Not run.</pre>
         </article>
       </section>
@@ -258,12 +283,18 @@ type First = { ok: true; value: {
         return success({ kind: "GeneratorState", words: cloneWords(words) });
       }
 
-      function modelNext(state) {
+      function modelStateFailure(state) {
         if (!state || state.kind !== "GeneratorState" || !Array.isArray(state.words) || state.words.length !== 4) {
           return failure("invalid-state-shape", { state });
         }
         if (state.words.some((word) => !wordIsValid(word))) return failure("invalid-state-word", { state });
         if (stateIsZero(state.words)) return failure("invalid-state-zero", { state });
+        return null;
+      }
+
+      function modelNext(state) {
+        const invalidState = modelStateFailure(state);
+        if (invalidState) return invalidState;
         const [s0, s1, s2, s3] = state.words.map((word) => Number.parseInt(word, 16) >>> 0);
         const multiply5 = Math.imul(s1, 5) >>> 0;
         const output = Math.imul(((multiply5 << 7) | (multiply5 >>> 25)) >>> 0, 9) >>> 0;
@@ -281,6 +312,8 @@ type First = { ok: true; value: {
       }
 
       function modelSample(state, bound, maximumAttempts) {
+        const invalidState = modelStateFailure(state);
+        if (invalidState) return invalidState;
         if (!Number.isInteger(bound) || bound < 1 || bound > 100) return failure("invalid-bound", { bound });
         if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) {
           return failure("invalid-attempt-fuel", { maximumAttempts });
@@ -356,33 +389,97 @@ type First = { ok: true; value: {
         render();
       });
 
+      $("restore-replay").addEventListener("click", () => {
+        const restored = modelInitialize(currentSeed);
+        currentState = restored.ok ? restored.value : null;
+        lastResult = success({ operation: "restore-replay-token", state: currentState });
+        render();
+      });
+      $("restore-state").addEventListener("click", () => {
+        const restored = currentState ? modelStateFailure(currentState) : failure("invalid-state-shape", { state: null });
+        if (restored) {
+          lastResult = restored;
+        } else {
+          currentState = { kind: "GeneratorState", words: cloneWords(currentState.words) };
+          lastResult = success({ operation: "restore-serialized-state", state: currentState });
+        }
+        render();
+      });
+
+      const guideState = {
+        happy: { phase: 0, state: null, lastResult: failure("not-started", {}), history: [] },
+        reject: { phase: 0, state: null, lastResult: failure("not-started", {}), history: [] },
+        illegal: { phase: 0, state: null, lastResult: failure("not-started", {}), history: [] },
+      };
+
       function guideReset(name) {
-        $("guided-output-" + name).textContent = "Not run.";
-        $("guided-output-" + name).className = "result neutral";
+        guideState[name] = { phase: 0, state: null, lastResult: failure("not-started", {}), history: [] };
+        renderGuide(name);
       }
 
-      function runGuide(name) {
-        let output;
-        if (name === "happy") {
-          const initialized = modelInitialize(GOLDEN);
-          const stepped = initialized.ok ? modelNext(initialized.value) : initialized;
-          const sampled = stepped.ok ? modelSample(stepped.value.state, 6, 1) : stepped;
-          output = { initialize: initialized, rawStep: stepped, boundedD6: sampled };
-        } else if (name === "reject") {
-          const initialized = modelInitialize(ONES);
-          const exhausted = initialized.ok ? modelSample(initialized.value, 100, 2) : initialized;
-          const accepted = initialized.ok ? modelSample(initialized.value, 100, 8) : initialized;
-          output = { initialize: initialized, maximumAttempts2: exhausted, maximumAttempts8: accepted };
-        } else {
-          const invalidSeed = modelInitialize(ZERO);
-          const valid = modelInitialize(GOLDEN);
-          const invalidBound0 = valid.ok ? modelSample(valid.value, 0, 1) : valid;
-          const invalidBound101 = valid.ok ? modelSample(valid.value, 101, 1) : valid;
-          output = { allZeroSeed: invalidSeed, bound0: invalidBound0, bound101: invalidBound101 };
-        }
+      function renderGuide(name) {
+        const guide = guideState[name];
+        $("guided-state-" + name).innerHTML = stateMarkup(guide.state);
         const target = $("guided-output-" + name);
-        target.className = "result " + (JSON.stringify(output).includes('"ok":false') ? "failure" : "success");
-        target.textContent = json(output);
+        const resultClass = guide.lastResult.code === "not-started" ? "neutral" : guide.lastResult.ok ? "success" : "failure";
+        target.className = "result " + resultClass;
+        target.textContent = json({ phase: guide.phase, lastResult: guide.lastResult, history: guide.history });
+        document.querySelectorAll('[data-guide-step="' + name + '"]').forEach((button) => {
+          button.disabled = Number(button.dataset.guidePhase) !== guide.phase;
+        });
+      }
+
+      function advanceGuide(name) {
+        const guide = guideState[name];
+        let operation;
+        let result;
+        if (name === "happy") {
+          if (guide.phase === 0) {
+            operation = "initialize golden seed";
+            result = modelInitialize(GOLDEN);
+          } else if (guide.phase === 1) {
+            operation = "raw step";
+            result = modelNext(guide.state);
+          } else {
+            operation = "sample bound 6 with fuel 1";
+            result = modelSample(guide.state, 6, 1);
+          }
+        } else if (name === "reject") {
+          if (guide.phase === 0) {
+            operation = "initialize all-ones seed";
+            result = modelInitialize(ONES);
+          } else if (guide.phase === 1) {
+            operation = "sample bound 100 with fuel 2";
+            result = modelSample(guide.state, 100, 2);
+          } else if (guide.phase === 2) {
+            operation = "restore replay token";
+            result = modelInitialize(ONES);
+          } else {
+            operation = "sample bound 100 with fuel 8";
+            result = modelSample(guide.state, 100, 8);
+          }
+        } else if (guide.phase === 0) {
+          operation = "initialize all-zero seed";
+          result = modelInitialize(ZERO);
+        } else if (guide.phase === 1) {
+          operation = "check all-zero generator state";
+          result = modelNext({ kind: "GeneratorState", words: cloneWords(ZERO) });
+        } else if (guide.phase === 2) {
+          operation = "initialize golden seed";
+          result = modelInitialize(GOLDEN);
+        } else if (guide.phase === 3) {
+          operation = "sample invalid bound 0";
+          result = modelSample(guide.state, 0, 1);
+        } else {
+          operation = "sample bound 1 with fuel 1";
+          result = modelSample(guide.state, 1, 1);
+        }
+        guide.lastResult = result;
+        if (result.ok) guide.state = result.value.state || result.value;
+        if (!result.ok && result.code === "sampling-attempts-exhausted") guide.state = result.details.state;
+        guide.history.push({ step: guide.phase + 1, operation, result });
+        guide.phase += 1;
+        renderGuide(name);
       }
 
       document.querySelectorAll("[data-tab]").forEach((button) => {
@@ -391,9 +488,12 @@ type First = { ok: true; value: {
           document.querySelectorAll("[data-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === button.dataset.tab));
         });
       });
-      document.querySelectorAll("[data-guide]").forEach((button) => button.addEventListener("click", () => runGuide(button.dataset.guide)));
+      document.querySelectorAll("[data-guide-step]").forEach((button) => button.addEventListener("click", () => advanceGuide(button.dataset.guideStep)));
       document.querySelectorAll("[data-guide-reset]").forEach((button) => button.addEventListener("click", () => guideReset(button.dataset.guideReset)));
 
+      guideReset("happy");
+      guideReset("reject");
+      guideReset("illegal");
       reset(GOLDEN);
     </script>
   </body>
