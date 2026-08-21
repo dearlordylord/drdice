@@ -53,6 +53,8 @@ npx --yes -p typescript@5.9.3 tsc --pretty false --strict \
 node "$outdir/dice-evaluation-type-api.js"
 ```
 
-Both HTML files are self-contained and open directly in a browser. The numeric
-limits and bounded literal corpus remain illustrative; issues #11–#13 own the
-compiler budgets, verification gates, and release contract.
+Both HTML files are self-contained and open directly in a browser. The bounded
+literal corpus remains illustrative. The supported limits and compiler
+budgets are recorded in
+[`benchmarks/issue-11/README.md`](../benchmarks/issue-11/README.md); issues #12
+and #13 own the verification gates and release contract.
