@@ -882,7 +882,7 @@ type StaticKnown<Source extends string, State, Fuel extends number, L extends Pr
         : StaticEvaluationSuccess<2, [DieSample<6, 1>, DieSample<6, 1>], GeneratorState<typeof GOLDEN_STATES[2]>>
       : Fuel extends 0 ? StaticZeroFuel<0, State> : StaticEvaluationSuccess<number, RollTrace, StaticStateOrUnknown<State>>
   : Source extends "d100 + 100" ? State extends InitialState
-    ? Fuel extends 0 ? StaticZeroFuel<0, State> : DiagnosticFailure<ResourceLimitExceededDiagnostic & {
+    ? Fuel extends 0 ? StaticZeroFuel<0, State> : DiagnosticFailure<DynamicResourceLimitExceededDiagnostic & {
         readonly offset: 5;
         readonly dimension: "arithmetic-magnitude";
         readonly limit: L["arithmeticMagnitude"];
@@ -986,6 +986,7 @@ type _Whitespace = Expect<Equal<WhitespaceEvaluation extends Success<infer V> ? 
 type _Parenthesized = Expect<Equal<ParenthesizedEvaluation extends Success<infer V> ? V extends { total: infer T } ? T : never : never, 2>>;
 type _Negative = Expect<Equal<NegativeEvaluation extends Success<infer V> ? V extends { total: infer T } ? T : never : never, -5>>;
 type _PerDieFuel = Expect<Equal<PerDieFuelEvaluation extends Success<infer V> ? V extends { rollTrace: infer T } ? T : never : never, [DieSample<6, 1>, DieSample<6, 1>]>>;
+type _LateArithmeticContext = Expect<LateArithmeticFailure extends Failure<"resource-limit-exceeded", { readonly partialTrace: [DieSample<100, 1>]; readonly successorState: GeneratorState<typeof GOLDEN_STATES[1]> }> ? true : false>;
 type _ZeroAttempts = Expect<Equal<ZeroAttemptEvaluation["code"], "sampling-attempts-exhausted">>;
 type _ZeroD1 = Expect<Equal<Evaluate<"d1", InitialState, 0>["code"], "sampling-attempts-exhausted">>;
 type _ZeroD100 = Expect<Equal<Evaluate<"d100", InitialState, 0>["code"], "sampling-attempts-exhausted">>;
