@@ -1,12 +1,11 @@
 /**
  * @drdice/dice is a declaration-only Dice Expression evaluator.
  *
- * This slice owns complete scanning/parsing, domain validation, static
- * preflight, and arithmetic-only evaluation.  The state-consuming DiceNode
- * evaluator is added by issue #22; keeping that branch here lets the later
- * slice preserve the accepted parser and diagnostic contract.
+ * This declaration owns complete scanning/parsing, domain validation, static
+ * preflight, and state-consuming Dice evaluation.  The evaluator composes
+ * bounded sampling only through the public @drdice/prng Sample boundary.
  */
-import type { GeneratorState as PrngGeneratorState } from "@drdice/prng";
+import type { GeneratorState as PrngGeneratorState, Sample } from "@drdice/prng";
 
 export const DICE_SEMANTIC_PROFILE: "dice-v1/utf16-bounded-left-to-right-1";
 export const DICE_SEMANTIC_VERSION: 1;
@@ -16,7 +15,8 @@ export type FailureCode =
   | "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero"
   | "invalid-attempt-fuel" | "expected-expression" | "expected-die-sides"
   | "expected-closing-parenthesis" | "leading-zero" | "unexpected-token"
-  | "dice-count-zero" | "side-count-zero" | "resource-limit-exceeded";
+  | "dice-count-zero" | "side-count-zero" | "resource-limit-exceeded"
+  | "sampling-attempts-exhausted";
 export type Failure<Code extends FailureCode, Details extends object = object> = {
   readonly ok: false; readonly code: Code; readonly details: Details;
 };
@@ -75,7 +75,16 @@ export type ResourceLimitExceededDiagnostic = {
   readonly dimension: ResourceDimension; readonly limit: number; readonly actual: number | "widened";
   readonly partialTrace?: never; readonly successorState?: never;
 };
-export type Diagnostic = SyntaxDiagnostic | DomainDiagnostic | ResourceLimitExceededDiagnostic;
+export type DynamicResourceLimitExceededDiagnostic = Omit<ResourceLimitExceededDiagnostic, "partialTrace" | "successorState"> & {
+  readonly partialTrace: RollTrace; readonly successorState: PrngGeneratorState;
+};
+export type SamplingAttemptsExhaustedDiagnostic = {
+  readonly kind: "evaluation"; readonly code: "sampling-attempts-exhausted"; readonly offset: number;
+  readonly maximumAttempts: number; readonly attempts: number;
+  readonly partialTrace: RollTrace; readonly successorState: PrngGeneratorState;
+};
+export type Diagnostic = SyntaxDiagnostic | DomainDiagnostic | ResourceLimitExceededDiagnostic
+  | DynamicResourceLimitExceededDiagnostic | SamplingAttemptsExhaustedDiagnostic;
 export type DiagnosticFailure<D extends { readonly code: FailureCode }> = Failure<D["code"], D>;
 
 export type EvaluationStateFailure =
@@ -90,6 +99,7 @@ export type EvaluationFailure =
   | DiagnosticFailure<ExpectedClosingParenthesisDiagnostic> | DiagnosticFailure<LeadingZeroDiagnostic>
   | DiagnosticFailure<UnexpectedTokenDiagnostic> | DiagnosticFailure<DiceCountZeroDiagnostic>
   | DiagnosticFailure<SideCountZeroDiagnostic> | DiagnosticFailure<ResourceLimitExceededDiagnostic>
+  | DiagnosticFailure<DynamicResourceLimitExceededDiagnostic> | DiagnosticFailure<SamplingAttemptsExhaustedDiagnostic>
   | EvaluationInputFailure;
 export type EvaluationResult = Success<DiceEvaluation> | EvaluationFailure;
 
@@ -460,7 +470,7 @@ type StaticPreflight<Ast> = AstStats<Ast> extends infer S extends Stats
   : never;
 
 /* -------------------------------------------------------------------------- */
-/* State/fuel validation and arithmetic evaluation                             */
+/* State/fuel validation and complete state-consuming evaluation               */
 /* -------------------------------------------------------------------------- */
 
 type HexDigit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "a" | "b" | "c" | "d" | "e" | "f";
@@ -483,22 +493,212 @@ type FuelFailure<State, MaximumAttempts extends number> = Failure<"invalid-attem
 type FuelPlan<State, MaximumAttempts extends number> = ValidFuel<MaximumAttempts> extends true
   ? IsGreaterThan<MaximumAttempts, L["rejectionSamplingAttempts"]> extends true ? ResourceFailure<"rejection-sampling-attempts", 0, L["rejectionSamplingAttempts"], MaximumAttempts> : true
   : FuelFailure<State, MaximumAttempts>;
-type EvaluationValue<Total extends number, State extends PrngGeneratorState> = Success<DiceEvaluation<Total, [], State>>;
-type EvalArithmetic<Ast, State extends PrngGeneratorState> = Ast extends IntNode<infer Value, readonly unknown[], number> ? EvaluationValue<Value, State>
-  : Ast extends GroupNode<infer Child, number> ? EvalArithmetic<Child, State>
-    : Ast extends BinaryNode<infer _Op, infer Left, infer Right, number>
-      ? EvalArithmetic<Left, State> extends infer LeftResult
-        ? LeftResult extends Success<DiceEvaluation<number, [], State>>
-          ? EvalArithmetic<Right, State> extends infer RightResult
-            ? RightResult extends Success<DiceEvaluation<number, [], State>>
-              ? SignedOfAst<Ast> extends infer TotalValue
-                ? TotalValue extends Signed<boolean, readonly unknown[]> ? EvaluationValue<ToSignedNumber<TotalValue["negative"], TotalValue["magnitude"]>, State> : never
-                : never
-              : RightResult
+type EvaluationValue<
+  Total extends number,
+  Trace extends RollTrace,
+  State extends PrngGeneratorState,
+  Steps extends number,
+> = {
+  readonly total: Total;
+  readonly rollTrace: Trace;
+  readonly successorState: State;
+  readonly steps: Steps;
+};
+
+type AddNatural<A extends number, B extends number> = [...TupleOf<A>, ...TupleOf<B>]["length"] & number;
+type NumberToSigned<N extends number> = `${N}` extends `-${infer Magnitude extends number}`
+  ? Signed<true, TupleOf<Magnitude>>
+  : Signed<false, TupleOf<N>>;
+type ApplyEvaluationOp<Op extends "+" | "-", A extends number, B extends number> =
+  NumberToSigned<A> extends infer Left extends Signed<boolean, readonly unknown[]>
+    ? NumberToSigned<B> extends infer Right extends Signed<boolean, readonly unknown[]>
+      ? Op extends "+"
+        ? AddSigned<Left, Right> extends infer Total extends Signed<boolean, readonly unknown[]>
+          ? ToSignedNumber<Total["negative"], Total["magnitude"]>
+          : never
+        : AddSigned<Left, NegateSigned<Right>> extends infer Total extends Signed<boolean, readonly unknown[]>
+          ? ToSignedNumber<Total["negative"], Total["magnitude"]>
+          : never
+      : never
+    : never;
+type MagnitudeOfNumber<N extends number> = `${N}` extends `-${infer Magnitude extends number}` ? Magnitude : N;
+type ExceedsArithmeticLimit<N extends number> = IsGreaterThan<MagnitudeOfNumber<N>, L["arithmeticMagnitude"]>;
+
+type DynamicResourceFailure<
+  Dimension extends ResourceDimension,
+  Offset extends number,
+  Actual extends number,
+  Trace extends RollTrace,
+  State extends PrngGeneratorState,
+> = Failure<"resource-limit-exceeded", {
+  readonly kind: "resource";
+  readonly code: "resource-limit-exceeded";
+  readonly offset: Offset;
+  readonly dimension: Dimension;
+  readonly limit: Dimension extends "evaluation-steps" ? L["evaluationSteps"] : L["arithmeticMagnitude"];
+  readonly actual: Actual;
+  readonly partialTrace: Trace;
+  readonly successorState: State;
+}>;
+type EvaluationStepFailure<
+  Offset extends number,
+  Actual extends number,
+  Trace extends RollTrace,
+  State extends PrngGeneratorState,
+> = DynamicResourceFailure<"evaluation-steps", Offset, Actual, Trace, State>;
+type SamplingExhaustionFailure<
+  Offset extends number,
+  MaximumAttempts extends number,
+  Attempts extends number,
+  Trace extends RollTrace,
+  State extends PrngGeneratorState,
+> = Failure<"sampling-attempts-exhausted", {
+  readonly kind: "evaluation";
+  readonly code: "sampling-attempts-exhausted";
+  readonly offset: Offset;
+  readonly maximumAttempts: MaximumAttempts;
+  readonly attempts: Attempts;
+  readonly partialTrace: Trace;
+  readonly successorState: State;
+}>;
+type WithPartial<FailureValue, Trace extends RollTrace, State extends PrngGeneratorState> = FailureValue extends Failure<infer Code, infer Details extends object>
+  ? Failure<Code, Details & { readonly partialTrace: Trace; readonly successorState: State }>
+  : FailureValue;
+
+/* A die node contributes its own step before consuming any PRNG state. */
+type EvalDice<
+  Count extends number,
+  Sides extends number,
+  State extends PrngGeneratorState,
+  Fuel extends number,
+  Trace extends RollTrace,
+  Offset extends number,
+  ConsumedSteps extends number,
+> = AddNatural<ConsumedSteps, 1> extends infer Steps extends number
+  ? IsGreaterThan<Steps, L["evaluationSteps"]> extends true
+    ? EvaluationStepFailure<Offset, Steps, Trace, State>
+    : EvalDiceRest<Count, Sides, State, Fuel, Trace, Offset, 0, Steps>
+  : never;
+
+type EvalDiceRest<
+  Count extends number,
+  Sides extends number,
+  State extends PrngGeneratorState,
+  Fuel extends number,
+  Trace extends RollTrace,
+  Offset extends number,
+  Total extends number,
+  Steps extends number,
+> = Count extends 0
+  ? Success<EvaluationValue<Total, Trace, State, Steps>>
+: Sample<State, Sides, Fuel> extends infer SampleResult
+    ? SampleResult extends {
+        readonly ok: true;
+        readonly value: {
+          readonly value: infer Value extends number;
+          readonly state: infer NextState extends PrngGeneratorState;
+          readonly attempts: infer Attempts extends number;
+        };
+      }
+      ? Increment<Value> extends infer Face extends number
+        ? [...Trace, DieSample<Sides, Face>] extends infer NextTrace extends RollTrace
+          ? ApplyEvaluationOp<"+", Total, Face> extends infer NextTotal extends number
+            ? AddNatural<Steps, Increment<Attempts>> extends infer NextSteps extends number
+              ? IsGreaterThan<NextSteps, L["evaluationSteps"]> extends true
+                ? EvaluationStepFailure<Offset, NextSteps, NextTrace, NextState>
+                : ExceedsArithmeticLimit<NextTotal> extends true
+                  ? DynamicResourceFailure<"arithmetic-magnitude", Offset, MagnitudeOfNumber<NextTotal>, NextTrace, NextState>
+                  : EvalDiceRest<Decrement<Count>, Sides, NextState, Fuel, NextTrace, Offset, NextTotal, NextSteps>
+              : never
             : never
-          : LeftResult
+          : never
         : never
-      : never;
+      : SampleResult extends {
+          readonly ok: false;
+          readonly code: "sampling-attempts-exhausted";
+          readonly details: {
+            readonly maximumAttempts: infer MaximumAttempts extends number;
+            readonly attempts: infer Attempts extends number;
+            readonly state: infer ExhaustedState extends PrngGeneratorState;
+          };
+        }
+        ? AddNatural<Steps, Increment<Attempts>> extends infer AttemptedSteps extends number
+          ? IsGreaterThan<AttemptedSteps, L["evaluationSteps"]> extends true
+            ? EvaluationStepFailure<Offset, AttemptedSteps, Trace, ExhaustedState>
+            : SamplingExhaustionFailure<Offset, MaximumAttempts, Attempts, Trace, ExhaustedState>
+          : never
+        : WithPartial<SampleResult, Trace, State>
+    : never;
+
+type EvalAst<
+  Ast,
+  State extends PrngGeneratorState,
+  Fuel extends number,
+  Trace extends RollTrace = [],
+  ConsumedSteps extends number = 0,
+> = Ast extends IntNode<infer Value, readonly unknown[], infer Offset>
+  ? AddNatural<ConsumedSteps, 1> extends infer Steps extends number
+    ? IsGreaterThan<Steps, L["evaluationSteps"]> extends true
+      ? EvaluationStepFailure<Offset, Steps, Trace, State>
+      : Success<EvaluationValue<Value, Trace, State, Steps>>
+    : never
+  : Ast extends DiceNode<infer Count, readonly unknown[], infer Sides, readonly unknown[], infer Offset, number>
+    ? EvalDice<Count, Sides, State, Fuel, Trace, Offset, ConsumedSteps>
+    : Ast extends GroupNode<infer Child, number>
+      ? AddNatural<ConsumedSteps, 1> extends infer Steps extends number
+        ? EvalAst<Child, State, Fuel, Trace, Steps>
+        : never
+      : Ast extends BinaryNode<infer Op extends "+" | "-", infer Left, infer Right, infer Offset>
+        ? EvalAst<Left, State, Fuel, Trace, ConsumedSteps> extends infer LeftResult
+          ? LeftResult extends {
+              readonly ok: true;
+              readonly value: {
+                readonly total: infer LeftTotal extends number;
+                readonly rollTrace: infer LeftTrace;
+                readonly successorState: infer LeftState extends PrngGeneratorState;
+                readonly steps: infer LeftSteps extends number;
+              };
+            }
+            ? LeftTrace extends RollTrace
+              ? EvalAst<Right, LeftState, Fuel, LeftTrace, LeftSteps> extends infer RightResult
+                ? RightResult extends {
+                    readonly ok: true;
+                    readonly value: {
+                      readonly total: infer RightTotal extends number;
+                      readonly rollTrace: infer RightTrace;
+                      readonly successorState: infer RightState extends PrngGeneratorState;
+                      readonly steps: infer RightSteps extends number;
+                    };
+                  }
+                  ? RightTrace extends RollTrace
+                    ? ApplyEvaluationOp<Op, LeftTotal, RightTotal> extends infer Total extends number
+                      ? Increment<RightSteps> extends infer Steps extends number
+                        ? IsGreaterThan<Steps, L["evaluationSteps"]> extends true
+                          ? EvaluationStepFailure<Offset, Steps, RightTrace, RightState>
+                          : ExceedsArithmeticLimit<Total> extends true
+                            ? DynamicResourceFailure<"arithmetic-magnitude", Offset, MagnitudeOfNumber<Total>, RightTrace, RightState>
+                            : Success<EvaluationValue<Total, RightTrace, RightState, Steps>>
+                        : never
+                      : never
+                    : never
+                  : RightResult
+                : never
+              : never
+            : LeftResult
+          : never
+        : never;
+
+type ProjectEvaluation<Result> = Result extends {
+  readonly ok: true;
+  readonly value: {
+    readonly total: infer Total extends number;
+    readonly rollTrace: infer Trace extends RollTrace;
+    readonly successorState: infer State extends PrngGeneratorState;
+    readonly steps: number;
+  };
+}
+  ? Success<DiceEvaluation<Total, Trace, State>>
+  : Result;
 type EvaluateParsed<Source extends string, State, MaximumAttempts extends number> = ParseSource<Source> extends infer Parsed
   ? Parsed extends Success<infer Ast>
     ? DomainOnlyValidation<Ast> extends infer Domain
@@ -508,7 +708,7 @@ type EvaluateParsed<Source extends string, State, MaximumAttempts extends number
             ? ValidateState<State> extends infer StateResult
               ? StateResult extends Success<infer ValidState extends PrngGeneratorState>
                 ? FuelPlan<ValidState, MaximumAttempts> extends infer Fuel
-                  ? Fuel extends true ? EvalArithmetic<Ast, ValidState> : Fuel
+                  ? Fuel extends true ? ProjectEvaluation<EvalAst<Ast, ValidState, MaximumAttempts>> : Fuel
                   : never
                 : StateResult
               : never
