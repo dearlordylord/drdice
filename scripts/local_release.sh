@@ -51,7 +51,10 @@ current_branch="$(git branch --show-current)"
   fail "the worktree is dirty"
 }
 
-CI=true pnpm install --frozen-lockfile --prod=false
+# The checkout can be shared with a container that materialized another
+# platform's optional TypeScript binary. Force installation so this release
+# always verifies with the current host platform package.
+CI=true pnpm install --frozen-lockfile --prod=false --force
 
 [[ -z "$(git status --porcelain)" ]] || {
   git status --short >&2
