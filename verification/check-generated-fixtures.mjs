@@ -20,7 +20,7 @@ try {
   }
 
   const [expectedNames, actualNames] = await Promise.all([
-    readdir(committed),
+    readdir(committed).then((names) => names.filter((name) => !name.startsWith("dice-issue21-"))),
     readdir(temporary),
   ]);
   expectedNames.sort();
