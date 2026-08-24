@@ -1,0 +1,2132 @@
+{
+  "semanticProfile": "dice-v1/utf16-bounded-left-to-right-1",
+  "semanticVersion": 1,
+  "prngSequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+  "limits": {
+    "sourceLength": 64,
+    "numericTokenLength": 3,
+    "nestingDepth": 4,
+    "astNodeCount": 15,
+    "diceTermCount": 4,
+    "dieSampleCount": 8,
+    "supportedSideCount": 100,
+    "arithmeticMagnitude": 100,
+    "evaluationSteps": 24,
+    "rejectionSamplingAttempts": 4
+  },
+  "staticResourceTieOrder": [
+    "ast-node-count",
+    "dice-term-count",
+    "die-sample-count",
+    "supported-side-count",
+    "arithmetic-magnitude",
+    "evaluation-steps"
+  ],
+  "canonicalState": [
+    "00000001",
+    "00000002",
+    "00000003",
+    "00000004"
+  ],
+  "craftedRejectionState": [
+    "b0e8eac3",
+    "f2d79146",
+    "a51937ed",
+    "21243868"
+  ],
+  "dynamicStepState": [
+    "f6d4d22f",
+    "179359c2",
+    "e89fce39",
+    "dc482244"
+  ],
+  "forcedState": [
+    "00000000",
+    "00000000",
+    "ffffffff",
+    "00000000"
+  ],
+  "cases": [
+    {
+      "id": "integer-zero",
+      "source": "0",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 0,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "single-die-one",
+      "source": "d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "uppercase-die",
+      "source": "D6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 6,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "multiple-dice-addition",
+      "source": "2d6 + 3",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 5,
+          "rollTrace": [
+            {
+              "sideCount": 6,
+              "face": 1
+            },
+            {
+              "sideCount": 6,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00003007",
+            "00000405",
+            "00000405",
+            "01800000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "parenthesized-depth-first",
+      "source": "d6 + (2d6 - 1)",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 2,
+          "rollTrace": [
+            {
+              "sideCount": 6,
+              "face": 1
+            },
+            {
+              "sideCount": 6,
+              "face": 1
+            },
+            {
+              "sideCount": 6,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "01803402",
+            "00003007",
+            "00083e02",
+            "0020280c"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "left-associative-subtraction",
+      "source": "12 - 7 - 2",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 3,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "negative-total",
+      "source": "1 - 6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": -5,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "all-supported-whitespace",
+      "source": " \t D6\r\n+ 1 ",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 2,
+          "rollTrace": [
+            {
+              "sideCount": 6,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "nesting-at-limit",
+      "source": "((((d1))))",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "dice-terms-at-limit",
+      "source": "d1+d1+d1+d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 4,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "01a02c09",
+            "01883a07",
+            "01e80400",
+            "00c05801"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "samples-at-limit",
+      "source": "8d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 8,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "3320a290",
+            "ebdc5e1d",
+            "90c43618",
+            "e4b42f08"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "source-length-at-limit",
+      "source": "                                                               1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "numeric-token-at-limit",
+      "source": "100",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 100,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "evaluation-steps-at-limit",
+      "source": "8d1+(1+1+1)",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 11,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            },
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "3320a290",
+            "ebdc5e1d",
+            "90c43618",
+            "e4b42f08"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "sample-attempt-fuel-zero",
+      "source": "d1",
+      "maximumAttempts": 0,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "kind": "evaluation",
+          "code": "sampling-attempts-exhausted",
+          "offset": 0,
+          "maximumAttempts": 0,
+          "attempts": 0,
+          "partialTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      },
+      "incompleteAttempts": 0
+    },
+    {
+      "id": "sample-attempt-fuel-two",
+      "source": "d1",
+      "maximumAttempts": 2,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "sample-attempt-fuel-three",
+      "source": "d1",
+      "maximumAttempts": 3,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "sample-attempt-fuel-four",
+      "source": "d1",
+      "maximumAttempts": 4,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "forced-rejection-then-acceptance",
+      "source": "d7",
+      "maximumAttempts": 2,
+      "stateWords": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 7,
+          "rollTrace": [
+            {
+              "sideCount": 7,
+              "face": 7
+            }
+          ],
+          "successorState": [
+            "1974791a",
+            "3eee5eab",
+            "9550c2c3",
+            "79d7bbd3"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        2
+      ]
+    },
+    {
+      "id": "post-consumption-dynamic-steps",
+      "source": "8d5",
+      "maximumAttempts": 4,
+      "stateWords": [
+        "f6d4d22f",
+        "179359c2",
+        "e89fce39",
+        "dc482244"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "evaluation-steps",
+          "limit": 24,
+          "actual": 25,
+          "partialTrace": [
+            {
+              "sideCount": 5,
+              "face": 4
+            },
+            {
+              "sideCount": 5,
+              "face": 5
+            },
+            {
+              "sideCount": 5,
+              "face": 2
+            },
+            {
+              "sideCount": 5,
+              "face": 2
+            },
+            {
+              "sideCount": 5,
+              "face": 4
+            },
+            {
+              "sideCount": 5,
+              "face": 2
+            },
+            {
+              "sideCount": 5,
+              "face": 5
+            },
+            {
+              "sideCount": 5,
+              "face": 4
+            }
+          ],
+          "successorState": [
+            "c22deee4",
+            "3c929a21",
+            "36861b80",
+            "ea3ff13a"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        4,
+        2,
+        4
+      ]
+    },
+    {
+      "id": "empty-input",
+      "source": "",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "expected-expression",
+        "details": {
+          "kind": "syntax",
+          "code": "expected-expression",
+          "offset": 0,
+          "found": "eof",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "whitespace-only",
+      "source": " \t\r\n",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "expected-expression",
+        "details": {
+          "kind": "syntax",
+          "code": "expected-expression",
+          "offset": 4,
+          "found": "eof",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "expected-die-sides",
+      "source": "d",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "expected-die-sides",
+        "details": {
+          "kind": "syntax",
+          "code": "expected-die-sides",
+          "offset": 1,
+          "found": "eof",
+          "expected": [
+            "positive-integer"
+          ]
+        }
+      }
+    },
+    {
+      "id": "whitespace-inside-die",
+      "source": "d 6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "expected-die-sides",
+        "details": {
+          "kind": "syntax",
+          "code": "expected-die-sides",
+          "offset": 1,
+          "found": " ",
+          "expected": [
+            "positive-integer"
+          ]
+        }
+      }
+    },
+    {
+      "id": "expected-closing-parenthesis",
+      "source": "(d6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "expected-closing-parenthesis",
+        "details": {
+          "kind": "syntax",
+          "code": "expected-closing-parenthesis",
+          "offset": 3,
+          "found": "eof",
+          "expected": [
+            ")"
+          ]
+        }
+      }
+    },
+    {
+      "id": "leading-zero-integer",
+      "source": "01",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "leading-zero",
+        "details": {
+          "kind": "syntax",
+          "code": "leading-zero",
+          "offset": 0,
+          "found": "1",
+          "expected": [
+            "canonical-integer"
+          ]
+        }
+      }
+    },
+    {
+      "id": "leading-zero-sides",
+      "source": "d01",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "leading-zero",
+        "details": {
+          "kind": "syntax",
+          "code": "leading-zero",
+          "offset": 1,
+          "found": "1",
+          "expected": [
+            "canonical-integer"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unary-minus",
+      "source": "-1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 0,
+          "found": "-",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "unary-plus",
+      "source": "+1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 0,
+          "found": "+",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "decimal-token",
+      "source": "1.5",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 1,
+          "found": ".",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "implicit-parenthesis-multiplication",
+      "source": "2(d6)",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 1,
+          "found": "(",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "implicit-die-multiplication",
+      "source": "d6 d6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 3,
+          "found": "d",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "space-before-die",
+      "source": "2 d6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 2,
+          "found": "d",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "trailing-token",
+      "source": "d6 trailing",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 3,
+          "found": "t",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unmatched-closing-parenthesis",
+      "source": "d6)",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 2,
+          "found": ")",
+          "expected": [
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown-token",
+      "source": "?",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 0,
+          "found": "?",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "astral-utf16-token",
+      "source": "🙂",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 0,
+          "found": "\ud83d",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "rejected-nbsp",
+      "source": "d6 +1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 2,
+          "found": " ",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "rejected-em-space",
+      "source": " d6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 0,
+          "found": " ",
+          "expected": [
+            "dice",
+            "integer",
+            "("
+          ]
+        }
+      }
+    },
+    {
+      "id": "rejected-vertical-tab",
+      "source": "d6\u000b+1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 2,
+          "found": "\u000b",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
+      "id": "zero-dice-count",
+      "source": "0d6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "dice-count-zero",
+        "details": {
+          "kind": "domain",
+          "code": "dice-count-zero",
+          "offset": 0,
+          "subject": "dice-count",
+          "value": "0"
+        }
+      }
+    },
+    {
+      "id": "zero-side-count",
+      "source": "d0",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "side-count-zero",
+        "details": {
+          "kind": "domain",
+          "code": "side-count-zero",
+          "offset": 1,
+          "subject": "side-count",
+          "value": "0"
+        }
+      }
+    },
+    {
+      "id": "domain-beats-supported-side",
+      "source": "d101 + d0",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "side-count-zero",
+        "details": {
+          "kind": "domain",
+          "code": "side-count-zero",
+          "offset": 8,
+          "subject": "side-count",
+          "value": "0"
+        }
+      }
+    },
+    {
+      "id": "source-length-one-beyond",
+      "source": "                                                                1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "source-length",
+          "limit": 64,
+          "actual": 65
+        }
+      }
+    },
+    {
+      "id": "numeric-token-one-beyond",
+      "source": "1000",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "numeric-token-length",
+          "limit": 3,
+          "actual": 4
+        }
+      }
+    },
+    {
+      "id": "nesting-one-beyond",
+      "source": "(((((d1)))))",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 4,
+          "dimension": "nesting-depth",
+          "limit": 4,
+          "actual": 5
+        }
+      }
+    },
+    {
+      "id": "ast-nodes-at-limit",
+      "source": "1+1+1+1+1+1+1+1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 8,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ast-nodes-one-beyond",
+      "source": "1+1+1+1+1+1+1+1+1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 15,
+          "dimension": "ast-node-count",
+          "limit": 15,
+          "actual": 16
+        }
+      }
+    },
+    {
+      "id": "dice-terms-one-beyond",
+      "source": "d1+d1+d1+d1+d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 12,
+          "dimension": "dice-term-count",
+          "limit": 4,
+          "actual": 5
+        }
+      }
+    },
+    {
+      "id": "samples-one-beyond",
+      "source": "9d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "die-sample-count",
+          "limit": 8,
+          "actual": 9
+        }
+      }
+    },
+    {
+      "id": "supported-sides-at-limit",
+      "source": "d100",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 100,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "supported-sides-one-beyond",
+      "source": "d101",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 1,
+          "dimension": "supported-side-count",
+          "limit": 100,
+          "actual": 101
+        }
+      }
+    },
+    {
+      "id": "arithmetic-at-limit",
+      "source": "100",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 100,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "arithmetic-one-beyond",
+      "source": "101",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "arithmetic-magnitude",
+          "limit": 100,
+          "actual": 101
+        }
+      }
+    },
+    {
+      "id": "constant-arithmetic-preflight",
+      "source": "60 + 60",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 3,
+          "dimension": "arithmetic-magnitude",
+          "limit": 100,
+          "actual": 120
+        }
+      }
+    },
+    {
+      "id": "evaluation-steps-one-beyond",
+      "source": "8d1+((1+1+1))",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 10,
+          "dimension": "evaluation-steps",
+          "limit": 24,
+          "actual": 25
+        }
+      }
+    },
+    {
+      "id": "static-term-before-side",
+      "source": "d1+d1+d1+d1+d101",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 12,
+          "dimension": "dice-term-count",
+          "limit": 4,
+          "actual": 5
+        }
+      }
+    },
+    {
+      "id": "term-sample-tie",
+      "source": "d1+d1+d1+d1+d5",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 12,
+          "dimension": "dice-term-count",
+          "limit": 4,
+          "actual": 5
+        }
+      }
+    },
+    {
+      "id": "rejection-fuel-one-beyond",
+      "source": "d1",
+      "maximumAttempts": 5,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "rejection-sampling-attempts",
+          "limit": 4,
+          "actual": 5
+        }
+      }
+    },
+    {
+      "id": "invalid-state-shape",
+      "source": "d1",
+      "maximumAttempts": 1,
+      "stateInput": null,
+      "expected": {
+        "ok": false,
+        "code": "invalid-state-shape",
+        "details": {
+          "state": null,
+          "partialTrace": [],
+          "successorState": null
+        }
+      }
+    },
+    {
+      "id": "invalid-state-word",
+      "source": "d1",
+      "maximumAttempts": 1,
+      "stateInput": {
+        "kind": "GeneratorState",
+        "words": [
+          "0000000A",
+          "00000000",
+          "00000000",
+          "00000001"
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "code": "invalid-state-word",
+        "details": {
+          "state": [
+            "0000000A",
+            "00000000",
+            "00000000",
+            "00000001"
+          ],
+          "partialTrace": [],
+          "successorState": null
+        }
+      }
+    },
+    {
+      "id": "invalid-state-zero",
+      "source": "d1",
+      "maximumAttempts": 1,
+      "stateInput": {
+        "kind": "GeneratorState",
+        "words": [
+          "00000000",
+          "00000000",
+          "00000000",
+          "00000000"
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "code": "invalid-state-zero",
+        "details": {
+          "state": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "partialTrace": [],
+          "successorState": null
+        }
+      }
+    },
+    {
+      "id": "invalid-fuel-negative",
+      "source": "d1",
+      "maximumAttempts": -1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "invalid-attempt-fuel",
+        "details": {
+          "maximumAttempts": -1,
+          "partialTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "invalid-fuel-noninteger",
+      "source": "d1",
+      "maximumAttempts": 1.5,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "invalid-attempt-fuel",
+        "details": {
+          "maximumAttempts": 1.5,
+          "partialTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "post-consumption-sampling-exhaustion",
+      "source": "d6 + d6",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000000",
+        "00000000",
+        "ffffffff",
+        "00000000"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "kind": "evaluation",
+          "code": "sampling-attempts-exhausted",
+          "offset": 5,
+          "maximumAttempts": 1,
+          "attempts": 1,
+          "partialTrace": [
+            {
+              "sideCount": 6,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "ffffffff",
+            "00000000",
+            "000001ff",
+            "ffffffff"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ],
+      "incompleteAttempts": 1
+    },
+    {
+      "id": "post-consumption-arithmetic-failure",
+      "source": "d100 + 100",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 5,
+          "dimension": "arithmetic-magnitude",
+          "limit": 100,
+          "actual": 101,
+          "partialTrace": [
+            {
+              "sideCount": 100,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
+      "id": "forced-zero-fuel",
+      "source": "d6",
+      "maximumAttempts": 0,
+      "stateWords": [
+        "00000000",
+        "00000000",
+        "ffffffff",
+        "00000000"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "kind": "evaluation",
+          "code": "sampling-attempts-exhausted",
+          "offset": 0,
+          "maximumAttempts": 0,
+          "attempts": 0,
+          "partialTrace": [],
+          "successorState": [
+            "00000000",
+            "00000000",
+            "ffffffff",
+            "00000000"
+          ]
+        }
+      },
+      "incompleteAttempts": 0
+    },
+    {
+      "id": "zero-fuel-static-valid",
+      "source": "12 - 7",
+      "maximumAttempts": 0,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 5,
+          "rollTrace": [],
+          "successorState": [
+            "00000001",
+            "00000002",
+            "00000003",
+            "00000004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "widened-source-probe",
+      "source": null,
+      "maximumAttempts": 1,
+      "stateInput": {
+        "kind": "GeneratorState",
+        "words": [
+          "00000001",
+          "00000002",
+          "00000003",
+          "00000004"
+        ]
+      },
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "source-length",
+          "limit": 64,
+          "actual": "widened"
+        }
+      }
+    }
+  ],
+  "sideGrid": {
+    "sides": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99,
+      100
+    ],
+    "expectedFace": 1,
+    "attempts": 1,
+    "successorState": [
+      "00000007",
+      "00000000",
+      "00000402",
+      "00003000"
+    ]
+  }
+}
