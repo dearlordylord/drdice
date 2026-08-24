@@ -20,7 +20,7 @@ wagering outcomes, or any application that requires unpredictable entropy.
 The supported checker is exactly `typescript@7.0.2`. The pinned
 `@typescript/typescript6@6.0.2` command is advisory migration evidence only.
 
-From a clean checkout:
+From a clean checkout, the normal deterministic lane is:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -29,7 +29,7 @@ pnpm verify
 
 The individual gates are `pnpm typecheck`, `pnpm check:fixtures`,
 `pnpm check:prng`, `pnpm check:clean-consumers`, `pnpm check:packed`, and the
-one-/four-checker budget commands. The PRNG artifact lane is
+one-/four-checker budget commands. The exhaustive PRNG artifact lane is
 `pnpm check:prng:budget`; it includes the exhaustive Issue #19 Sample grid and
 its TypeScript 7 focused measurements are recorded in
 [`verification/issue-19/results.json`](verification/issue-19/results.json).
@@ -37,6 +37,10 @@ The earlier raw-transition measurements remain in
 [`verification/issue-18/results.json`](verification/issue-18/results.json).
 Baseline scaffold measurements live in
 [`verification/baseline/scaffold.json`](verification/baseline/scaffold.json).
+The release-only warm-up/five-run matrix for every public PRNG, Dice, combined,
+and maximum query is `pnpm release:measure`; commit its report and run
+`pnpm check:release` as described in
+[`verification/issue-24/README.md`](verification/issue-24/README.md).
 
 ## Compatibility identities
 
