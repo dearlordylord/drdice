@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const temporary = await mkdtemp(resolve(tmpdir(), "drdice-consumer-"));
+const canonicalTemporary = await realpath(temporary);
 const archives = resolve(temporary, "archives");
 const consumerRoot = resolve(temporary, "consumer");
 const packageRecords = [
@@ -19,6 +20,9 @@ const expectedMembers = new Set([
   "package/dist/index.d.ts",
   "package/package.json",
 ]);
+const isWithin = (candidate, directory) => (
+  candidate === directory || candidate.startsWith(`${directory}${sep}`)
+);
 
 const run = (command, args, cwd) => {
   const result = spawnSync(command, args, { cwd, encoding: "utf8" });
@@ -183,12 +187,12 @@ export type DiceReferencesPrngState = Assert<Equal<
 
   const installedPrng = await realpath(resolve(consumerRoot, "node_modules/@drdice/prng"));
   const installedDice = await realpath(resolve(consumerRoot, "node_modules/@drdice/dice"));
-  if (!installedPrng.startsWith(temporary) || !installedDice.startsWith(temporary)) {
+  if (!isWithin(installedPrng, canonicalTemporary) || !isWithin(installedDice, canonicalTemporary)) {
     throw new Error(`consumer resolved outside its isolated install: ${installedPrng}; ${installedDice}`);
   }
   const workspacePackageRoots = await Promise.all(packageRecords.map(async (record) => realpath(resolve(root, record.directory))));
   const isWorkspacePackage = (candidate) => workspacePackageRoots.some((workspacePackageRoot) => (
-    candidate === workspacePackageRoot || candidate.startsWith(`${workspacePackageRoot}${sep}`)
+    isWithin(candidate, workspacePackageRoot)
   ));
   if (isWorkspacePackage(installedPrng) || isWorkspacePackage(installedDice)) {
     throw new Error("consumer unexpectedly resolved a workspace package instead of a packed artifact");
