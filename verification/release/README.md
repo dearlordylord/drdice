@@ -10,10 +10,15 @@ executable. The budget lane runs one warm-up process followed by five fresh
 scored processes for every case under both explicit TypeScript 7 checker
 policies: one checker and four checkers. Every scored process records compiler
 check time, total time, compiler-reported memory, process-tree peak RSS, type
-count, and instantiation count. The declared blocking ceilings are in
-`budgets.json`; compiler-reported memory is the enforceable memory metric, and
-process-tree RSS is retained as host evidence because native checker workers
-can reserve memory outside the compiler's own counter.
+count, and instantiation count. The declared ceilings are in `budgets.json`.
+Portable release qualification blocks on deterministic compiler structure and
+memory costs; elapsed compiler timings are recorded and reported as advisories
+because they vary with host contention. Strict operational timing remains
+blocking in the dedicated `Reference compiler budgets` workflow on the
+self-hosted `drdice-reference` runner. Compiler-reported memory is the
+enforceable memory metric, and process-tree RSS is retained as host evidence
+because native checker workers can reserve memory outside the compiler's own
+counter.
 
 The pinned `@typescript/typescript6@6.0.2` / `tsc6` lane records one fresh
 process per case as advisory migration evidence only; it does not repeat the
@@ -35,7 +40,8 @@ once, runs the blocking warm-up plus five-run budget matrix, and writes the
 committed report. It also hashes every
 tracked source file except the report itself. `check:release` refuses a dirty
 tree, recomputes that source digest, verifies the report's content digest,
-revalidates all blocking budget ceilings without rerunning qualification. Thus a
+revalidates all blocking budget ceilings and timing advisories without rerunning
+qualification. Thus a
 report from an earlier declaration, script, fixture, package manifest, or
 budget file cannot be presented as current evidence. Editing the report,
 changing source after measurement, omitting a scored run, or changing the

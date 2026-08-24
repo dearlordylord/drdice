@@ -1,7 +1,8 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "requiredWarmupRuns": 1,
   "requiredScoredRuns": 5,
+  "compilerTimingEnforcement": "advisory",
   "blockingCompiler": "typescript@7.0.2",
   "advisoryCompiler": "@typescript/typescript6@6.0.2",
   "policies": {

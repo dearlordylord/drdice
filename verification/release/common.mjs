@@ -67,10 +67,17 @@ export const summarizeValues = (samples, key) => {
 export const validateBudgetResults = (benchmark, budgets) => {
   const failures = [];
   const advisories = [];
+  if (!["blocking", "advisory"].includes(budgets.compilerTimingEnforcement)) {
+    failures.push(`compiler timing enforcement must be blocking or advisory, got ${String(budgets.compilerTimingEnforcement)}`);
+  }
   for (const [policyName, policy] of Object.entries(budgets.policies)) {
     const records = benchmark.results.filter((result) => result.compiler === policyName);
     const messages = policy.blocking ? failures : advisories;
     const add = (message) => messages.push(`${policyName}: ${message}`);
+    const timingMessages = policy.blocking && budgets.compilerTimingEnforcement === "blocking"
+      ? failures
+      : advisories;
+    const addTiming = (message) => timingMessages.push(`${policyName}: ${message}`);
     if (records.length !== Object.keys(policy.cases).length) {
       add(`expected ${Object.keys(policy.cases).length} case records, found ${records.length}`);
       continue;
@@ -90,8 +97,8 @@ export const validateBudgetResults = (benchmark, budgets) => {
         add(`${caseName}: advisory status is ${result.status}`);
       }
       if (result.status !== "passed") continue;
-      if (result.checkMilliseconds.median > limits.maximumCheckMilliseconds) add(`${caseName}: median check ${result.checkMilliseconds.median} ms exceeds ${limits.maximumCheckMilliseconds} ms`);
-      if (result.checkMilliseconds.maximum > policy.maximumSingleCheckMilliseconds) add(`${caseName}: single check ${result.checkMilliseconds.maximum} ms exceeds ${policy.maximumSingleCheckMilliseconds} ms`);
+      if (result.checkMilliseconds.median > limits.maximumCheckMilliseconds) addTiming(`${caseName}: median check ${result.checkMilliseconds.median} ms exceeds ${limits.maximumCheckMilliseconds} ms`);
+      if (result.checkMilliseconds.maximum > policy.maximumSingleCheckMilliseconds) addTiming(`${caseName}: single check ${result.checkMilliseconds.maximum} ms exceeds ${policy.maximumSingleCheckMilliseconds} ms`);
       if (result.compilerMemoryKiB.maximum > limits.maximumCompilerMemoryKiB) add(`${caseName}: compiler memory ${result.compilerMemoryKiB.maximum} KiB exceeds ${limits.maximumCompilerMemoryKiB} KiB`);
       if (result.instantiations.maximum > limits.maximumInstantiations) add(`${caseName}: instantiations ${result.instantiations.maximum} exceeds ${limits.maximumInstantiations}`);
     }

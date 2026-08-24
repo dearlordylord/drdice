@@ -27,7 +27,7 @@
     "check:usability": "node verification/usability/check.mjs",
     "check:runtime": "node verification/runtime/check.mjs",
     "check:property-parity": "node verification/issue-25/check.mjs",
-    "check:architecture": "node verification/issue-26/check.mjs && node verification/issue-26/check-release-tag.mjs",
+    "check:architecture": "node verification/issue-26/check.mjs && node verification/issue-26/check-release-tag.mjs && node verification/release/check-policy.mjs",
     "check:budgets": "node verification/check-budgets.mjs --policy all",
     "check:budgets:one-checker": "node verification/check-budgets.mjs --policy one-checker",
     "check:budgets:four-checker": "node verification/check-budgets.mjs --policy four-checker",
