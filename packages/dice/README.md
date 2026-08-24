@@ -1,53 +1,62 @@
 # @drdice/dice
 
-`@drdice/dice` provides matching runtime and literal-computing implementations
-of DRDice's bounded Dice Expression evaluator. It depends one-way on
-`@drdice/prng` and is intended for reproducible games, tests, and TypeScript
-type-system experimentation.
+Deterministic dice-expression evaluation with matching runtime behavior and
+literal-computing TypeScript types. It uses `@drdice/prng` for reproducible
+randomness.
 
-DRDice is non-cryptographic. It is suitable for reproducible game simulations,
-deterministic tests, examples, and type-system experiments. Do not use it for
-keys, secrets, passwords, authentication or reset tokens, security decisions,
-gambling or wagering, or unpredictable entropy.
+## Install
 
-Exact literal type computation is checked with `typescript@7.0.2`. The pinned
-`@typescript/typescript6@6.0.2` lane is advisory compatibility evidence only.
+```sh
+npm install @drdice/prng @drdice/dice
+```
 
-Only the package root is public. Runtime values and type-only helpers are both
-imported from `@drdice/dice`; deep imports are unsupported. PRNG-owned
-types remain owned by `@drdice/prng` and are not re-exported here.
+Exact literal result types require TypeScript 7.0.2. Inputs known only at
+runtime still work normally and receive broader result types.
 
-The Dice semantic identity is
-`dice-v3/utf16-bounded-left-to-right-3` (semantic version `3`). It is distinct
-from the package version, the PRNG schema version, and the PRNG Sequence
-Profile. A grammar, UTF-16 offset, limit, parser, evaluation-order, arithmetic,
-sampling, failure-selection, or result-value change requires a new Dice
-semantic identity and reviewed old and new vectors. Private refactors may
-retain the identity only when all exact vectors and release gates remain equal.
-The complete
-evaluator exposes `Evaluate<Source, GeneratorState, MaximumAttempts = 5>` for
-literal nonnegative integers, `dS`/`NdS` terms, left-associative `+`/`-`,
-parentheses, and ASCII space/tab/line-feed/carriage-return. Successful
-evaluations return an exact signed total, a flat ordered Roll Trace, and the
-actual Next Generator State. Each Die Sample is delegated to the public
-`@drdice/prng` `Sample` operation with the configured per-sample attempt fuel.
-Source, syntax, domain, and static resource diagnostics are selected before
-state consumption; widened strings and numbers are outside the v3 type contract.
-Fuel defaults to the maximum supported value, `5`, which keeps the worst-case
-per-die exhaustion probability below one part per million. Override it only
-when a test or constrained type-checking budget needs to exercise another fuel.
+## Quick start
 
-Successful results can be projected with `PayloadOf`, `ValueOf`, `RollsOf`,
-and `StateOf`. `ValueOf` is the resulting expression number; `PayloadOf` is the
-complete `{ total, rollTrace, nextState }` object. A subsequent evaluation
-uses `Evaluate<NextSource, StateOf<PreviousResult>>`. The result field remains named
-`nextState` because it is the state after consuming that evaluation;
-`StateOf<Result>` is the concise name once that state is extracted.
+```ts
+import { initialize, stateOf as prngStateOf } from "@drdice/prng";
+import { evaluate, rollsOf, stateOf, valueOf } from "@drdice/dice";
 
-The lowercase `evaluate(source, state, maximumAttempts?)` function executes
-the same profile at runtime. Literal arguments receive the exact corresponding
-`Evaluate` result type; dynamic strings and states receive the broader
-`EvaluationResult`. A subsequent runtime evaluation passes `stateOf(previous)`
-to `evaluate`.
-The lowercase `payloadOf`, `valueOf`, `rollsOf`, and `stateOf` functions are
-the runtime counterparts of the capitalized extractor types.
+const initialized = initialize([
+  "00000001",
+  "00000002",
+  "00000003",
+  "00000004",
+] as const);
+
+const d20 = evaluate("d20", prngStateOf(initialized));
+const value = valueOf(d20);
+//    ^? const value: 12
+
+console.log({ value, rolls: rollsOf(d20), nextState: stateOf(d20) });
+```
+
+The roll happens at runtime. Because the seed and expression are literals,
+TypeScript also computes the exact result. Pass `stateOf(d20)` to the next
+evaluation to continue the sequence.
+
+## Expressions and API
+
+`evaluate(source, state, maximumAttempts?)` supports nonnegative integers,
+`dS` and `NdS` dice terms, parentheses, and left-associative `+` and `-`.
+Examples include `d20`, `4d6 + 3`, and `d6 + (2d6 - 1)`.
+
+Successful results contain the total, the ordered roll trace, and the next
+generator state. Use `payloadOf`, `valueOf`, `rollsOf`, and `stateOf` to extract
+them. Their type-level counterparts are `Evaluate`, `PayloadOf`, `ValueOf`,
+`RollsOf`, and `StateOf`.
+
+Invalid or overly complex expressions return structured failures without
+silently consuming state. Check `result.ok` before using an extractor when an
+evaluation can fail. Each die receives up to five rejection-sampling attempts
+by default; ordinary game code can omit this option.
+
+## Reproducibility and safety
+
+Reproducing a result requires the same generator state, expression, options,
+and package versions.
+
+DRDice is deterministic, not cryptographic randomness. Do not use it for
+secrets, authentication, security decisions, or wagering.

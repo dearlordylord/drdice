@@ -1,11 +1,11 @@
 # DRDice
 
-Full-Typescript deterministic pseudo-random number generator and dice
-expression evaluator.
+Deterministic pseudo-random generation and dice-expression evaluation with
+matching runtime and literal-computing TypeScript APIs.
 
 ## Quick start
 
-Exact literal type computation requires TypeScript 7.0.2.
+Exact literal result types require TypeScript 7.0.2.
 
 ```sh
 npm install @drdice/prng @drdice/dice
@@ -75,10 +75,9 @@ this option.
 
 ## Reproducibility and safety
 
-The runtime and type-level implementations are tested against independent
-reference models and shared golden vectors. Reproducing a result requires the
-same seed or generator state, dice expression, options, and compatibility
-profiles.
+The runtime and type-level implementations are checked against the same
+deterministic examples. Reproducing a result requires the same package versions,
+seed or generator state, dice expression, and options.
 
 DRDice is deterministic, not cryptographic randomness. Use it for games,
 simulations, and tests—not secrets, security decisions, or wagering.
@@ -90,5 +89,5 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Compatibility identities and maintainer release steps are documented in the
-package READMEs and [release guide](verification/release/README.md).
+Maintainer qualification and publishing steps are documented in the
+[release guide](verification/release/README.md).

@@ -1,60 +1,66 @@
 # @drdice/prng
 
-`@drdice/prng` provides one Seeded PRNG as matching runtime functions and
-literal-computing types. It is intended for reproducible games, tests, and TypeScript
-type-system experimentation; it is not a source of cryptographic randomness,
-secrets, security tokens, gambling outcomes, or unpredictable entropy.
+Deterministic seeded random generation with matching runtime functions and
+literal-computing TypeScript types. Use it for reproducible games, simulations,
+and tests.
 
-Exact literal type computation is checked with `typescript@7.0.2`. The pinned
-`@typescript/typescript6@6.0.2` lane is advisory compatibility evidence only.
+## Install
 
-Only the package root is public. Runtime values and type-only helpers are both
-imported from `@drdice/prng`; deep imports are unsupported.
+```sh
+npm install @drdice/prng
+```
 
-The immutable PRNG Sequence Profile is
-`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The package version (`0.3.0`),
-Replay Token/Serialized Generator State schema version (`1`), and Sequence
-Profile identity are separate compatibility identities. A package contract
-change requires a new package release; a serialized-shape change requires a
-new schema version; and a sequence-changing implementation change requires a
-new Sequence Profile plus reviewed old and new vectors. A private refactor may
-retain all three only when the exact vectors and release gates remain equal.
+Exact literal result types require TypeScript 7.0.2. Inputs known only at
+runtime still work normally and receive broader result types.
 
-The root provides exact literal type operations:
+## Quick start
 
-- `Initialize<SeedWords>` validates four lowercase eight-digit hexadecimal
-  words, diffuses even simple human-chosen seeds through 16 state transitions,
-  and returns a tagged `GeneratorState` or a structured failure.
-- `Next<GeneratorState>` returns one raw Word32 and its explicit next
-  state. It never mutates or advances an input type.
-- `Sample<GeneratorState, Bound, MaximumAttempts = 5>` returns an exact unbiased
-  integer in `[0, Bound)` for every bound from 1 through 100. It scans every
-  complete fixed-width candidate in an output word before consuming another
-  state, supports output-word fuel from 0 through 5, and reports exact
-  exhaustion state. Fuel 5 keeps worst-case per-die exhaustion below one part
-  per million across all supported bounds.
-- `PayloadOf<Result>` extracts the complete successful payload,
-  `ValueOf<SampleResult>` extracts the sampled integer, `WordOf<NextResult>`
-  extracts a raw word, and `StateOf<Result>` extracts the current state without
-  a local conditional helper.
-- `ReplayToken<SeedWords>` and `RestoreReplay<Token>` restart from the Seed.
-- `SerializedGeneratorState<StateWords>`, `RestoreState<Snapshot>`, and
-  `SerializeState<State>` preserve the current state and resume at its next
-  word. Replay restart and serialized-state resume are intentionally distinct.
+```ts
+import { initialize, sample, stateOf, valueOf } from "@drdice/prng";
 
-The lowercase runtime functions implement the same operations: `initialize`,
-`next`, `sample`, `serializeState`, `restoreState`, and `restoreReplay`.
-Their generic signatures compute exact return types for literal arguments and
-widen naturally for runtime-only inputs. `randomSeed()` creates four seed words
-from the host entropy source; the generator remains non-cryptographic.
-The lowercase `payloadOf`, `valueOf`, `wordOf`, and `stateOf` functions are the
-runtime counterparts of the capitalized extractor types.
+const initialized = initialize([
+  "00000001",
+  "00000002",
+  "00000003",
+  "00000004",
+] as const);
 
-All-zero and malformed Seed or Generator State values fail structurally and do
-not advance state. Invalid bounds and attempt fuel are rejected before any
-transition. The public type API is literal-computing: widened strings and
-numbers are outside that contract. This package is suitable for reproducible
-game simulations, deterministic tests, examples, and type-system experiments.
-It is not cryptographic and must not be used for keys, secrets, passwords,
-authentication or reset tokens, security decisions, gambling or wagering, or
-unpredictable entropy.
+const first = sample(stateOf(initialized), 20);
+const firstValue = valueOf(first);
+//    ^? const firstValue: 11
+
+const second = sample(stateOf(first), 6);
+const secondValue = valueOf(second);
+//    ^? const secondValue: 4
+
+console.log({ firstValue, secondValue });
+```
+
+Generator states are immutable. Pass the returned state into the next operation
+to continue a sequence, or reuse an earlier state to replay it.
+
+## API
+
+- `randomSeed()` creates a fresh four-word seed using host entropy.
+- `initialize(seed)` creates a generator state.
+- `next(state)` returns a raw 32-bit word and the next state.
+- `sample(state, bound, maximumAttempts?)` returns an unbiased integer in
+  `[0, bound)` for bounds from 1 through 100.
+- `serializeState` and `restoreState` save and resume the current position.
+- `payloadOf`, `valueOf`, `wordOf`, and `stateOf` extract successful results.
+
+The matching type-level API uses capitalized names: `Initialize`, `Next`,
+`Sample`, `SerializeState`, `RestoreState`, `PayloadOf`, `ValueOf`, `WordOf`,
+and `StateOf`.
+
+Operations return structured failures for malformed seeds or states, invalid
+bounds, and exhausted sampling attempts. Check `result.ok` before using an
+extractor when an operation can fail.
+
+## Reproducibility and safety
+
+Reproducing a sequence requires the same seed or serialized state and the same
+package version. Serialized generator states use schema version `1`.
+
+This generator is deterministic, not cryptographically secure. Do not use it
+for secrets, authentication, security decisions, or wagering.
