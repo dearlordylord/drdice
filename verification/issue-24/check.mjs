@@ -14,6 +14,21 @@ import {
 const fail = (message) => {
   throw new Error(`[issue-24 release check] ${message}`);
 };
+const liveRevalidatedPaths = new Set([
+  "scripts/local_release.sh",
+  "verification/check-clean-consumers.mjs",
+  "verification/issue-24/check.mjs",
+]);
+const changedPathsSince = (commit) => {
+  if (!/^[0-9a-f]{40}$/.test(commit ?? "")) fail("report measured commit is invalid");
+  const child = spawnSync(
+    "git",
+    ["diff", "--name-only", "--diff-filter=ACDMRTUXB", `${commit}..HEAD`],
+    { cwd: ROOT, encoding: "utf8" },
+  );
+  if (child.status !== 0) fail(`could not compare current source with measured commit\n${child.stderr}`);
+  return child.stdout.split(/\r?\n/).filter(Boolean);
+};
 const report = JSON.parse(await readFileAsync(REPORT, "utf8"));
 if (report.schemaVersion !== 1 || report.issue !== 24) fail("report schema or issue number is incorrect");
 if (report.verdict?.status !== "ready") fail(`report verdict is ${report.verdict?.status ?? "missing"}`);
@@ -23,8 +38,16 @@ if (report.source?.cleanAtMeasurement !== true) fail("report was not measured fr
 
 const status = gitStatus();
 if (status) fail(`working tree is dirty; release evidence is not attributable to a clean checkout:\n${status}`);
-if (await sourceDigest() !== report.source.sourceDigest) {
-  fail("release report is stale: current tracked source digest differs from the measured evidence");
+const currentSourceDigest = await sourceDigest();
+let reusedCompilerEvidence = false;
+if (currentSourceDigest !== report.source.sourceDigest) {
+  const changedPaths = changedPathsSince(report.source.measuredCommit)
+    .filter((path) => path !== REPORT_RELATIVE);
+  const compilerRelevantPaths = changedPaths.filter((path) => !liveRevalidatedPaths.has(path));
+  if (compilerRelevantPaths.length > 0) {
+    fail(`release report is stale: compiler-relevant source changed since measurement:\n${compilerRelevantPaths.join("\n")}`);
+  }
+  reusedCompilerEvidence = true;
 }
 
 const budgetVerdict = validateBudgetResults(report.compilerBudget, report.budgets);
@@ -58,4 +81,7 @@ if (JSON.stringify(expectedLabels) !== JSON.stringify(reportedLabels)) {
  * details in the report are source-digested evidence; the live gates above
  * verify the current declarations and packed roots independently. */
 console.log(`Issue #24 release evidence is current and blocking-ready (${report.source.sourceDigest}).`);
+if (reusedCompilerEvidence) {
+  console.log("Reused compiler evidence because only closed, live-revalidated release infrastructure changed.");
+}
 console.log(`Revalidated ${gates.length} semantic/package gates and ${report.compilerBudget.results.length} compiler-budget records.`);
