@@ -88,6 +88,25 @@ try {
           throw new Error(`@drdice/dice re-exports PRNG-owned type(s): ${names.join(", ")}`);
         }
       }
+      const importedPrngLocals = [...declaration.matchAll(
+        /\bimport\s+type\s+\{([^}]*)\}\s+from\s+["']@drdice\/prng["']/g,
+      )].flatMap((match) => match[1].split(",").map((entry) => {
+        const names = entry.trim().split(/\s+as\s+/i).map((name) => name.trim());
+        return names.at(-1);
+      })).filter(Boolean);
+      if (importedPrngLocals.length > 0) {
+        const localNames = importedPrngLocals.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+        const directAlias = new RegExp(
+          `\\bexport\\s+type\\s+\\w+(?:<[^\\n;]*>)?\\s*=\\s*(?:${localNames})(?:\\s*<[^\\n;]*>)?\\s*;`,
+          "g",
+        );
+        if (directAlias.test(declaration)) {
+          throw new Error("@drdice/dice exports a direct alias of an imported PRNG type");
+        }
+      }
+      if (/\bexport\s+type\s+\w+(?:<[^\n;]*>)?\s*=\s*import\s*\(\s*["']@drdice\/prng["']\s*\)/.test(declaration)) {
+        throw new Error("@drdice/dice exports a type-query alias of the PRNG declaration root");
+      }
       if (!/import type\s+\{[^}]*\b(?:GeneratorState|Sample)\b[^}]*\}\s+from\s+["']@drdice\/prng["']/s.test(declaration)) {
         throw new Error("@drdice/dice declaration root no longer records its PRNG type dependency");
       }

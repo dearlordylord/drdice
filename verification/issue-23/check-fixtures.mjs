@@ -59,13 +59,26 @@ const checkOracleBoundary = async () => {
   if (oracleFiles.length !== 2) fail(`expected the issue #17/#20 oracle chain, found ${oracleFiles.length} oracle files`);
   for (const file of oracleFiles.sort()) {
     const source = await readFile(file, "utf8");
+    const executableSource = source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\r\n]*/g, "");
     const relativeFile = relative(root, file).replaceAll("\\", "/");
     if (!relativeFile.startsWith("verification/")) fail(`${relativeFile} escaped the verification directory`);
     if (/(?:^|[/'"`])(?:packages|src|dist)(?:[/'"`])/.test(source)) {
       fail(`${relativeFile} references a production package/source/dist path`);
     }
-    if (source.includes("@drdice/prng") || source.includes("@drdice/dice")) {
-      fail(`${relativeFile} imports a public implementation package`);
+    /* The oracles have no reason to load modules dynamically.  Rejecting the
+     * loader syntax itself closes the common indirection escape hatch (for
+     * example import("@drdice/" + "prng") or require(specifier)); checking
+     * only the final literal lets those imports evade the package-name scan. */
+    if (/\b(?:import|require)\s*\(/.test(executableSource)) {
+      fail(`${relativeFile} uses dynamic module loading`);
+    }
+    if (/\b(?:eval|Function)\s*\(/.test(executableSource)) {
+      fail(`${relativeFile} uses dynamic code loading`);
+    }
+    if (/@drdice\b/.test(source)) {
+      fail(`${relativeFile} references a public implementation package`);
     }
 
     const imports = [];
