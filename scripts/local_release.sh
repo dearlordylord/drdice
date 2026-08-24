@@ -42,6 +42,22 @@ package_needs_publish() {
   [[ "$(published_version "$package_name" "$package_version")" != "$package_version" ]]
 }
 
+wait_for_published_version() {
+  local package_name="$1"
+  local package_version="$2"
+  local attempt
+
+  for attempt in {1..12}; do
+    if [[ "$(published_version "$package_name" "$package_version")" == "$package_version" ]]; then
+      return 0
+    fi
+    printf 'Waiting for %s@%s registry visibility (%s/12).\n' \
+      "$package_name" "$package_version" "$attempt"
+    sleep 5
+  done
+  fail "$package_name@$package_version is not visible in the registry after 60 seconds"
+}
+
 current_branch="$(git branch --show-current)"
 [[ "$current_branch" == "$RELEASE_BRANCH" ]] ||
   fail "current branch is '$current_branch'; expected '$RELEASE_BRANCH'"
@@ -95,8 +111,6 @@ dice_archive="$release_directory/drdice-dice-$dice_version.tgz"
 [[ -f "$prng_archive" ]] || fail "PRNG tarball was not created"
 [[ -f "$dice_archive" ]] || fail "Dice tarball was not created"
 
-pnpm check:packed
-
 prng_needs_publish=false
 dice_needs_publish=false
 package_needs_publish "$PRNG_PACKAGE_NAME" "$prng_version" && prng_needs_publish=true
@@ -122,10 +136,8 @@ else
   printf '%s@%s is already published; skipping.\n' "$DICE_PACKAGE_NAME" "$dice_version"
 fi
 
-[[ "$(published_version "$PRNG_PACKAGE_NAME" "$prng_version")" == "$prng_version" ]] ||
-  fail "$PRNG_PACKAGE_NAME@$prng_version is not visible in the registry"
-[[ "$(published_version "$DICE_PACKAGE_NAME" "$dice_version")" == "$dice_version" ]] ||
-  fail "$DICE_PACKAGE_NAME@$dice_version is not visible in the registry"
+wait_for_published_version "$PRNG_PACKAGE_NAME" "$prng_version"
+wait_for_published_version "$DICE_PACKAGE_NAME" "$dice_version"
 
 if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
   tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"

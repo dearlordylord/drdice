@@ -11,6 +11,6 @@ The blocking compiler is pinned to `typescript@7.0.2`. The workspace also pins
 pass the blocking budget gate. Re-run `pnpm check:budgets:one-checker` and
 `pnpm check:budgets:four-checker` when changing package declarations or checker
 configuration, then update the baseline only with reviewed measurements. The
-Issue #24 release declaration set raises the portable scaffold instantiation
+The v1 release declaration set raises the portable scaffold instantiation
 ceiling to 60,000; the historical Issue #16 measurements above remain
 unchanged and are retained for comparison.

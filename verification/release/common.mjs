@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 export const HERE = dirname(fileURLToPath(import.meta.url));
 export const ROOT = resolve(HERE, "../..");
-export const REPORT_RELATIVE = "verification/issue-24/release-candidate.json";
+export const REPORT_RELATIVE = "verification/release/release-candidate.json";
 export const REPORT = resolve(ROOT, REPORT_RELATIVE);
 
 export const canonicalize = (value) => {

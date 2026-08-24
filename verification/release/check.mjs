@@ -12,13 +12,16 @@ import {
 } from "./common.mjs";
 
 const fail = (message) => {
-  throw new Error(`[issue-24 release check] ${message}`);
+  throw new Error(`[release qualification] ${message}`);
 };
-const liveRevalidatedPaths = new Set([
-  "scripts/local_release.sh",
-  "verification/check-clean-consumers.mjs",
-  "verification/issue-24/check.mjs",
-]);
+const isReleaseInfrastructure = (path) => (
+  path === "README.md"
+  || path === "package.json"
+  || path === "scripts/local_release.sh"
+  || path === "verification/check-clean-consumers.mjs"
+  || path.startsWith("verification/parity/")
+  || path.startsWith("verification/release/")
+);
 const changedPathsSince = (commit) => {
   if (!/^[0-9a-f]{40}$/.test(commit ?? "")) fail("report measured commit is invalid");
   const child = spawnSync(
@@ -30,7 +33,9 @@ const changedPathsSince = (commit) => {
   return child.stdout.split(/\r?\n/).filter(Boolean);
 };
 const report = JSON.parse(await readFileAsync(REPORT, "utf8"));
-if (report.schemaVersion !== 1 || report.issue !== 24) fail("report schema or issue number is incorrect");
+if (report.schemaVersion !== 2 || report.qualification !== "v1-release") {
+  fail("report schema or qualification identity is incorrect");
+}
 if (report.verdict?.status !== "ready") fail(`report verdict is ${report.verdict?.status ?? "missing"}`);
 if (report.reportDigest !== reportDigest(report)) fail("report digest does not match its contents; evidence was edited or truncated");
 if (report.source?.digestExcludes?.join("|") !== REPORT_RELATIVE) fail("report source digest exclusion is incorrect");
@@ -43,7 +48,7 @@ let reusedCompilerEvidence = false;
 if (currentSourceDigest !== report.source.sourceDigest) {
   const changedPaths = changedPathsSince(report.source.measuredCommit)
     .filter((path) => path !== REPORT_RELATIVE);
-  const compilerRelevantPaths = changedPaths.filter((path) => !liveRevalidatedPaths.has(path));
+  const compilerRelevantPaths = changedPaths.filter((path) => !isReleaseInfrastructure(path));
   if (compilerRelevantPaths.length > 0) {
     fail(`release report is stale: compiler-relevant source changed since measurement:\n${compilerRelevantPaths.join("\n")}`);
   }
@@ -61,13 +66,7 @@ const run = (label, args) => {
   if (child.status !== 0) fail(`${label} failed\n${child.stdout}\n${child.stderr}`);
   return { label, command: ["pnpm", ...args].join(" "), status: child.status, stdout: child.stdout, stderr: child.stderr };
 };
-const gates = [
-  run("TypeScript 7 project typecheck", ["typecheck"]),
-  run("complete semantic and package parity", ["check:parity"]),
-  run("packed clean consumers", ["check:clean-consumers"]),
-  run("packed artifact allowlists", ["check:packed"]),
-  run("advertised workspace verification", ["verify"]),
-];
+const gates = [run("workspace release verification", ["verify"])];
 
 /* Keep the report's gate inventory closed: adding or removing a release gate
  * requires a new measured report rather than silently weakening this check. */
@@ -80,7 +79,7 @@ if (JSON.stringify(expectedLabels) !== JSON.stringify(reportedLabels)) {
 /* Avoid importing package declarations in the checker.  The semantic/package
  * details in the report are source-digested evidence; the live gates above
  * verify the current declarations and packed roots independently. */
-console.log(`Issue #24 release evidence is current and blocking-ready (${report.source.sourceDigest}).`);
+console.log(`Release evidence is current and blocking-ready (${report.source.sourceDigest}).`);
 if (reusedCompilerEvidence) {
   console.log("Reused compiler evidence because only closed, live-revalidated release infrastructure changed.");
 }

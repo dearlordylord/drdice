@@ -1,6 +1,5 @@
 {
-  "schemaVersion": 1,
-  "issue": 24,
+  "schemaVersion": 2,
   "verdict": {
     "status": "ready",
     "blockingFailures": [],
@@ -12,7 +11,7 @@
     "sourceDigest": "a73d1c3351273222aa820678eb47f0a827de5ad5490891e5d992f1e5ae8a3dee",
     "cleanAtMeasurement": true,
     "digestExcludes": [
-      "verification/issue-24/release-candidate.json"
+      "verification/release/release-candidate.json"
     ]
   },
   "semantic": {
@@ -104,39 +103,9 @@
   ],
   "gates": [
     {
-      "label": "TypeScript 7 project typecheck",
-      "command": "pnpm typecheck",
-      "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice\n> tsc --project tsconfig.json --pretty false\n\n",
-      "stderr": ""
-    },
-    {
-      "label": "complete semantic and package parity",
-      "command": "pnpm check:parity",
-      "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n",
-      "stderr": ""
-    },
-    {
-      "label": "packed clean consumers",
-      "command": "pnpm check:clean-consumers",
-      "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 check:clean-consumers /workspace/typescript/drdice\n> node verification/check-clean-consumers.mjs\n\nPacked clean consumers pass root imports; exports block deep imports in TypeScript and Node.\n",
-      "stderr": ""
-    },
-    {
-      "label": "packed artifact allowlists",
-      "command": "pnpm check:packed",
-      "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 check:packed /workspace/typescript/drdice\n> node verification/check-packed-artifacts.mjs\n\nPacked artifacts contain only the two root declaration allowlists.\n",
-      "stderr": ""
-    },
-    {
-      "label": "advertised workspace verification",
+      "label": "workspace release verification",
       "command": "pnpm verify",
-      "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 verify /workspace/typescript/drdice\n> pnpm typecheck && pnpm check:parity && pnpm check:budgets\n\n\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice\n> tsc --project tsconfig.json --pretty false\n\n\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n\n> drdice-workspace@0.0.0 check:budgets /workspace/typescript/drdice\n> node verification/check-budgets.mjs --policy all\n\n{\n  \"schemaVersion\": 1,\n  \"issue\": 16,\n  \"results\": [\n    {\n      \"policy\": \"one-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 214,\n      \"totalMilliseconds\": 279,\n      \"compilerMemoryKiB\": 77987,\n      \"types\": 48435,\n      \"instantiations\": 53393,\n      \"wallMilliseconds\": 588.155\n    },\n    {\n      \"policy\": \"four-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 175,\n      \"totalMilliseconds\": 216,\n      \"compilerMemoryKiB\": 81038,\n      \"types\": 52289,\n      \"instantiations\": 54239,\n      \"wallMilliseconds\": 509.018\n    }\n  ]\n}\n",
-      "stderr": ""
+      "status": 0
     }
   ],
   "budgets": {
@@ -288,19 +257,19 @@
       },
       {
         "name": "prng",
-        "file": "verification/issue-24/cases/prng.ts"
+        "file": "verification/release/cases/prng.ts"
       },
       {
         "name": "dice",
-        "file": "verification/issue-24/cases/dice.ts"
+        "file": "verification/release/cases/dice.ts"
       },
       {
         "name": "combined",
-        "file": "verification/issue-24/cases/combined.ts"
+        "file": "verification/release/cases/combined.ts"
       },
       {
         "name": "max-query",
-        "file": "verification/issue-24/cases/max-query.ts"
+        "file": "verification/release/cases/max-query.ts"
       }
     ],
     "compilerVersions": {
@@ -419,7 +388,7 @@
         "executable": "tsc",
         "checkerWorkers": 1,
         "case": "prng",
-        "file": "verification/issue-24/cases/prng.ts",
+        "file": "verification/release/cases/prng.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -523,7 +492,7 @@
         "executable": "tsc",
         "checkerWorkers": 1,
         "case": "dice",
-        "file": "verification/issue-24/cases/dice.ts",
+        "file": "verification/release/cases/dice.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -627,7 +596,7 @@
         "executable": "tsc",
         "checkerWorkers": 1,
         "case": "combined",
-        "file": "verification/issue-24/cases/combined.ts",
+        "file": "verification/release/cases/combined.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -731,7 +700,7 @@
         "executable": "tsc",
         "checkerWorkers": 1,
         "case": "max-query",
-        "file": "verification/issue-24/cases/max-query.ts",
+        "file": "verification/release/cases/max-query.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -939,7 +908,7 @@
         "executable": "tsc",
         "checkerWorkers": 4,
         "case": "prng",
-        "file": "verification/issue-24/cases/prng.ts",
+        "file": "verification/release/cases/prng.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -1043,7 +1012,7 @@
         "executable": "tsc",
         "checkerWorkers": 4,
         "case": "dice",
-        "file": "verification/issue-24/cases/dice.ts",
+        "file": "verification/release/cases/dice.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -1147,7 +1116,7 @@
         "executable": "tsc",
         "checkerWorkers": 4,
         "case": "combined",
-        "file": "verification/issue-24/cases/combined.ts",
+        "file": "verification/release/cases/combined.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -1251,7 +1220,7 @@
         "executable": "tsc",
         "checkerWorkers": 4,
         "case": "max-query",
-        "file": "verification/issue-24/cases/max-query.ts",
+        "file": "verification/release/cases/max-query.ts",
         "warmupRuns": 1,
         "scoredRuns": 5,
         "freshProcesses": true,
@@ -1423,7 +1392,7 @@
         "executable": "tsc6",
         "checkerWorkers": 1,
         "case": "prng",
-        "file": "verification/issue-24/cases/prng.ts",
+        "file": "verification/release/cases/prng.ts",
         "warmupRuns": 1,
         "scoredRuns": 1,
         "freshProcesses": true,
@@ -1491,7 +1460,7 @@
         "executable": "tsc6",
         "checkerWorkers": 1,
         "case": "dice",
-        "file": "verification/issue-24/cases/dice.ts",
+        "file": "verification/release/cases/dice.ts",
         "warmupRuns": 1,
         "scoredRuns": 1,
         "freshProcesses": true,
@@ -1559,7 +1528,7 @@
         "executable": "tsc6",
         "checkerWorkers": 1,
         "case": "combined",
-        "file": "verification/issue-24/cases/combined.ts",
+        "file": "verification/release/cases/combined.ts",
         "warmupRuns": 1,
         "scoredRuns": 1,
         "freshProcesses": true,
@@ -1627,7 +1596,7 @@
         "executable": "tsc6",
         "checkerWorkers": 1,
         "case": "max-query",
-        "file": "verification/issue-24/cases/max-query.ts",
+        "file": "verification/release/cases/max-query.ts",
         "warmupRuns": 1,
         "scoredRuns": 1,
         "freshProcesses": true,
@@ -1691,5 +1660,6 @@
       }
     ]
   },
-  "reportDigest": "2d848629460a3d282ff191fa1ac2fbb5073a091f7b2396ae909a2b746f3fda7b"
+  "reportDigest": "f1f1b60d175036a36d8e674bafa4e2cd11e2a78d8df3c860cea6ea2299fa12f8",
+  "qualification": "v1-release"
 }

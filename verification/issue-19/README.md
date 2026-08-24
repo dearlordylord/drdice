@@ -20,7 +20,7 @@ is dirty and checks every shard under TypeScript 7.
 The blocking budget lane is `pnpm check:prng:budget`. The Issue #19 half of the
 lane enumerates every committed grid and special shard under one- and
 four-checker TypeScript 7.0.2 policies. It checks the focused maximum-width,
-four-attempt query and enforces the Issue #24 PRNG release ceiling of 750 ms
+four-attempt query and enforces the v1 PRNG release ceiling of 750 ms
 median check time, 1,500 ms single check time, 320 MiB compiler memory, and
 120,000 instantiations. The blocking command performs one unscored warm-up and
 five fresh scored processes for every artifact under each checker policy, and

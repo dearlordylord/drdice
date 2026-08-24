@@ -40,7 +40,7 @@ Baseline scaffold measurements live in
 The release-only warm-up/five-run matrix for every public PRNG, Dice, combined,
 and maximum query is `pnpm release:measure`; commit its report and run
 `pnpm check:release` as described in
-[`verification/issue-24/README.md`](verification/issue-24/README.md).
+[`verification/release/README.md`](verification/release/README.md).
 
 ## Release
 
@@ -76,4 +76,4 @@ Documentation, checker-performance work, and private refactors may retain an
 identity only when all exact oracle, golden-vector, package-boundary, and
 release-budget gates remain unchanged. The release-candidate qualification
 and stale-evidence checks are documented in
-[`verification/issue-24/README.md`](verification/issue-24/README.md).
+[`verification/release/README.md`](verification/release/README.md).

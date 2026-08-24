@@ -8,15 +8,15 @@ import { ROOT } from "./common.mjs";
 
 const outputArgument = process.argv.indexOf("--output");
 const outputPath = outputArgument >= 0 ? process.argv[outputArgument + 1] : null;
-if (!outputPath) throw new Error("usage: node verification/issue-24/benchmark.mjs --output REPORT.json");
+if (!outputPath) throw new Error("usage: node verification/release/benchmark.mjs --output REPORT.json");
 
-const budget = JSON.parse(await readFile(resolve(ROOT, "verification/issue-24/budgets.json"), "utf8"));
+const budget = JSON.parse(await readFile(resolve(ROOT, "verification/release/budgets.json"), "utf8"));
 const cases = [
   { name: "baseline", file: "verification/budget-scaffold.ts" },
-  { name: "prng", file: "verification/issue-24/cases/prng.ts" },
-  { name: "dice", file: "verification/issue-24/cases/dice.ts" },
-  { name: "combined", file: "verification/issue-24/cases/combined.ts" },
-  { name: "max-query", file: "verification/issue-24/cases/max-query.ts" },
+  { name: "prng", file: "verification/release/cases/prng.ts" },
+  { name: "dice", file: "verification/release/cases/dice.ts" },
+  { name: "combined", file: "verification/release/cases/combined.ts" },
+  { name: "max-query", file: "verification/release/cases/max-query.ts" },
 ];
 const compilers = [
   { name: "typescript-7-single-checker", package: "typescript@7.0.2", executable: "tsc", checkers: 1, blocking: true },

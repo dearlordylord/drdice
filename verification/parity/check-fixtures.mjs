@@ -17,7 +17,7 @@ const root = resolve(here, "../..");
 const verification = resolve(root, "verification");
 
 const fail = (message) => {
-  throw new Error(`[issue-23 fixtures] ${message}`);
+  throw new Error(`[parity fixtures] ${message}`);
 };
 
 const run = (script) => {
@@ -139,4 +139,4 @@ await checkOracleBoundary();
 await checkShardAssertions();
 await checkCompleteDiceCorpus();
 for (const suite of suites) run(suite);
-console.log(`[issue-23 fixtures] complete deterministic parity passed (${suites.length} owner suites, ${oracleFiles.length} private oracles)`);
+console.log(`[parity fixtures] complete deterministic parity passed (${suites.length} owner suites, ${oracleFiles.length} private oracles)`);

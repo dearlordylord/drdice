@@ -1,12 +1,12 @@
-# Issue #23: complete generated parity and package-boundary verification
+# Complete parity and package-boundary verification
 
 `check.mjs` is the normal-change gate for the complete PRNG and Dice
-contracts. It runs every issue-owned exact fixture checker, verifies that all
+contracts. It runs every exact fixture checker, verifies that all
 private oracles stay inside `verification/` and never import production code,
 then checks the rolled-up package roots, packed allowlists, clean consumers,
 and blocked deep imports.
 
-The issue-owned generators remain the source of committed shards:
+The generators remain the source of committed shards:
 
 - `verification/generate-fixtures.mjs` owns the PRNG transition and bounded
   sampling shards;

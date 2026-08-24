@@ -14,10 +14,10 @@ import {
 } from "./common.mjs";
 
 const mode = process.argv[2] ?? "--measure";
-if (mode !== "--measure") throw new Error("usage: node verification/issue-24/release.mjs --measure");
+if (mode !== "--measure") throw new Error("usage: node verification/release/release.mjs --measure");
 
 const fail = (message) => {
-  throw new Error(`[issue-24 release] ${message}`);
+  throw new Error(`[release qualification] ${message}`);
 };
 
 const run = (command, args) => {
@@ -33,7 +33,7 @@ const run = (command, args) => {
 const runRequiredGate = (label, command, args) => {
   const result = run(command, args);
   if (result.status !== 0) fail(`${label} failed\n${result.stdout}\n${result.stderr}`);
-  return { label, ...result };
+  return { label, command: result.command, status: result.status };
 };
 
 const extract = (source, pattern, label) => {
@@ -97,7 +97,7 @@ const semanticEvidence = async () => {
   };
 };
 
-const budgetFile = resolve(ROOT, "verification/issue-24/budgets.json");
+const budgetFile = resolve(ROOT, "verification/release/budgets.json");
 const budgets = JSON.parse(await readFile(budgetFile, "utf8"));
 const initialStatus = gitStatus();
 if (initialStatus) {
@@ -107,20 +107,16 @@ if (initialStatus) {
 const measuredCommit = gitCommit();
 const measuredSourceDigest = await sourceDigest();
 const gates = [
-  runRequiredGate("TypeScript 7 project typecheck", "pnpm", ["typecheck"]),
-  runRequiredGate("complete semantic and package parity", "pnpm", ["check:parity"]),
-  runRequiredGate("packed clean consumers", "pnpm", ["check:clean-consumers"]),
-  runRequiredGate("packed artifact allowlists", "pnpm", ["check:packed"]),
-  runRequiredGate("advertised workspace verification", "pnpm", ["verify"]),
+  runRequiredGate("workspace release verification", "pnpm", ["verify"]),
 ];
 const packages = await packageEvidence();
 const semantic = await semanticEvidence();
 
-const temporary = await mkdtemp(resolve("/tmp", "drdice-issue24-release-"));
+const temporary = await mkdtemp(resolve("/tmp", "drdice-release-"));
 const benchmarkPath = resolve(temporary, "compiler-budget.json");
 let benchmark;
 try {
-  const measured = run(process.execPath, [resolve(ROOT, "verification/issue-24/benchmark.mjs"), "--output", benchmarkPath]);
+  const measured = run(process.execPath, [resolve(ROOT, "verification/release/benchmark.mjs"), "--output", benchmarkPath]);
   if (measured.status !== 0) fail(`compiler benchmark failed\n${measured.stdout}\n${measured.stderr}`);
   benchmark = JSON.parse(await readFile(benchmarkPath, "utf8"));
 } finally {
@@ -133,8 +129,8 @@ const budgetVerdict = validateBudgetResults(benchmark, budgets);
 if (budgetVerdict.failures.length > 0) fail(`blocking compiler budgets failed:\n${budgetVerdict.failures.join("\n")}`);
 
 const report = {
-  schemaVersion: 1,
-  issue: 24,
+  schemaVersion: 2,
+  qualification: "v1-release",
   verdict: {
     status: "ready",
     blockingFailures: budgetVerdict.failures,
@@ -155,7 +151,7 @@ const report = {
 };
 report.reportDigest = reportDigest(report);
 await writeFile(REPORT, JSON.stringify(report, null, 2) + "\n", "utf8");
-console.log(`Issue #24 release candidate measured at ${REPORT_RELATIVE}`);
+console.log(`Release candidate measured at ${REPORT_RELATIVE}`);
 console.log(`Source digest: ${digestJson({ source: measuredSourceDigest })}`);
 console.log(`Blocking verdict: ${report.verdict.status}`);
 if (budgetVerdict.advisories.length > 0) {

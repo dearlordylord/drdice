@@ -1,4 +1,4 @@
-# Issue #24: release qualification
+# Release qualification
 
 This directory owns the release-candidate qualification lane. It is private
 verification infrastructure and is not part of either package's public API.
@@ -24,17 +24,17 @@ After committing source changes, run from the repository root:
 ```sh
 pnpm install --frozen-lockfile
 pnpm release:measure
-git add verification/issue-24/release-candidate.json
-git commit -m "docs: record issue24 release qualification"
+git add verification/release/release-candidate.json
+git commit -m "docs: record release qualification"
 pnpm check:release
 ```
 
-`release:measure` refuses a dirty tree, runs the TypeScript 7 semantic,
-package, packed-boundary, and clean-consumer gates, runs the full warm-up plus
+`release:measure` refuses a dirty tree, runs the complete workspace verification
+once, runs the full warm-up plus
 five-run budget matrix, and writes the committed report. It also hashes every
 tracked source file except the report itself. `check:release` refuses a dirty
 tree, recomputes that source digest, verifies the report's content digest,
-revalidates all blocking budget ceilings, and reruns the release gates. Thus a
+revalidates all blocking budget ceilings, and reruns workspace verification once. Thus a
 report from an earlier declaration, script, fixture, package manifest, or
 budget file cannot be presented as current evidence. Editing the report,
 changing source after measurement, omitting a scored run, or changing the
@@ -59,6 +59,6 @@ The cases are deliberately named and closed:
 - `max-query` evaluates the maximum eight completed samples with one attempt
   of fuel.
 
-The issue-owned exact corpora remain the semantic source of truth. These
+The exact corpora remain the semantic source of truth. These
 budget queries are performance probes and never generate or replace golden
 vectors.

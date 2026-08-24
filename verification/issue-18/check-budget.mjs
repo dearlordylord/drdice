@@ -23,7 +23,7 @@ const artifacts = [
   ...expectedNames.map((name) => resolve(generatedDirectory, name)),
 ];
 const limits = {
-  /* Issue #24's final release lane uses the same 750 ms PRNG median ceiling
+  /* The final release lane uses the same 750 ms PRNG median ceiling
    * for the focused query and the complete transition artifacts. */
   maximumCheckMilliseconds: 750,
   maximumSingleCheckMilliseconds: 1500,
