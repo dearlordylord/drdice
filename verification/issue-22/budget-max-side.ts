@@ -6,7 +6,7 @@ type State = GeneratorState<readonly ["00000001", "00000002", "00000003", "00000
 type MaximumSide = Evaluate<"d100", State, 4>;
 type Expected = Success<{
   readonly total: 1;
-  readonly rollTrace: [DieSample<100, 1>];
+  readonly rollTrace: readonly [DieSample<100, 1>];
   readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]>;
 }>;
 type Equal<Left, Right> =

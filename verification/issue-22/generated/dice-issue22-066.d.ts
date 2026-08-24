@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d1", null, 1>;
-type Expected = Failure<"invalid-state-shape", { readonly state: null; readonly partialTrace: []; readonly nextState: null }>;
+type Expected = Failure<"invalid-state-shape", { readonly state: null; readonly partialTrace: readonly []; readonly nextState: null }>;
 export type invalid_state_shape = Assert<Equal<Input, Expected>>;

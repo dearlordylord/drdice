@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d86", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Success<{ readonly total: 1; readonly rollTrace: [DieSample<86, 1>]; readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
+type Expected = Success<{ readonly total: 1; readonly rollTrace: readonly [DieSample<86, 1>]; readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
 export type Side86 = Assert<Equal<Input, Expected>>;

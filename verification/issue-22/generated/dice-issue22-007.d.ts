@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<" \t D6\r\n+ 1 ", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Success<{ readonly total: 2; readonly rollTrace: [DieSample<6, 1>]; readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
+type Expected = Success<{ readonly total: 2; readonly rollTrace: readonly [DieSample<6, 1>]; readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
 export type all_supported_whitespace = Assert<Equal<Input, Expected>>;

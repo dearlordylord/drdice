@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d100 + 100", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 5; readonly dimension: "arithmetic-magnitude"; readonly limit: 100; readonly actual: 101; readonly partialTrace: [DieSample<100, 1>]; readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
+type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 5; readonly dimension: "arithmetic-magnitude"; readonly limit: 100; readonly actual: 101; readonly partialTrace: readonly [DieSample<100, 1>]; readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
 export type post_consumption_arithmetic_failure = Assert<Equal<Input, Expected>>;

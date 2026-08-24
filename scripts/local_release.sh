@@ -7,6 +7,15 @@ DICE_PACKAGE_NAME="@drdice/dice"
 EXPECTED_GITHUB_LOGIN="dearlordylord"
 DRY_RUN="${DRDICE_RELEASE_DRY_RUN:-0}"
 
+if [[ "${1:-}" == "--dist-tag-dry-run" ]]; then
+  [[ -n "${2:-}" ]] || {
+    printf 'Release refused: --dist-tag-dry-run requires a version\n' >&2
+    exit 1
+  }
+  node scripts/npm-dist-tag.mjs "$2"
+  exit 0
+fi
+
 fail() {
   printf 'Release refused: %s\n' "$1" >&2
   exit 1
@@ -107,6 +116,12 @@ dice_version="$(node -p "require('./packages/dice/package.json').version")"
 [[ "$prng_version" == "$dice_version" ]] ||
   fail "package versions differ: PRNG $prng_version, Dice $dice_version"
 RELEASE_TAG="v$prng_version"
+npm_dist_tag="$(node scripts/npm-dist-tag.mjs "$prng_version")"
+if [[ "$npm_dist_tag" == "latest" ]]; then
+  github_release_kind="stable"
+else
+  github_release_kind="prerelease"
+fi
 prng_archive="$release_directory/drdice-prng-$prng_version.tgz"
 dice_archive="$release_directory/drdice-dice-$dice_version.tgz"
 
@@ -119,21 +134,21 @@ package_needs_publish "$PRNG_PACKAGE_NAME" "$prng_version" && prng_needs_publish
 package_needs_publish "$DICE_PACKAGE_NAME" "$dice_version" && dice_needs_publish=true
 
 if [[ "$DRY_RUN" == "1" ]]; then
-  npm publish "$prng_archive" --access public --dry-run
-  npm publish "$dice_archive" --access public --dry-run
-  printf 'Release dry run passed for %s@%s and %s@%s.\n' \
-    "$PRNG_PACKAGE_NAME" "$prng_version" "$DICE_PACKAGE_NAME" "$dice_version"
+  npm publish "$prng_archive" --access public --tag "$npm_dist_tag" --dry-run
+  npm publish "$dice_archive" --access public --tag "$npm_dist_tag" --dry-run
+  printf 'Release dry run passed for %s@%s and %s@%s with npm dist-tag %s.\n' \
+    "$PRNG_PACKAGE_NAME" "$prng_version" "$DICE_PACKAGE_NAME" "$dice_version" "$npm_dist_tag"
   exit 0
 fi
 
 if [[ "$prng_needs_publish" == "true" ]]; then
-  npm publish "$prng_archive" --access public
+  npm publish "$prng_archive" --access public --tag "$npm_dist_tag"
 else
   printf '%s@%s is already published; skipping.\n' "$PRNG_PACKAGE_NAME" "$prng_version"
 fi
 
 if [[ "$dice_needs_publish" == "true" ]]; then
-  npm publish "$dice_archive" --access public
+  npm publish "$dice_archive" --access public --tag "$npm_dist_tag"
 else
   printf '%s@%s is already published; skipping.\n' "$DICE_PACKAGE_NAME" "$dice_version"
 fi
@@ -159,16 +174,23 @@ if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
     --clobber
   release_is_draft="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)"
   if [[ "$release_is_draft" == "true" ]]; then
-    gh release edit "$RELEASE_TAG" --draft=false --latest --target "$head_commit"
+    if [[ "$github_release_kind" == "stable" ]]; then
+      gh release edit "$RELEASE_TAG" --draft=false --latest --target "$head_commit"
+    else
+      gh release edit "$RELEASE_TAG" --draft=false --prerelease --target "$head_commit"
+    fi
   fi
 else
+  release_flags=(--generate-notes --title "DRDice $RELEASE_TAG" --verify-tag)
+  if [[ "$github_release_kind" == "stable" ]]; then
+    release_flags+=(--latest)
+  else
+    release_flags+=(--prerelease)
+  fi
   gh release create "$RELEASE_TAG" \
     "$prng_archive#drdice-prng-$prng_version.tgz" \
     "$dice_archive#drdice-dice-$dice_version.tgz" \
-    --generate-notes \
-    --latest \
-    --title "DRDice $RELEASE_TAG" \
-    --verify-tag
+    "${release_flags[@]}"
 fi
 
 npm dist-tag ls "$PRNG_PACKAGE_NAME"

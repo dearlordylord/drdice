@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "compiler": "Version 7.0.2",
+  "maximumCasesPerShard": 12,
+  "maximumBlockingShards": 16,
+  "maximumWallMilliseconds": 60000
+}

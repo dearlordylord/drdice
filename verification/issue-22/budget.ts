@@ -12,7 +12,7 @@ type BudgetState = GeneratorState<readonly [
 type MaximumEvaluation = Evaluate<"8d1", BudgetState, 1>;
 type Expected = Success<{
   readonly total: 8;
-  readonly rollTrace: [
+  readonly rollTrace: readonly [
     DieSample<1, 1>,
     DieSample<1, 1>,
     DieSample<1, 1>,

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 
 import {
-  oracleInitialize,
-  oracleSample,
-} from "../issue-17/oracle.mjs";
-import { oracleEvaluate } from "../issue-20/oracle.mjs";
+  initialize as runtimeInitialize,
+  sample as runtimeSample,
+} from "../../packages/prng/dist/index.js";
+import { evaluate } from "../../packages/dice/dist/index.js";
 
 const GAMEPLAY_OUTPUT_FUEL = 5;
 const MAX_EXHAUSTION_PROBABILITY = 1e-6;
@@ -16,13 +16,13 @@ const fail = (message) => {
 
 const word = (value) => (value >>> 0).toString(16).padStart(8, "0");
 const initialize = (seed) => {
-  const initialized = oracleInitialize(seed);
+  const initialized = runtimeInitialize(seed);
   if (!initialized.ok) fail(`valid usability seed was rejected: ${JSON.stringify(initialized)}`);
   return initialized.value;
 };
 
 const roll = (state, sides) => {
-  const sampled = oracleSample(state, sides, GAMEPLAY_OUTPUT_FUEL);
+  const sampled = runtimeSample(state, sides, GAMEPLAY_OUTPUT_FUEL);
   if (!sampled.ok) fail(`d${sides} exhausted during deterministic usability corpus: ${JSON.stringify(sampled)}`);
   return {
     face: sampled.value.value + 1,
@@ -121,7 +121,7 @@ const encounter = (seed) => {
     ["monster damage", "d8+2"],
     ["healing", "2d4+2"],
   ]) {
-    const result = oracleEvaluate(expression, state, GAMEPLAY_OUTPUT_FUEL);
+    const result = evaluate(expression, state, GAMEPLAY_OUTPUT_FUEL);
     if (!result.ok) fail(`${label} (${expression}) failed: ${JSON.stringify(result)}`);
     transcript.push({
       label,

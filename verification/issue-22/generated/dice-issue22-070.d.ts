@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d1", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1.5>;
-type Expected = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: 1.5; readonly partialTrace: []; readonly nextState: GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]> }>;
+type Expected = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: 1.5; readonly partialTrace: readonly []; readonly nextState: GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]> }>;
 export type invalid_fuel_noninteger = Assert<Equal<Input, Expected>>;

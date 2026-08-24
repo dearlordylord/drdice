@@ -33,7 +33,7 @@ const stateType = (words) => `GeneratorState<${tuple(words)}>`;
 const stateInputType = (vector) => vector.stateWords
   ? stateType(vector.stateWords)
   : literal(vector.stateInput);
-const traceType = (trace) => `[${trace.map((sample) => `DieSample<${sample.sideCount}, ${sample.face}>`).join(", ")}]`;
+const traceType = (trace) => `readonly [${trace.map((sample) => `DieSample<${sample.sideCount}, ${sample.face}>`).join(", ")}]`;
 
 const expectedType = (vector) => {
   const expected = vector.expected;

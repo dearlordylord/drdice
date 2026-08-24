@@ -12,7 +12,10 @@ The generators remain the source of committed shards:
   sampling shards;
 - `verification/issue-21/generate.mjs` owns arithmetic/static Dice shards;
 - `verification/issue-22/generate.mjs` owns complete-evaluation and `d1`–`d100`
-  shards.
+  shards;
+- `verification/issue-25/generate.mjs` owns executable property shards whose
+  oracle literal is both the exact inferred type witness and runtime expected
+  result.
 
 Run the complete normal lane from the repository root:
 

@@ -18,7 +18,7 @@ const literal = (value) => {
   if (typeof value === "string") return JSON.stringify(value);
   if (typeof value === "number") return Object.is(value, -0) ? "0" : String(value);
   if (typeof value === "boolean") return String(value);
-  if (Array.isArray(value)) return value.length === 0 ? "[]" : `readonly [${value.map(literal).join(", ")}]`;
+  if (Array.isArray(value)) return `readonly [${value.map(literal).join(", ")}]`;
   if (typeof value === "object") {
     return `{ ${Object.entries(value).map(([key, item]) => `readonly ${key}: ${literal(item)}`).join("; ")} }`;
   }
@@ -29,7 +29,7 @@ const stateType = (vector) => vector.stateWords ? stateTypeFromWords(vector.stat
 const expectedType = (vector) => {
   const expected = vector.expected;
   if (expected.ok) {
-    return `Success<{ readonly total: ${literal(expected.value.total)}; readonly rollTrace: []; readonly nextState: ${stateTypeFromWords(expected.value.nextState)} }>`;
+    return `Success<{ readonly total: ${literal(expected.value.total)}; readonly rollTrace: readonly []; readonly nextState: ${stateTypeFromWords(expected.value.nextState)} }>`;
   }
   const details = { ...expected.details };
   if (vector.id.startsWith("invalid-state-")) details.state = vector.stateInput;

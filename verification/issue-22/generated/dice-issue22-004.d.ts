@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d6 + (2d6 - 1)", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Success<{ readonly total: 2; readonly rollTrace: [DieSample<6, 1>, DieSample<6, 1>, DieSample<6, 1>]; readonly nextState: GeneratorState<readonly ["01803402", "00003007", "00083e02", "0020280c"]> }>;
+type Expected = Success<{ readonly total: 2; readonly rollTrace: readonly [DieSample<6, 1>, DieSample<6, 1>, DieSample<6, 1>]; readonly nextState: GeneratorState<readonly ["01803402", "00003007", "00083e02", "0020280c"]> }>;
 export type parenthesized_depth_first = Assert<Equal<Input, Expected>>;

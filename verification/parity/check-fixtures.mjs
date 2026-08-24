@@ -42,6 +42,7 @@ const suites = [
   "verification/issue-20/check.mjs",
   "verification/issue-21/check.mjs",
   "verification/issue-22/check.mjs",
+  "verification/issue-25/check.mjs",
 ];
 
 const oracleFiles = [];
@@ -111,6 +112,11 @@ const checkShardAssertions = async () => {
       pattern: /^prng-issue(?:18|19)-.*\.d\.ts$/,
       label: "PRNG parity",
     },
+    {
+      directory: resolve(verification, "issue-25/generated"),
+      pattern: /^parity-\d{3}\.ts$/,
+      label: "Executable property parity",
+    },
   ];
   for (const group of shardGroups) {
     const names = (await readdir(group.directory)).filter((name) => group.pattern.test(name)).sort();
@@ -118,8 +124,11 @@ const checkShardAssertions = async () => {
     for (const name of names) {
       const source = await readFile(resolve(group.directory, name), "utf8");
       if (!source.includes("Assert<Equal<")) fail(`${group.label} shard ${name} has no exact type-equality assertion`);
-      if (group.label !== "PRNG parity" && !source.includes("type Expected =")) {
+      if (group.label !== "PRNG parity" && group.label !== "Executable property parity" && !source.includes("type Expected =")) {
         fail(`${group.label} shard ${name} has no literal expected result`);
+      }
+      if (group.label === "Executable property parity" && (!source.includes(" as const;") || !source.includes("deepEqual("))) {
+        fail(`${group.label} shard ${name} does not bridge one const literal to type and runtime equality`);
       }
     }
   }

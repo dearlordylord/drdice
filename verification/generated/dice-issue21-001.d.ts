@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"12 - 7 - 2", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Success<{ readonly total: 3; readonly rollTrace: []; readonly nextState: GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]> }>;
+type Expected = Success<{ readonly total: 3; readonly rollTrace: readonly []; readonly nextState: GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]> }>;
 export type left_associative_subtraction = Assert<Equal<Input, Expected>>;

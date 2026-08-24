@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"8d5", GeneratorState<readonly ["f6d4d22f", "179359c2", "e89fce39", "dc482244"]>, 4>;
-type Expected = Success<{ readonly total: 24; readonly rollTrace: [DieSample<5, 4>, DieSample<5, 5>, DieSample<5, 2>, DieSample<5, 1>, DieSample<5, 2>, DieSample<5, 4>, DieSample<5, 1>, DieSample<5, 5>]; readonly nextState: GeneratorState<readonly ["5032e3d1", "0b10a7db", "3a2a5e28", "c19115ca"]> }>;
+type Expected = Success<{ readonly total: 24; readonly rollTrace: readonly [DieSample<5, 4>, DieSample<5, 5>, DieSample<5, 2>, DieSample<5, 1>, DieSample<5, 2>, DieSample<5, 4>, DieSample<5, 1>, DieSample<5, 5>]; readonly nextState: GeneratorState<readonly ["5032e3d1", "0b10a7db", "3a2a5e28", "c19115ca"]> }>;
 export type post_consumption_dynamic_steps = Assert<Equal<Input, Expected>>;

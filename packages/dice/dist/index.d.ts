@@ -112,11 +112,11 @@ export type Diagnostic = SyntaxDiagnostic | DomainDiagnostic | ResourceLimitExce
 export type DiagnosticFailure<D extends { readonly code: FailureCode }> = Failure<D["code"], D>;
 
 export type EvaluationStateFailure =
-  | Failure<"invalid-state-shape", { readonly state: unknown; readonly partialTrace: []; readonly nextState: null }>
-  | Failure<"invalid-state-word", { readonly state: unknown; readonly partialTrace: []; readonly nextState: null }>
-  | Failure<"invalid-state-zero", { readonly state: unknown; readonly partialTrace: []; readonly nextState: null }>;
+  | Failure<"invalid-state-shape", { readonly state: unknown; readonly partialTrace: readonly []; readonly nextState: null }>
+  | Failure<"invalid-state-word", { readonly state: unknown; readonly partialTrace: readonly []; readonly nextState: null }>
+  | Failure<"invalid-state-zero", { readonly state: unknown; readonly partialTrace: readonly []; readonly nextState: null }>;
 export type EvaluationInputFailure = EvaluationStateFailure | Failure<"invalid-attempt-fuel", {
-  readonly maximumAttempts: number; readonly partialTrace: []; readonly nextState: PrngGeneratorState;
+  readonly maximumAttempts: number; readonly partialTrace: readonly []; readonly nextState: PrngGeneratorState;
 }>;
 export type EvaluationFailure =
   | DiagnosticFailure<ExpectedExpressionDiagnostic> | DiagnosticFailure<ExpectedDieSidesDiagnostic>
@@ -462,19 +462,6 @@ type ChooseCandidate<Current, Next> = [Current] extends [never] ? Next : [Next] 
     ? Next extends { readonly dimension: infer ND extends ResourceDimension; readonly offset: infer NO extends number }
       ? IsLessThan<NO, CO> extends true ? Next : IsLessThan<CO, NO> extends true ? Current : IsLessThan<DimensionPriority<ND>, DimensionPriority<CD>> extends true ? Next : Current
       : Current : Current;
-type StaticPreflightOriginal<Ast> = AstStats<Ast> extends infer S extends Stats
-  ? ChooseCandidate<
-      ChooseCandidate<
-        ChooseCandidate<
-          ChooseCandidate<
-            ChooseCandidate<StatCandidate<"ast-node-count", S["nodeOffsets"], L["astNodeCount"]>, StatCandidate<"dice-term-count", S["diceOffsets"], L["diceTermCount"]>>,
-            StatCandidate<"die-sample-count", S["sampleOffsets"], L["dieSampleCount"]>>,
-          SupportedSideCandidate<Ast>>,
-        ChooseCandidate<FirstArithmeticLiterals<S["integerValues"]>, FirstArithmeticCandidate<Ast>>>,
-      StatCandidate<"evaluation-steps", S["stepOffsets"], L["evaluationSteps"]>> extends infer Candidate
-    ? Candidate extends { readonly dimension: infer D extends ResourceDimension; readonly offset: infer O extends number; readonly limit: infer Limit extends number; readonly actual: infer Actual extends number } ? ResourceFailure<D, O, Limit, Actual> : true
-    : never
-  : never;
 type StaticPreflight<Ast> = AstStats<Ast> extends infer S extends Stats
   ? ChooseCandidate<
       ChooseCandidate<
@@ -506,16 +493,18 @@ type IsStringWords<W> = W extends readonly [string, string, string, string] ? tr
 type IsZeroWords<W> = W extends readonly ["00000000", "00000000", "00000000", "00000000"] ? true : false;
 type ValidWordTuple<W> = W extends readonly [infer A extends string, infer B extends string, infer C extends string, infer D extends string]
   ? IsCanonicalWord<A> extends true ? IsCanonicalWord<B> extends true ? IsCanonicalWord<C> extends true ? IsCanonicalWord<D> : false : false : false : false;
-type StateFailureWithContext<Code extends "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero", Input> = Failure<Code, { readonly state: Input; readonly partialTrace: []; readonly nextState: null }>;
+type StateFailureWithContext<Code extends "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero", Input> = Failure<Code, { readonly state: Input; readonly partialTrace: readonly []; readonly nextState: null }>;
 type ValidateState<Input> = Input extends { readonly kind: "GeneratorState"; readonly words: infer Words }
   ? IsFourWords<Words> extends true ? IsStringWords<Words> extends true ? ValidWordTuple<Words> extends true
     ? IsZeroWords<Words> extends true ? StateFailureWithContext<"invalid-state-zero", Input> : Success<Input>
     : StateFailureWithContext<"invalid-state-word", Input> : StateFailureWithContext<"invalid-state-word", Input>
   : StateFailureWithContext<"invalid-state-shape", Input> : StateFailureWithContext<"invalid-state-shape", Input>;
 type ValidFuel<F extends number> = number extends F ? false : `${F}` extends `-${string}` ? false : `${F}` extends `${bigint}` ? true : false;
-type FuelFailure<State, MaximumAttempts extends number> = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: MaximumAttempts; readonly partialTrace: []; readonly nextState: State extends PrngGeneratorState ? State : never }>;
+type FuelFailure<State, MaximumAttempts extends number> = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: MaximumAttempts; readonly partialTrace: readonly []; readonly nextState: State extends PrngGeneratorState ? State : never }>;
 type FuelPlan<State, MaximumAttempts extends number> = ValidFuel<MaximumAttempts> extends true
-  ? IsGreaterThan<MaximumAttempts, L["rejectionSamplingAttempts"]> extends true ? ResourceFailure<"rejection-sampling-attempts", 0, L["rejectionSamplingAttempts"], MaximumAttempts> : true
+  ? MaximumAttempts extends 0 | 1 | 2 | 3 | 4 | 5
+    ? true
+    : ResourceFailure<"rejection-sampling-attempts", 0, L["rejectionSamplingAttempts"], MaximumAttempts>
   : FuelFailure<State, MaximumAttempts>;
 type EvaluationValue<
   Total extends number,
@@ -625,7 +614,7 @@ type EvalDiceRest<
         };
       }
       ? Increment<Value> extends infer Face extends number
-        ? [...Trace, DieSample<Sides, Face>] extends infer NextTrace extends RollTrace
+        ? readonly [...Trace, DieSample<Sides, Face>] extends infer NextTrace extends RollTrace
           ? AddNatural<Total, Face> extends infer NextTotal extends number
             ? AddNatural<Steps, Increment<Attempts>> extends infer NextSteps extends number
               ? IsGreaterThan<NextSteps, L["evaluationSteps"]> extends true
@@ -658,7 +647,7 @@ type EvalAst<
   Ast,
   State extends PrngGeneratorState,
   Fuel extends number,
-  Trace extends RollTrace = [],
+  Trace extends RollTrace = readonly [],
   ConsumedSteps extends number = 0,
 > = Ast extends IntNode<infer Value, readonly unknown[], infer Offset>
   ? AddNatural<ConsumedSteps, 1> extends infer Steps extends number
@@ -777,7 +766,7 @@ export function valueOf<const Payload extends DiceEvaluation>(result: Success<Pa
 /** Extract the consumed rolls from a successful runtime evaluation. */
 export function rollsOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["rollTrace"];
 
-/** Extract the continuation state from a successful runtime evaluation. */
+/** Extract the Next Generator State from a successful runtime evaluation. */
 export function stateOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["nextState"];
 
-export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.3.0-dev.4"; readonly declarationOnly: false };
+export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.3.0-dev.5"; readonly declarationOnly: false };

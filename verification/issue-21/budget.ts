@@ -15,7 +15,7 @@ type MaximumArithmetic = Evaluate<
   4
 >;
 
-type Expected = Success<DiceEvaluation<8, [], BudgetState>>;
+type Expected = Success<DiceEvaluation<8, readonly [], BudgetState>>;
 type Assert<Value extends true> = Value;
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends

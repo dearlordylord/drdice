@@ -60,7 +60,7 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} packed members differ: ${members.join(", ")}`);
   }
   const manifest = JSON.parse(run("tar", ["-xOf", archive, "package/package.json"], root));
-  if (manifest.name !== record.name || manifest.version !== "0.3.0-dev.4") {
+  if (manifest.name !== record.name || manifest.version !== "0.3.0-dev.5") {
     throw new Error(`${record.name} packed identity is incorrect`);
   }
   if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {
@@ -153,7 +153,7 @@ export type PrngRootTypeAssertion = Assert<Equal<Sample<ConsumerState, 1, 1>, Ex
 
 type ExpectedDiceEvaluation = DiceSuccess<{
   readonly total: 1;
-  readonly rollTrace: [DieSample<1, 1>];
+  readonly rollTrace: readonly [DieSample<1, 1>];
   readonly nextState: PrngGeneratorState<readonly [
     "00000007",
     "00000000",

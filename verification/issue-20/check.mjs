@@ -206,7 +206,7 @@ const checkCase = (vector, byId) => {
 
   if (!actual.ok && ["expected-expression", "expected-die-sides", "expected-closing-parenthesis", "leading-zero", "unexpected-token", "dice-count-zero", "side-count-zero"].includes(actual.code)) {
     assert(!Object.hasOwn(actual.details, "partialTrace"), `${vector.id} static diagnostic consumed a trace`);
-    assert(!Object.hasOwn(actual.details, "nextState"), `${vector.id} static diagnostic exposed a successor state`);
+    assert(!Object.hasOwn(actual.details, "nextState"), `${vector.id} static diagnostic exposed a Next Generator State`);
   }
 };
 

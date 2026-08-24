@@ -12,7 +12,7 @@ Only the package root is public. Runtime values and type-only helpers are both
 imported from `@drdice/prng`; deep imports are unsupported.
 
 The immutable PRNG Sequence Profile is
-`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The development package version (`0.3.0-dev.4`),
+`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The development package version (`0.3.0-dev.5`),
 Replay Token/Serialized Generator State schema version (`1`), and Sequence
 Profile identity are separate compatibility identities. A package contract
 change requires a new package release; a serialized-shape change requires a

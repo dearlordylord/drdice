@@ -23,7 +23,7 @@ const combinedRolls = rollsOf(combinedRoll);
 type _CombinedValue = Assert<Equal<typeof combinedValue, 34>>;
 type _CombinedRolls = Assert<Equal<
   typeof combinedRolls,
-  [
+  readonly [
     { readonly sideCount: 6; readonly face: 5 },
     { readonly sideCount: 6; readonly face: 6 },
     { readonly sideCount: 6; readonly face: 6 },

@@ -1,0 +1,24 @@
+name: Reference compiler budgets
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1"
+
+jobs:
+  measured-budgets:
+    runs-on: [self-hosted, drdice-reference]
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:prng:budget
+      - run: pnpm check:dice:budget
+      - run: pnpm check:budgets

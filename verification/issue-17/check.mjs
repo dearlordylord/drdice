@@ -132,7 +132,7 @@ const checkTransitionCorpus = (golden) => {
   equal(golden.canonicalSeed, PINNED_CANONICAL_SEED, "canonical Seed changed without a reviewed profile change");
   equal(vector.seed, PINNED_CANONICAL_SEED, "raw-word seed must use the established human-seed vector");
   assert(Array.isArray(vector.words) && vector.words.length >= 10, "at least ten literal raw words are required");
-  assert(Array.isArray(vector.nextStates) && vector.nextStates.length >= 3, "at least three literal successor states are required");
+  assert(Array.isArray(vector.nextStates) && vector.nextStates.length >= 3, "at least three literal Next Generator States are required");
   assert(Array.isArray(vector.transitions) && vector.transitions.length >= 10, "at least ten literal transition records are required");
 
   equal(
@@ -143,7 +143,7 @@ const checkTransitionCorpus = (golden) => {
   equal(
     vector.nextStates.slice(0, PINNED_CANONICAL_SUCCESSOR_STATES.length),
     PINNED_CANONICAL_SUCCESSOR_STATES,
-    "canonical successor states changed without a reviewed profile change",
+    "canonical Next Generator States changed without a reviewed profile change",
   );
 
   for (const [index, word] of vector.words.entries()) {
@@ -163,7 +163,7 @@ const checkTransitionCorpus = (golden) => {
     const actual = oracleNext(current);
     assert(actual.ok, `transition ${position} unexpectedly failed: ${json(actual)}`);
     equal(actual.value.word, transition.word, `transition ${position} word disagrees with committed golden data`);
-    equal(actual.value.state.words, transition.nextState, `transition ${position} successor state disagrees with committed golden data`);
+    equal(actual.value.state.words, transition.nextState, `transition ${position} Next Generator State disagrees with committed golden data`);
     current = actual.value.state;
   }
 

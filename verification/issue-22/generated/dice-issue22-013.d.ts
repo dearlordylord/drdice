@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"8d1+(1+1+1)", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Success<{ readonly total: 11; readonly rollTrace: [DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>]; readonly nextState: GeneratorState<readonly ["3320a290", "ebdc5e1d", "90c43618", "e4b42f08"]> }>;
+type Expected = Success<{ readonly total: 11; readonly rollTrace: readonly [DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>]; readonly nextState: GeneratorState<readonly ["3320a290", "ebdc5e1d", "90c43618", "e4b42f08"]> }>;
 export type evaluation_steps_at_limit = Assert<Equal<Input, Expected>>;

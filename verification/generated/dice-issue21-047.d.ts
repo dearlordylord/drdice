@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d1", { readonly kind: "GeneratorState"; readonly words: readonly ["0000000A", "00000000", "00000000", "00000001"] }, 1>;
-type Expected = Failure<"invalid-state-word", { readonly state: { readonly kind: "GeneratorState"; readonly words: readonly ["0000000A", "00000000", "00000000", "00000001"] }; readonly partialTrace: []; readonly nextState: null }>;
+type Expected = Failure<"invalid-state-word", { readonly state: { readonly kind: "GeneratorState"; readonly words: readonly ["0000000A", "00000000", "00000000", "00000001"] }; readonly partialTrace: readonly []; readonly nextState: null }>;
 export type invalid_state_word = Assert<Equal<Input, Expected>>;

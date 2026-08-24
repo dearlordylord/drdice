@@ -28,7 +28,7 @@ when using the documented gameplay fuel.
 Stable reproducibility means exact agreement when the algorithm profile,
 initial Seed or Generator State, Dice Expression, and operation options match.
 Agreement covers sampled values, attempt counts, Roll Trace order, totals,
-successor state, failure variant, diagnostic code, and structured diagnostic
+Next Generator State, failure variant, diagnostic code, and structured diagnostic
 details. Diagnostic prose and performance are not sequence identity.
 
 Any change to PRNG stepping, Seed initialization, bounded sampling, rejected
@@ -83,14 +83,14 @@ The committed corpus must include:
 - at least the first ten output words from that Seed—`3804789018`,
   `2299676403`, `3571406116`, `2962224741`, `2455399324`, `2204902570`,
   `3487887384`, `4280504250`, `539482314`, and `1610455189`—plus the exact
-  first three successor states;
+  first three Next Generator States;
 - bound 1 consumption, bounds 2 and 100, a power-of-two bound, and bounds on
   both sides of a power of two;
 - immediate acceptance, forced rejection followed by acceptance, and exact
   exhaustion after zero through five output words;
 - Replay Token restart and Serialized Generator State resume behavior;
 - representative successful expressions with exact totals, ordered traces,
-  attempt counts, and successor states; and
+  attempt counts, and Next Generator States; and
 - one canonical example for every public failure variant and every specified
   failure-precedence collision.
 
@@ -148,7 +148,7 @@ domain validation, static-resource precedence, and post-consumption dynamic
 failure.
 
 Type assertions compare the complete discriminated result. Success assertions
-include total, every Die Sample in order, and successor state. Failure
+include total, every Die Sample in order, and Next Generator State. Failure
 assertions include the exact variant, code, structured details, and any
 specified attempts, partial trace, or retained state. Comparing only totals,
 assignability to a broad result union, or duplicated handwritten expectations

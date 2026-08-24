@@ -20,7 +20,7 @@ type SampleShape = PrngSuccess<{
 }>;
 type DiceShape = DiceSuccess<{
   readonly total: number;
-  readonly rollTrace: [
+  readonly rollTrace: readonly [
     DieSample<100, number>,
     DieSample<100, number>,
     DieSample<20, number>,
