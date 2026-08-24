@@ -86,6 +86,8 @@ export const validateBudgetResults = (benchmark, budgets) => {
         if (result.warmupRuns !== budgets.requiredWarmupRuns) add(`${caseName}: warm-up count ${result.warmupRuns} is not ${budgets.requiredWarmupRuns}`);
         if (result.scoredRuns !== budgets.requiredScoredRuns) add(`${caseName}: scored run count ${result.scoredRuns} is not ${budgets.requiredScoredRuns}`);
         if (result.freshProcesses !== true) add(`${caseName}: scored runs were not fresh processes`);
+      } else if (result.status !== "passed") {
+        add(`${caseName}: advisory status is ${result.status}`);
       }
       if (result.status !== "passed") continue;
       if (result.checkMilliseconds.median > limits.maximumCheckMilliseconds) add(`${caseName}: median check ${result.checkMilliseconds.median} ms exceeds ${limits.maximumCheckMilliseconds} ms`);
