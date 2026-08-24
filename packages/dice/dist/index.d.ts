@@ -183,33 +183,32 @@ type LowSurrogateBlocks = readonly [
   readonly ["\udfc0", "\udfc1", "\udfc2", "\udfc3", "\udfc4", "\udfc5", "\udfc6", "\udfc7", "\udfc8", "\udfc9", "\udfca", "\udfcb", "\udfcc", "\udfcd", "\udfce", "\udfcf", "\udfd0", "\udfd1", "\udfd2", "\udfd3", "\udfd4", "\udfd5", "\udfd6", "\udfd7", "\udfd8", "\udfd9", "\udfda", "\udfdb", "\udfdc", "\udfdd", "\udfde", "\udfdf"],
   readonly ["\udfe0", "\udfe1", "\udfe2", "\udfe3", "\udfe4", "\udfe5", "\udfe6", "\udfe7", "\udfe8", "\udfe9", "\udfea", "\udfeb", "\udfec", "\udfed", "\udfee", "\udfef", "\udff0", "\udff1", "\udff2", "\udff3", "\udff4", "\udff5", "\udff6", "\udff7", "\udff8", "\udff9", "\udffa", "\udffb", "\udffc", "\udffd", "\udffe", "\udfff"]
 ];
+type LowSurrogate = LowSurrogateBlocks[number][number];
+type AstralPairBlockMatch<C extends string, HighBlock extends readonly string[], LowBlock extends readonly string[]> = C extends `${infer _High extends HighBlock[number]}${infer _Low extends LowBlock[number]}` ? true : false;
+type AstralLowBlockMatch<C extends string, HighBlock extends readonly string[], Blocks extends readonly (readonly string[])[] = LowSurrogateBlocks> = Blocks extends readonly [infer Block extends readonly string[], ...infer Tail extends (readonly string[])[]]
+  ? AstralPairBlockMatch<C, HighBlock, Block> extends true ? true : AstralLowBlockMatch<C, HighBlock, Tail>
+  : false;
+type AstralBlockIndex<C extends string, Blocks extends readonly (readonly string[])[] = HighSurrogateBlocks, Seen extends unknown[] = []> = Blocks extends readonly [infer Block extends readonly string[], ...infer Tail extends (readonly string[])[]]
+  ? AstralLowBlockMatch<C, Block> extends true ? Seen["length"] : AstralBlockIndex<C, Tail, [...Seen, unknown]>
+  : never;
 type LowMatch<C extends string, H extends string, Blocks extends readonly (readonly string[])[] = LowSurrogateBlocks> = Blocks extends readonly [infer Block extends readonly string[], ...infer Tail extends (readonly string[])[]]
   ? C extends `${H}${Block[number]}` ? H : LowMatch<C, H, Tail>
-  : never;
-type HighMatch<C extends string, Blocks extends readonly (readonly string[])[] = HighSurrogateBlocks> = Blocks extends readonly [infer Block extends readonly string[], ...infer Tail extends (readonly string[])[]]
-  ? HighMatchInBlock<C, Block> extends infer Found extends string
-    ? [Found] extends [never] ? HighMatch<C, Tail> : Found
-    : never
   : never;
 type HighMatchInBlock<C extends string, Block extends readonly string[], LowBlocks extends readonly (readonly string[])[] = LowSurrogateBlocks> = Block extends readonly [infer Head extends string, ...infer Tail extends string[]]
   ? LowMatch<C, Head, LowBlocks> extends infer Found extends string
     ? [Found] extends [never] ? HighMatchInBlock<C, Tail, LowBlocks> : Found
     : never
   : never;
-/* Constrained template inference recognizes the two UTF-16 units in a
- * 32-entry high block.  Only confirmed pairs enter the exact high-unit
- * lookup; BMP and lone-surrogate literals take one unit. */
-type LowSurrogate = LowSurrogateBlocks[number][number];
-type IsAstralInHighBlock<C extends string, HighBlock extends readonly string[]> = C extends `${infer High extends HighBlock[number]}${infer Low extends LowSurrogate}` ? true : false;
-type AstralHighBlock<C extends string, Blocks extends readonly (readonly string[])[] = HighSurrogateBlocks> = Blocks extends readonly [infer Block extends readonly string[], ...infer Tail extends (readonly string[])[]]
-  ? IsAstralInHighBlock<C, Block> extends true ? Block : AstralHighBlock<C, Tail>
-  : never;
-type FirstUnitFromAstralBlock<C extends string, Block> = [Block] extends [never] ? C
-  : Block extends readonly string[] ? HighMatchInBlock<C, Block> : C;
+type HighMatch<C extends string> = [AstralBlockIndex<C>] extends [never] ? never
+  : AstralBlockIndex<C> extends infer BlockIndex extends number
+    ? HighMatchInBlock<C, HighSurrogateBlocks[BlockIndex]> : never;
+/* ASCII and BMP literals are one UTF-16 unit.  Astral literals are classified
+ * by the complete sharded surrogate-pair lookup; a valid pair also recovers
+ * its exact high unit for diagnostics. */
 type Utf16Units<C extends string> = string extends C ? [unknown] : C extends AsciiUnit ? [unknown]
-  : [AstralHighBlock<C>] extends [never] ? [unknown] : [unknown, unknown];
+  : [HighMatch<C>] extends [never] ? [unknown] : [unknown, unknown];
 type Utf16FirstUnit<C extends string> = string extends C ? C : C extends AsciiUnit ? C
-  : FirstUnitFromAstralBlock<C, AstralHighBlock<C>>;
+  : [HighMatch<C>] extends [never] ? C : HighMatch<C>;
 type StringLength<S extends string, Out extends unknown[] = []> =
   S extends `${infer Head}${infer Tail}` ? StringLength<Tail, [...Out, ...Utf16Units<Head>]> : Out["length"];
 /* Keep numeric literals exact for diagnostics, but cap tuple magnitudes at
