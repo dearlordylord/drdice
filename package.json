@@ -14,12 +14,14 @@
     "typecheck:ts6": "pnpm exec tsc6 --project tsconfig.json --pretty false",
     "generate:fixtures": "node verification/generate-fixtures.mjs",
     "check:fixtures": "node verification/check-generated-fixtures.mjs",
+    "check:prng": "node verification/issue-17/check.mjs && node verification/issue-17/check-boundary.mjs && node verification/issue-18/check.mjs",
+    "check:prng:budget": "node verification/issue-18/check-budget.mjs",
     "check:clean-consumers": "node verification/check-clean-consumers.mjs",
     "check:packed": "node verification/check-packed-artifacts.mjs",
     "check:budgets": "node verification/check-budgets.mjs --policy all",
     "check:budgets:one-checker": "node verification/check-budgets.mjs --policy one-checker",
     "check:budgets:four-checker": "node verification/check-budgets.mjs --policy four-checker",
-    "verify": "pnpm typecheck && pnpm check:fixtures && pnpm check:clean-consumers && pnpm check:packed && pnpm check:budgets",
+    "verify": "pnpm typecheck && pnpm check:fixtures && pnpm check:prng && pnpm check:clean-consumers && pnpm check:packed && pnpm check:budgets && pnpm check:prng:budget",
     "verify:ts6": "pnpm typecheck:ts6"
   },
   "devDependencies": {

@@ -24,6 +24,9 @@ pnpm verify
 ```
 
 The individual gates are `pnpm typecheck`, `pnpm check:fixtures`,
-`pnpm check:clean-consumers`, `pnpm check:packed`, and the one-/four-checker
-budget commands. Baseline scaffold measurements live in
+`pnpm check:prng`, `pnpm check:clean-consumers`, `pnpm check:packed`, and the
+one-/four-checker budget commands. The PRNG artifact lane is
+`pnpm check:prng:budget`; its TypeScript 7 measurements are recorded in
+[`verification/issue-18/results.json`](verification/issue-18/results.json).
+Baseline scaffold measurements live in
 [`verification/baseline/scaffold.json`](verification/baseline/scaffold.json).

@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "issue": 18,
+  "query": "verification/issue-18/budget.ts",
+  "blockingCompiler": {
+    "package": "typescript@7.0.2",
+    "reportedVersion": "Version 7.0.2"
+  },
+  "limits": {
+    "maximumCheckMilliseconds": 500,
+    "maximumCompilerMemoryKiB": 327680,
+    "maximumInstantiations": 90000
+  },
+  "measurement": {
+    "recordedAt": "2026-08-24",
+    "runner": "Linux container, Node 20.20.1",
+    "policies": {
+      "oneChecker": {
+        "checkers": 1,
+        "checkMilliseconds": 249,
+        "compilerMemoryKiB": 80979,
+        "instantiations": 84075
+      },
+      "fourChecker": {
+        "checkers": 4,
+        "checkMilliseconds": 251,
+        "compilerMemoryKiB": 83352,
+        "instantiations": 87392
+      }
+    }
+  }
+}
