@@ -21,9 +21,13 @@ The blocking budget lane is `pnpm check:prng:budget`. The Issue #19 half of the
 lane enumerates every committed grid and special shard under one- and
 four-checker TypeScript 7.0.2 policies. It checks the focused maximum-width,
 four-attempt query and enforces the Issue #11 sampling ceilings of 600 ms
-portable check time, 1,500 ms single check time, 320 MiB compiler memory, and
-120,000 instantiations. Its standard library set is the pinned `ES2020`
-surface; no library-checking shortcut is used.
+median check time, 1,500 ms single check time, 320 MiB compiler memory, and
+120,000 instantiations. The blocking command performs one unscored warm-up and
+five fresh scored processes for every artifact under each checker policy, and
+passes `--reference-runner` so the operational ceilings are active. Its
+standard library set is the pinned `ES2020` surface; no library-checking
+shortcut is used. The checker rejects a reference run configured with fewer
+than the required five scored processes.
 
 The operation is deterministic and non-cryptographic. It must not be used for
 secrets, security tokens, gambling, or unpredictable entropy.

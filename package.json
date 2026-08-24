@@ -15,7 +15,7 @@
     "generate:fixtures": "node verification/generate-fixtures.mjs",
     "check:fixtures": "node verification/check-generated-fixtures.mjs",
     "check:prng": "node verification/issue-17/check.mjs && node verification/issue-17/check-boundary.mjs && node verification/issue-18/check.mjs && node verification/issue-19/check.mjs",
-    "check:prng:budget": "node verification/issue-18/check-budget.mjs && node verification/issue-19/check-budget.mjs",
+    "check:prng:budget": "node verification/issue-18/check-budget.mjs --reference-runner && node verification/issue-19/check-budget.mjs --reference-runner",
     "check:clean-consumers": "node verification/check-clean-consumers.mjs",
     "check:packed": "node verification/check-packed-artifacts.mjs",
     "check:budgets": "node verification/check-budgets.mjs --policy all",

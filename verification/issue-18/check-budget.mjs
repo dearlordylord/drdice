@@ -28,10 +28,17 @@ const limits = {
   maximumCompilerMemoryKiB: 327680,
   maximumInstantiations: 90000,
 };
-const scoredRuns = Number.parseInt(process.env.DRDICE_PRNG_BUDGET_RUNS ?? "1", 10);
 const enforceOperational = process.argv.includes("--reference-runner");
+const requiredScoredRuns = 5;
+const scoredRuns = Number.parseInt(
+  process.env.DRDICE_PRNG_BUDGET_RUNS ?? String(requiredScoredRuns),
+  10,
+);
 if (!Number.isInteger(scoredRuns) || scoredRuns < 1) {
   throw new Error("DRDICE_PRNG_BUDGET_RUNS must be a positive integer");
+}
+if (enforceOperational && scoredRuns !== requiredScoredRuns) {
+  throw new Error(`--reference-runner requires exactly ${requiredScoredRuns} scored runs after one warm-up`);
 }
 
 const parse = (output, label, unit = "") => {

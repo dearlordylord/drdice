@@ -22,14 +22,14 @@ artifact. `pnpm check:fixtures` checks that this generated set is clean and
 typechecks every shard under TypeScript 7.
 
 `pnpm check:prng:budget` requires TypeScript 7.0.2 and enumerates the focused
-query plus all eleven generated #18 artifacts under both checker policies. It always enforces the
-deterministic 320 MiB compiler-memory and 90,000-instantiation ceilings. The
-portable command uses one scored process per artifact; set
-`DRDICE_PRNG_BUDGET_RUNS=5` for the Issue #11-style repeated evidence. On a
-reference runner, add `--reference-runner` to enforce the 500 ms median check
-ceiling and 1,500 ms single-run ceiling. `budget.ts` remains a small focused
-probe, while the blocking artifact list is the generated corpus. The recorded
-per-artifact run is [`results.json`](./results.json):
+query plus all eleven generated #18 artifacts under both checker policies. It
+always enforces the deterministic 320 MiB compiler-memory and
+90,000-instantiation ceilings. The blocking package command performs one
+unscored warm-up and five fresh scored processes per artifact/policy and passes
+`--reference-runner` to enforce the 500 ms median check ceiling and 1,500 ms
+single-run ceiling. `budget.ts` remains a small focused probe, while the
+blocking artifact list is the generated corpus. The recorded per-artifact run
+is [`results.json`](./results.json):
 
 | checker policy | maximum check | maximum memory | maximum instantiations |
 | --- | ---: | ---: | ---: |
