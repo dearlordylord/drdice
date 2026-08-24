@@ -29,6 +29,11 @@ corpus therefore fails instead of being silently regenerated. To audit a
 candidate corpus without replacing the committed file, pass its path as the
 first argument or set `DRDICE_GOLDEN_FILE`.
 
+The checker also pins the canonical Seed, established ten-word/three-state
+reference, profile identity, schema version, bound ceiling, and attempt ceiling
+independently of both the oracle and JSON. It probes bound 101 and fuel 5 for
+structured no-consumption failures.
+
 The second command is tolerant of this pre-package branch. After the #16
 workspace supplies `packages/prng` and `packages/dice`, it verifies that both
 manifests have explicit root-only exports and allowlists, and that neither
@@ -45,4 +50,3 @@ The canonical raw words, in lowercase hexadecimal form, are:
 
 These fixtures are review evidence for later type-level implementation work;
 the package APIs must consume the literals without importing this oracle.
-

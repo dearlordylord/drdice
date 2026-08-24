@@ -21,6 +21,7 @@ import {
   oracleNext,
   oracleRestoreReplay,
   oracleRestoreState,
+  oracleSerializeState,
   oracleSample,
   oracleStateFromWords,
 } from "./oracle.mjs";
@@ -28,6 +29,33 @@ import {
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const defaultGoldenFile = path.join(directory, "golden-vectors.json");
 const goldenFile = process.env.DRDICE_GOLDEN_FILE ?? process.argv[2] ?? defaultGoldenFile;
+
+/* These are independent review anchors, not values read from the oracle or
+ * corpus.  A coordinated change to both files must fail until the profile is
+ * deliberately re-reviewed. */
+const PINNED_SCHEMA_VERSION = 1;
+const PINNED_SEQUENCE_PROFILE = "xoshiro128ss-1.1/direct128-msb-rejection-1";
+const PINNED_MAX_BOUND = 100;
+const PINNED_MAX_ATTEMPTS = 4;
+const PINNED_CANONICAL_SEED = ["00000001", "00000002", "00000003", "00000004"];
+const PINNED_CANONICAL_RAW_WORDS = [
+  "00002d00",
+  "00000000",
+  "005a7080",
+  "04389d80",
+  "79199d9b",
+  "61963b24",
+  "4cb9b57a",
+  "de9d7431",
+  "de458f35",
+  "fdce1a54",
+];
+const PINNED_CANONICAL_SUCCESSOR_STATES = [
+  ["00000007", "00000000", "00000402", "00003000"],
+  ["00003007", "00000405", "00000405", "01800000"],
+  ["01803402", "00003007", "00083e02", "0020280c"],
+];
+const PINNED_CRAFTED_REJECTION_STATE = ["b0e8eac3", "f2d79146", "a51937ed", "21243868"];
 
 const fail = (message) => {
   throw new Error(`[issue-17] ${message}`);
@@ -100,10 +128,22 @@ const checkTransitionCorpus = (golden) => {
   const vector = golden.rawWordVector;
   assert(vector && typeof vector === "object", "raw-word vector is missing");
   words(golden.canonicalSeed, "canonicalSeed");
-  equal(vector.seed, golden.canonicalSeed, "raw-word seed must be the canonical Seed");
+  equal(golden.canonicalSeed, PINNED_CANONICAL_SEED, "canonical Seed changed without a reviewed profile change");
+  equal(vector.seed, PINNED_CANONICAL_SEED, "raw-word seed must use the established direct-Seed vector");
   assert(Array.isArray(vector.words) && vector.words.length >= 10, "at least ten literal raw words are required");
   assert(Array.isArray(vector.successorStates) && vector.successorStates.length >= 3, "at least three literal successor states are required");
   assert(Array.isArray(vector.transitions) && vector.transitions.length >= 10, "at least ten literal transition records are required");
+
+  equal(
+    vector.words.slice(0, PINNED_CANONICAL_RAW_WORDS.length),
+    PINNED_CANONICAL_RAW_WORDS,
+    "canonical raw words changed without a reviewed profile change",
+  );
+  equal(
+    vector.successorStates.slice(0, PINNED_CANONICAL_SUCCESSOR_STATES.length),
+    PINNED_CANONICAL_SUCCESSOR_STATES,
+    "canonical successor states changed without a reviewed profile change",
+  );
 
   for (const [index, word] of vector.words.entries()) {
     assert(typeof word === "string" && /^[0-9a-f]{8}$/.test(word), `raw word ${index} is not a canonical lowercase Word32`);
@@ -199,6 +239,11 @@ const checkSamplingCorpus = (golden) => {
   ]) assert(byId.has(id), `required sampling vector ${id} is missing`);
 
   const forced = byId.get("forced-rejection-then-acceptance");
+  equal(golden.craftedRejectionState, PINNED_CRAFTED_REJECTION_STATE, "crafted rejection state changed without a reviewed profile change");
+  equal(forced.inputState, golden.craftedRejectionState, "forced-rejection vector must use craftedRejectionState exactly");
+  assert(forced.bound === 7 && forced.maximumAttempts === 2, "forced-rejection vector must retain its two-attempt bound-seven role");
+  equal(forced.attemptWords, ["f244aa57", "ddb72649"], "forced-rejection words changed without reviewed evidence");
+  equal(forced.candidates, [7, 6], "forced-rejection candidates must reject seven then accept six");
   assert(forced.candidates[0] >= forced.bound, "forced-rejection vector does not reject its first candidate");
   assert(forced.candidates[forced.candidates.length - 1] < forced.bound, "forced-rejection vector does not eventually accept");
   for (let fuel = 0; fuel <= 4; fuel += 1) {
@@ -225,6 +270,9 @@ const checkReplayCorpus = (golden) => {
   equal(first.value.state.words, replay.firstSuccessorState, "Replay Token first successor disagrees with golden data");
 
   const serialized = replay.serializedState;
+  const serializedFromOracle = oracleSerializeState(first.value.state);
+  assert(serializedFromOracle.ok, "a valid Generator State must serialize");
+  equal(serializedFromOracle.value, serialized, "serialized-state golden data disagrees with oracle serialization");
   equal(serialized.schemaVersion, SCHEMA_VERSION, "Serialized Generator State schema version disagrees with oracle");
   equal(serialized.sequenceProfile, SEQUENCE_PROFILE, "Serialized Generator State profile disagrees with oracle");
   words(serialized.state, "serializedState.state");
@@ -234,6 +282,31 @@ const checkReplayCorpus = (golden) => {
   assert(next.ok, "restored serialized state could not step");
   equal(next.value.word, replay.resumedWord, "Serialized Generator State did not resume at the next word");
   equal(next.value.state.words, replay.resumedSuccessorState, "Serialized Generator State successor disagrees with golden data");
+  const serializedAgain = oracleSerializeState(resumed.value);
+  assert(serializedAgain.ok, "a restored Generator State must serialize again");
+  equal(serializedAgain.value, serialized, "serialize/restore round-trip changed the current Generator State");
+};
+
+const checkPinnedProfileAndInvalidPreflight = () => {
+  assert(SCHEMA_VERSION === PINNED_SCHEMA_VERSION, "oracle schema version changed without a reviewed profile change");
+  assert(SEQUENCE_PROFILE === PINNED_SEQUENCE_PROFILE, "oracle Sequence Profile changed without a reviewed profile change");
+  assert(MAX_BOUND === PINNED_MAX_BOUND, "oracle maximum bound changed without a reviewed profile change");
+  assert(MAX_ATTEMPTS === PINNED_MAX_ATTEMPTS, "oracle maximum attempts changed without a reviewed profile change");
+
+  const initialized = oracleInitialize(PINNED_CANONICAL_SEED);
+  assert(initialized.ok, "canonical Seed must initialize for invalid-preflight checks");
+  const state = initialized.value;
+  const before = [...state.words];
+
+  const invalidBound = oracleSample(state, PINNED_MAX_BOUND + 1, 1);
+  assert(!invalidBound.ok && invalidBound.code === "invalid-bound", "bound 101 must fail as invalid-bound");
+  equal(invalidBound.details.bound, PINNED_MAX_BOUND + 1, "invalid bound diagnostic must retain 101");
+  equal(state.words, before, "invalid bound 101 consumed Generator State");
+
+  const invalidFuel = oracleSample(state, 1, PINNED_MAX_ATTEMPTS + 1);
+  assert(!invalidFuel.ok && invalidFuel.code === "invalid-attempt-fuel", "fuel 5 must fail as invalid-attempt-fuel");
+  equal(invalidFuel.details.maximumAttempts, PINNED_MAX_ATTEMPTS + 1, "invalid fuel diagnostic must retain 5");
+  equal(state.words, before, "invalid fuel 5 consumed Generator State");
 };
 
 const checkPrivateBoundary = () => {
@@ -263,8 +336,9 @@ const checkNegativeBoundaryCases = () => {
 
 const main = () => {
   const golden = readGolden();
-  assert(golden.schemaVersion === SCHEMA_VERSION, "golden schema version disagrees with oracle");
-  assert(golden.sequenceProfile === SEQUENCE_PROFILE, "golden Sequence Profile disagrees with oracle");
+  checkPinnedProfileAndInvalidPreflight();
+  assert(golden.schemaVersion === PINNED_SCHEMA_VERSION, "golden schema version changed without a reviewed profile change");
+  assert(golden.sequenceProfile === PINNED_SEQUENCE_PROFILE, "golden Sequence Profile changed without a reviewed profile change");
   words(golden.canonicalSeed, "canonicalSeed");
   words(golden.craftedRejectionState, "craftedRejectionState");
   checkTransitionCorpus(golden);
