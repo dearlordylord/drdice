@@ -18,7 +18,11 @@ const isReleaseInfrastructure = (path) => (
   path === "README.md"
   || path === "package.json"
   || path === "scripts/local_release.sh"
+  || path === "verification/baseline/README.md"
   || path === "verification/check-clean-consumers.mjs"
+  || path === "verification/issue-18/check-budget.mjs"
+  || path === "verification/issue-19/README.md"
+  || path === "verification/issue-19/check-budget.mjs"
   || path.startsWith("verification/parity/")
   || path.startsWith("verification/release/")
 );
