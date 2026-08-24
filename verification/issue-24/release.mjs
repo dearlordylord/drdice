@@ -111,6 +111,7 @@ const gates = [
   runRequiredGate("complete semantic and package parity", "pnpm", ["check:parity"]),
   runRequiredGate("packed clean consumers", "pnpm", ["check:clean-consumers"]),
   runRequiredGate("packed artifact allowlists", "pnpm", ["check:packed"]),
+  runRequiredGate("advertised workspace verification", "pnpm", ["verify"]),
 ];
 const packages = await packageEvidence();
 const semantic = await semanticEvidence();

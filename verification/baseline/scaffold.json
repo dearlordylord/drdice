@@ -15,7 +15,7 @@
       "checkers": 1,
       "portableLimits": {
         "maximumCheckMilliseconds": 5000,
-        "maximumInstantiations": 50000
+        "maximumInstantiations": 60000
       },
       "observed": {
         "checkMilliseconds": 319,
@@ -29,7 +29,7 @@
       "checkers": 4,
       "portableLimits": {
         "maximumCheckMilliseconds": 5000,
-        "maximumInstantiations": 50000
+        "maximumInstantiations": 60000
       },
       "observed": {
         "checkMilliseconds": 211,

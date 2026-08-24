@@ -43,6 +43,7 @@ const gates = [
   run("complete semantic and package parity", ["check:parity"]),
   run("packed clean consumers", ["check:clean-consumers"]),
   run("packed artifact allowlists", ["check:packed"]),
+  run("advertised workspace verification", ["verify"]),
 ];
 
 /* Keep the report's gate inventory closed: adding or removing a release gate

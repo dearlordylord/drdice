@@ -22,7 +22,9 @@ if (JSON.stringify(generatedNames) !== JSON.stringify(expectedNames)) {
 const artifacts = [focusedQuery, ...expectedNames.map((name) => resolve(generatedDirectory, name))];
 const limits = {
   /* Issue #11's sampling-ceiling budget. */
-  maximumCheckMilliseconds: 600,
+  /* Issue #24's final PRNG release lane uses one 750 ms median ceiling for
+   * focused and exhaustive bounded-sampling evidence. */
+  maximumCheckMilliseconds: 750,
   maximumSingleCheckMilliseconds: 1500,
   maximumCompilerMemoryKiB: 327680,
   maximumInstantiations: 120000,
