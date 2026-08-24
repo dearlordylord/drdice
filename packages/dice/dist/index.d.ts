@@ -602,12 +602,12 @@ type EvalDiceRest<
       }
       ? Increment<Value> extends infer Face extends number
         ? [...Trace, DieSample<Sides, Face>] extends infer NextTrace extends RollTrace
-          ? ApplyEvaluationOp<"+", Total, Face> extends infer NextTotal extends number
+          ? AddNatural<Total, Face> extends infer NextTotal extends number
             ? AddNatural<Steps, Increment<Attempts>> extends infer NextSteps extends number
               ? IsGreaterThan<NextSteps, L["evaluationSteps"]> extends true
                 ? EvaluationStepFailure<Offset, NextSteps, NextTrace, NextState>
-                : ExceedsArithmeticLimit<NextTotal> extends true
-                  ? DynamicResourceFailure<"arithmetic-magnitude", Offset, MagnitudeOfNumber<NextTotal>, NextTrace, NextState>
+                : IsGreaterThan<NextTotal, L["arithmeticMagnitude"]> extends true
+                  ? DynamicResourceFailure<"arithmetic-magnitude", Offset, NextTotal, NextTrace, NextState>
                   : EvalDiceRest<Decrement<Count>, Sides, NextState, Fuel, NextTrace, Offset, NextTotal, NextSteps>
               : never
             : never

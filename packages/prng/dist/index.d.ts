@@ -287,15 +287,17 @@ type Add<A extends Bits32, B extends Bits32> = AsBitArray<Reverse<AddLittleEndia
 type Mul5<A extends Bits32> = Add<A, ShiftLeft<A, 2>>;
 type Mul9<A extends Bits32> = Add<A, ShiftLeft<A, 3>>;
 
+type XoshiroStateWords<A extends Bits32, B extends Bits32, C extends Bits32, D extends Bits32> = readonly [
+  BitsToText<Xor<A, Xor<B, D>>>,
+  BitsToText<Xor<B, Xor<C, A>>>,
+  BitsToText<Xor<Xor<C, A>, ShiftLeft<B, 9>>>,
+  BitsToText<RotateLeft<AsBitArray<Xor<D, B>>, 11>>,
+];
+
 /** xoshiro128** 1.1: output scrambles the second state word. */
 type XoshiroStep<A extends Bits32, B extends Bits32, C extends Bits32, D extends Bits32> = {
   readonly word: BitsToText<Mul9<RotateLeft<Mul5<B>, 7>>>;
-  readonly state: readonly [
-    BitsToText<Xor<A, Xor<B, D>>>,
-    BitsToText<Xor<B, Xor<C, A>>>,
-    BitsToText<Xor<Xor<C, A>, ShiftLeft<B, 9>>>,
-    BitsToText<RotateLeft<AsBitArray<Xor<D, B>>, 11>>,
-  ];
+  readonly state: XoshiroStateWords<A, B, C, D>;
 };
 
 type IsZeroWord<S extends string> = S extends "00000000" ? true : false;
@@ -381,6 +383,26 @@ type StateBits<State extends GeneratorState> = State["words"] extends readonly [
       ? TextToBits<C> extends infer CB extends Bits32
         ? TextToBits<D> extends infer DB extends Bits32
           ? XoshiroStep<AB, BB, CB, DB>
+          : never
+        : never
+      : never
+    : never
+  : never;
+
+/* d1 has no rejection decision or output conversion to perform.  Keep its
+ * transition on a state-only path so the public Sample boundary does not
+ * instantiate the unused output scramble and bit-prefix machinery. */
+type StateWordsOnly<State extends GeneratorState> = State["words"] extends readonly [
+  infer A extends string,
+  infer B extends string,
+  infer C extends string,
+  infer D extends string,
+]
+  ? TextToBits<A> extends infer AB extends Bits32
+    ? TextToBits<B> extends infer BB extends Bits32
+      ? TextToBits<C> extends infer CB extends Bits32
+        ? TextToBits<D> extends infer DB extends Bits32
+          ? XoshiroStateWords<AB, BB, CB, DB>
           : never
         : never
       : never
@@ -878,25 +900,33 @@ type SampleLoop<
       readonly attempts: Attempts["length"];
       readonly state: State;
     }>
-  : StateBits<State> extends infer Step
-    ? Step extends { readonly word: infer Word extends string; readonly state: infer Words extends StateWords }
-      ? PrefixBits<Word, BoundWidth<Bound>> extends infer CandidateBits extends readonly Bit[]
-        ? IsBelowBound<CandidateBits, Bound> extends true
-          ? BoundedSuccess<
-              BitsToSmallNumber<CandidateBits>,
-              GeneratorState<readonly [Words[0], Words[1], Words[2], Words[3]]>,
-              [...Attempts, unknown]["length"]
-            >
-          : SampleLoop<
-              GeneratorState<readonly [Words[0], Words[1], Words[2], Words[3]]>,
-              Bound,
-              PreviousFuel<Fuel>,
-              MaximumAttempts,
-              [...Attempts, unknown]
-            >
-        : never
-      : Step
-    : never;
+  : Bound extends 1
+    ? StateWordsOnly<State> extends infer Words extends StateWords
+      ? BoundedSuccess<
+          0,
+          GeneratorState<readonly [Words[0], Words[1], Words[2], Words[3]]>,
+          [...Attempts, unknown]["length"]
+        >
+      : never
+    : StateBits<State> extends infer Step
+      ? Step extends { readonly word: infer Word extends string; readonly state: infer Words extends StateWords }
+        ? PrefixBits<Word, BoundWidth<Bound>> extends infer CandidateBits extends readonly Bit[]
+          ? IsBelowBound<CandidateBits, Bound> extends true
+            ? BoundedSuccess<
+                BitsToSmallNumber<CandidateBits>,
+                GeneratorState<readonly [Words[0], Words[1], Words[2], Words[3]]>,
+                [...Attempts, unknown]["length"]
+              >
+            : SampleLoop<
+                GeneratorState<readonly [Words[0], Words[1], Words[2], Words[3]]>,
+                Bound,
+                PreviousFuel<Fuel>,
+                MaximumAttempts,
+                [...Attempts, unknown]
+              >
+          : never
+        : Step
+      : never;
 
 /* State validation deliberately runs before bound/fuel preflight. */
 type SampleStateValidation<Input> = Input extends {

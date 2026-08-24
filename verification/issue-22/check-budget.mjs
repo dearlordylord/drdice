@@ -8,12 +8,14 @@ const root = resolve(here, "../..");
 const generated = resolve(here, "generated");
 const focusedQuery = resolve(here, "budget.ts");
 const maximumSideQuery = resolve(here, "budget-max-side.ts");
+const importOnlyQuery = resolve(here, "import-only.ts");
 const artifacts = [focusedQuery, maximumSideQuery, ...(await readdir(generated)).filter((name) => /^dice-issue22-(?:\d{3}|side-\d{3})\.d\.ts$/.test(name)).sort().map((name) => resolve(generated, name))];
 const limits = {
   maximumCheckMilliseconds: 750,
   maximumSingleCheckMilliseconds: 1500,
   maximumCompilerMemoryKiB: 360448,
-  maximumInstantiations: 230000,
+  maximumInstantiations: 165000,
+  maximumAdditionalInstantiations: 32000,
 };
 const scoredRuns = Number.parseInt(process.env.DRDICE_DICE_BUDGET_RUNS ?? "1", 10);
 const enforceOperational = process.argv.includes("--reference-runner");
@@ -29,7 +31,14 @@ const version = spawnSync("pnpm", ["exec", "tsc", "--version"], { cwd: root, enc
 if (version.status !== 0 || version.stdout.trim() !== "Version 7.0.2") throw new Error(`issue-22 budget requires TypeScript 7.0.2, got ${version.stdout.trim()}\n${version.stderr}`);
 
 const results = [];
+const baselines = [];
 for (const checkers of [1, 4]) {
+  const baselineArgs = ["exec", "tsc", "--ignoreConfig", "--pretty", "false", "--strict", "--noEmit", "--target", "ES2020", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--lib", "ES2020,DOM", "--extendedDiagnostics", "--checkers", String(checkers), importOnlyQuery];
+  const baseline = spawnSync("pnpm", baselineArgs, { cwd: root, encoding: "utf8" });
+  const baselineOutput = `${baseline.stdout}\n${baseline.stderr}`;
+  if (baseline.status !== 0) throw new Error(`issue-22 ${relative(root, importOnlyQuery)} ${checkers}-checker baseline failed\n${baselineOutput}`);
+  const baselineInstantiations = parse(baselineOutput, "Instantiations");
+  baselines.push({ artifact: relative(root, importOnlyQuery), compiler: version.stdout.trim(), checkers, instantiations: baselineInstantiations });
   for (const artifact of artifacts) {
     const args = ["exec", "tsc", "--ignoreConfig", "--pretty", "false", "--strict", "--noEmit", "--target", "ES2020", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--lib", "ES2020,DOM", "--extendedDiagnostics", "--checkers", String(checkers), artifact];
     const label = `${relative(root, artifact)} ${checkers}-checker`;
@@ -58,7 +67,12 @@ for (const checkers of [1, 4]) {
     if (enforceOperational && observed.checkMilliseconds.maximum > limits.maximumSingleCheckMilliseconds) throw new Error(`${label} single check time ${observed.checkMilliseconds.maximum} exceeds ${limits.maximumSingleCheckMilliseconds} ms`);
     if (observed.compilerMemoryKiB.maximum > limits.maximumCompilerMemoryKiB) throw new Error(`${label} compiler memory ${observed.compilerMemoryKiB.maximum} KiB exceeds ${limits.maximumCompilerMemoryKiB}`);
     if (observed.instantiations.maximum > limits.maximumInstantiations) throw new Error(`${label} instantiations ${observed.instantiations.maximum} exceeds ${limits.maximumInstantiations}`);
+    if (artifact === focusedQuery) {
+      const additionalInstantiations = observed.instantiations.maximum - baselineInstantiations;
+      if (additionalInstantiations > limits.maximumAdditionalInstantiations) throw new Error(`${label} adds ${additionalInstantiations} instantiations over ${baselineInstantiations}-instantiation import-only baseline, exceeding ${limits.maximumAdditionalInstantiations}`);
+      observed.additionalInstantiations = additionalInstantiations;
+    }
     results.push(observed);
   }
 }
-console.log(JSON.stringify({ schemaVersion: 1, issue: 22, focusedQuery: relative(root, focusedQuery), artifacts: artifacts.map((artifact) => relative(root, artifact)), limits, results }, null, 2));
+console.log(JSON.stringify({ schemaVersion: 1, issue: 22, focusedQuery: relative(root, focusedQuery), importOnlyQuery: relative(root, importOnlyQuery), artifacts: artifacts.map((artifact) => relative(root, artifact)), limits, baselines, results }, null, 2));
