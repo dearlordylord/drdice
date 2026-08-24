@@ -6,6 +6,9 @@ PRNG_PACKAGE_NAME="@drdice/prng"
 DICE_PACKAGE_NAME="@drdice/dice"
 EXPECTED_GITHUB_LOGIN="dearlordylord"
 DRY_RUN="${DRDICE_RELEASE_DRY_RUN:-0}"
+REGISTRY_VISIBILITY_ATTEMPTS=60
+REGISTRY_VISIBILITY_DELAY_SECONDS=5
+REGISTRY_VISIBILITY_TIMEOUT_SECONDS=$((REGISTRY_VISIBILITY_ATTEMPTS * REGISTRY_VISIBILITY_DELAY_SECONDS))
 
 if [[ "${1:-}" == "--dist-tag-dry-run" ]]; then
   [[ -n "${2:-}" ]] || {
@@ -55,15 +58,15 @@ wait_for_published_version() {
   local package_version="$2"
   local attempt
 
-  for attempt in {1..12}; do
+  for ((attempt = 1; attempt <= REGISTRY_VISIBILITY_ATTEMPTS; attempt += 1)); do
     if [[ "$(published_version "$package_name" "$package_version")" == "$package_version" ]]; then
       return 0
     fi
-    printf 'Waiting for %s@%s registry visibility (%s/12).\n' \
-      "$package_name" "$package_version" "$attempt"
-    sleep 5
+    printf 'Waiting for %s@%s registry visibility (%s/%s).\n' \
+      "$package_name" "$package_version" "$attempt" "$REGISTRY_VISIBILITY_ATTEMPTS"
+    sleep "$REGISTRY_VISIBILITY_DELAY_SECONDS"
   done
-  fail "$package_name@$package_version is not visible in the registry after 60 seconds"
+  fail "$package_name@$package_version is not visible in the registry after $REGISTRY_VISIBILITY_TIMEOUT_SECONDS seconds"
 }
 
 current_branch="$(git branch --show-current)"
