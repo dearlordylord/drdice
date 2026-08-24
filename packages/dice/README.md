@@ -5,8 +5,10 @@ literal-computing Dice Expression evaluator. It depends one-way on
 `@drdice/prng` and is intended for reproducible games, tests, and TypeScript
 type-system experimentation.
 
-DRDice is non-cryptographic. Do not use it for secrets, security tokens,
-gambling, or unpredictable entropy.
+DRDice is non-cryptographic. It is suitable for reproducible game simulations,
+deterministic tests, examples, and type-system experiments. Do not use it for
+keys, secrets, passwords, authentication or reset tokens, security decisions,
+gambling or wagering, or unpredictable entropy.
 
 The v1 implementation is checked by exactly `typescript@7.0.2`. The pinned
 `@typescript/typescript6@6.0.2` lane is advisory migration evidence only.
@@ -17,7 +19,12 @@ types remain owned by `@drdice/prng` and are not re-exported here.
 
 The Dice grammar identity for v1 is
 `dice-v1/utf16-bounded-left-to-right-1` (semantic version `1`). It is distinct
-from the package version and from the PRNG Sequence Profile. The complete
+from the package version, the PRNG schema version, and the PRNG Sequence
+Profile. A grammar, UTF-16 offset, limit, parser, evaluation-order, arithmetic,
+sampling, failure-selection, or result-value change requires a new Dice
+semantic identity and reviewed old and new vectors. Private refactors may
+retain the identity only when all exact vectors and release gates remain equal.
+The complete
 evaluator exposes `Evaluate<Source, GeneratorState, MaximumAttempts>` for
 literal nonnegative integers, `dS`/`NdS` terms, left-associative `+`/`-`,
 parentheses, and ASCII space/tab/line-feed/carriage-return. Successful

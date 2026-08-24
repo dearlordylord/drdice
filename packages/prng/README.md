@@ -14,8 +14,11 @@ Only the package root is public. Consumers use type-only imports from
 The immutable PRNG Sequence Profile is
 `xoshiro128ss-1.1/direct128-msb-rejection-1`. The package version (`0.1.0`),
 Replay Token/Serialized Generator State schema version (`1`), and Sequence
-Profile identity are separate compatibility identities. A sequence-changing
-implementation change requires a new profile and reviewed vectors.
+Profile identity are separate compatibility identities. A package contract
+change requires a new package release; a serialized-shape change requires a
+new schema version; and a sequence-changing implementation change requires a
+new Sequence Profile plus reviewed old and new vectors. A private refactor may
+retain all three only when the exact vectors and release gates remain equal.
 
 The root provides exact literal type operations:
 
@@ -33,8 +36,10 @@ The root provides exact literal type operations:
   word. Replay restart and serialized-state resume are intentionally distinct.
 
 All-zero and malformed Seed or Generator State values fail structurally and do
-do not advance state. Invalid bounds and attempt fuel are rejected before any
+not advance state. Invalid bounds and attempt fuel are rejected before any
 transition. The public type API is literal-computing: widened strings and
-numbers are outside the v1 contract. DRDice is reproducible but not
-cryptographic; do not use it for secrets, security tokens, gambling, or
+numbers are outside the v1 contract. This package is suitable for reproducible
+game simulations, deterministic tests, examples, and type-system experiments.
+It is not cryptographic and must not be used for keys, secrets, passwords,
+authentication or reset tokens, security decisions, gambling or wagering, or
 unpredictable entropy.

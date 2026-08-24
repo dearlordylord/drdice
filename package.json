@@ -26,6 +26,8 @@
     "check:budgets": "node verification/check-budgets.mjs --policy all",
     "check:budgets:one-checker": "node verification/check-budgets.mjs --policy one-checker",
     "check:budgets:four-checker": "node verification/check-budgets.mjs --policy four-checker",
+    "release:measure": "node verification/issue-24/release.mjs --measure",
+    "check:release": "node verification/issue-24/check.mjs",
     "verify": "pnpm typecheck && pnpm check:parity && pnpm check:budgets && pnpm check:prng:budget",
     "verify:ts6": "pnpm typecheck:ts6"
   },

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "requiredWarmupRuns": 1,
+  "requiredScoredRuns": 5,
+  "blockingCompiler": "typescript@7.0.2",
+  "advisoryCompiler": "@typescript/typescript6@6.0.2",
+  "policies": {
+    "typescript-7-single-checker": {
+      "blocking": true,
+      "package": "typescript@7.0.2",
+      "executable": "tsc",
+      "checkerWorkers": 1,
+      "maximumSingleCheckMilliseconds": 1500,
+      "cases": {
+        "baseline": { "maximumCheckMilliseconds": 500, "maximumCompilerMemoryKiB": 163840, "maximumInstantiations": 60000 },
+        "prng": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 327680, "maximumInstantiations": 120000 },
+        "dice": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "combined": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "max-query": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 }
+      }
+    },
+    "typescript-7-four-checker": {
+      "blocking": true,
+      "package": "typescript@7.0.2",
+      "executable": "tsc",
+      "checkerWorkers": 4,
+      "maximumSingleCheckMilliseconds": 1500,
+      "cases": {
+        "baseline": { "maximumCheckMilliseconds": 500, "maximumCompilerMemoryKiB": 163840, "maximumInstantiations": 60000 },
+        "prng": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 327680, "maximumInstantiations": 120000 },
+        "dice": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "combined": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "max-query": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 }
+      }
+    },
+    "typescript-6-advisory": {
+      "blocking": false,
+      "package": "@typescript/typescript6@6.0.2",
+      "executable": "tsc6",
+      "checkerWorkers": 1,
+      "maximumSingleCheckMilliseconds": 6000,
+      "cases": {
+        "baseline": { "maximumCheckMilliseconds": 3500, "maximumCompilerMemoryKiB": 393216, "maximumInstantiations": 60000 },
+        "prng": { "maximumCheckMilliseconds": 4500, "maximumCompilerMemoryKiB": 425984, "maximumInstantiations": 120000 },
+        "dice": { "maximumCheckMilliseconds": 4500, "maximumCompilerMemoryKiB": 458752, "maximumInstantiations": 165000 },
+        "combined": { "maximumCheckMilliseconds": 4500, "maximumCompilerMemoryKiB": 458752, "maximumInstantiations": 165000 },
+        "max-query": { "maximumCheckMilliseconds": 5000, "maximumCompilerMemoryKiB": 458752, "maximumInstantiations": 165000 }
+      }
+    }
+  }
+}

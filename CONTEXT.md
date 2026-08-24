@@ -46,3 +46,22 @@ _Avoid_: Roll, result, Evaluation Result
 The outcome of attempting to evaluate a Dice Expression: either a Dice Evaluation
 or a structured failure without a total.
 _Avoid_: Dice Evaluation, result
+
+**Package Identity**:
+The published package name and version that identify a package/API release.
+_Avoid_: algorithm identity, schema identity
+
+**State Schema Identity**:
+The versioned Replay Token and Serialized Generator State shape and
+interpretation.
+_Avoid_: package version, Sequence Profile
+
+**PRNG Sequence Profile**:
+The immutable transition, output, rejection, state-consumption, and seed-mapping
+rules that define a reproducible pseudorandom sequence.
+_Avoid_: package version, random number generator
+
+**Dice Semantic Profile**:
+The immutable Dice grammar, UTF-16, resource, arithmetic, evaluation, sampling,
+failure, and result rules.
+_Avoid_: package version, Roll Trace

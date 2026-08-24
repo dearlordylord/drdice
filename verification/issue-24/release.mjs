@@ -1,0 +1,162 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+import {
+  ROOT,
+  REPORT,
+  REPORT_RELATIVE,
+  digestJson,
+  gitCommit,
+  gitStatus,
+  reportDigest,
+  sourceDigest,
+  validateBudgetResults,
+} from "./common.mjs";
+
+const mode = process.argv[2] ?? "--measure";
+if (mode !== "--measure") throw new Error("usage: node verification/issue-24/release.mjs --measure");
+
+const fail = (message) => {
+  throw new Error(`[issue-24 release] ${message}`);
+};
+
+const run = (command, args) => {
+  const child = spawnSync(command, args, { cwd: ROOT, encoding: "utf8" });
+  return {
+    command: [command, ...args].join(" "),
+    status: child.status,
+    stdout: child.stdout ?? "",
+    stderr: child.stderr ?? "",
+  };
+};
+
+const runRequiredGate = (label, command, args) => {
+  const result = run(command, args);
+  if (result.status !== 0) fail(`${label} failed\n${result.stdout}\n${result.stderr}`);
+  return { label, ...result };
+};
+
+const extract = (source, pattern, label) => {
+  const match = source.match(pattern);
+  if (!match) fail(`could not read ${label} from a package declaration`);
+  return match[1];
+};
+
+const packageEvidence = async () => {
+  const records = [];
+  for (const name of ["prng", "dice"]) {
+    const directory = resolve(ROOT, "packages", name);
+    const manifest = JSON.parse(await readFile(resolve(directory, "package.json"), "utf8"));
+    const declaration = await readFile(resolve(directory, "dist/index.d.ts"), "utf8");
+    records.push({
+      name: manifest.name,
+      version: manifest.version,
+      types: manifest.types,
+      exports: manifest.exports,
+      files: manifest.files,
+      dependencies: manifest.dependencies ?? {},
+      sideEffects: manifest.sideEffects,
+      declarationOnly: /declaration-only/i.test(await readFile(resolve(directory, "README.md"), "utf8")),
+      declarationBytes: Buffer.byteLength(declaration),
+      identities: name === "prng"
+        ? {
+            packageType: extract(declaration, /export type PackageVersion = "([^"]+)"/, "PRNG package version"),
+            schemaVersion: Number(extract(declaration, /export const SCHEMA_VERSION: (\d+)/, "PRNG schema version")),
+            sequenceProfile: extract(declaration, /export const SEQUENCE_PROFILE: "([^"]+)"/, "PRNG Sequence Profile"),
+          }
+        : {
+            semanticVersion: Number(extract(declaration, /export const DICE_SEMANTIC_VERSION: (\d+)/, "Dice semantic version")),
+            semanticProfile: extract(declaration, /export const DICE_SEMANTIC_PROFILE: "([^"]+)"/, "Dice semantic profile"),
+          },
+    });
+  }
+  return records;
+};
+
+const semanticEvidence = async () => {
+  const prng = JSON.parse(await readFile(resolve(ROOT, "verification/issue-17/golden-vectors.json"), "utf8"));
+  const dice = JSON.parse(await readFile(resolve(ROOT, "verification/issue-20/golden-vectors.json"), "utf8"));
+  const cases = JSON.parse(await readFile(resolve(ROOT, "verification/issue-22/cases.json"), "utf8"));
+  return {
+    prng: {
+      schemaVersion: prng.schemaVersion,
+      corpus: prng.corpus,
+      sequenceProfile: prng.sequenceProfile,
+      transitionCount: prng.rawWordVector.transitions.length,
+      boundedResultCount: prng.sampling.length,
+    },
+    dice: {
+      semanticProfile: dice.semanticProfile,
+      semanticVersion: dice.semanticVersion,
+      prngSequenceProfile: dice.prngSequenceProfile,
+      limits: dice.limits,
+      tieOrder: dice.staticResourceTieOrder,
+      goldenCaseCount: dice.cases.length,
+      completeParityCaseCount: cases.length,
+    },
+  };
+};
+
+const budgetFile = resolve(ROOT, "verification/issue-24/budgets.json");
+const budgets = JSON.parse(await readFile(budgetFile, "utf8"));
+const initialStatus = gitStatus();
+if (initialStatus) {
+  fail(`working tree is dirty; commit source changes before measuring release evidence:\n${initialStatus}`);
+}
+
+const measuredCommit = gitCommit();
+const measuredSourceDigest = await sourceDigest();
+const gates = [
+  runRequiredGate("TypeScript 7 project typecheck", "pnpm", ["typecheck"]),
+  runRequiredGate("complete semantic and package parity", "pnpm", ["check:parity"]),
+  runRequiredGate("packed clean consumers", "pnpm", ["check:clean-consumers"]),
+  runRequiredGate("packed artifact allowlists", "pnpm", ["check:packed"]),
+];
+const packages = await packageEvidence();
+const semantic = await semanticEvidence();
+
+const temporary = await mkdtemp(resolve("/tmp", "drdice-issue24-release-"));
+const benchmarkPath = resolve(temporary, "compiler-budget.json");
+let benchmark;
+try {
+  const measured = run(process.execPath, [resolve(ROOT, "verification/issue-24/benchmark.mjs"), "--output", benchmarkPath]);
+  if (measured.status !== 0) fail(`compiler benchmark failed\n${measured.stdout}\n${measured.stderr}`);
+  benchmark = JSON.parse(await readFile(benchmarkPath, "utf8"));
+} finally {
+  await rm(temporary, { recursive: true, force: true });
+}
+
+const currentSourceDigest = await sourceDigest();
+if (currentSourceDigest !== measuredSourceDigest) fail("source tree changed while qualification was running; discard the measurements and retry");
+const budgetVerdict = validateBudgetResults(benchmark, budgets);
+if (budgetVerdict.failures.length > 0) fail(`blocking compiler budgets failed:\n${budgetVerdict.failures.join("\n")}`);
+
+const report = {
+  schemaVersion: 1,
+  issue: 24,
+  verdict: {
+    status: "ready",
+    blockingFailures: budgetVerdict.failures,
+    advisories: budgetVerdict.advisories,
+    statement: "Release candidate meets the declared TypeScript 7.0.2 semantic, package, packed-boundary, and compiler-budget gates.",
+  },
+  source: {
+    measuredCommit,
+    sourceDigest: measuredSourceDigest,
+    cleanAtMeasurement: true,
+    digestExcludes: [REPORT_RELATIVE],
+  },
+  semantic,
+  packages,
+  gates,
+  budgets,
+  compilerBudget: benchmark,
+};
+report.reportDigest = reportDigest(report);
+await writeFile(REPORT, JSON.stringify(report, null, 2) + "\n", "utf8");
+console.log(`Issue #24 release candidate measured at ${REPORT_RELATIVE}`);
+console.log(`Source digest: ${digestJson({ source: measuredSourceDigest })}`);
+console.log(`Blocking verdict: ${report.verdict.status}`);
+if (budgetVerdict.advisories.length > 0) {
+  console.warn(`Advisories:\n${budgetVerdict.advisories.join("\n")}`);
+}

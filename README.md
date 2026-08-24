@@ -9,9 +9,13 @@ declaration-only TypeScript packages:
 
 The package roots are intentionally the only public export paths. Their
 computation is erased by TypeScript, so consumers use `import type`; there is
-no supported runtime entry point. DRDice is for reproducible games, tests, and
-type-system experimentation, not cryptographic randomness, secrets, security
-tokens, gambling, or unpredictable entropy.
+no supported runtime entry point.
+
+DRDice is non-cryptographic. Appropriate uses include reproducible board- or
+role-playing-game simulations, deterministic tests, teaching examples, and
+type-system experiments. It must not be used for cryptographic keys, secrets,
+passwords, authentication or reset tokens, security decisions, gambling or
+wagering outcomes, or any application that requires unpredictable entropy.
 
 The supported checker is exactly `typescript@7.0.2`. The pinned
 `@typescript/typescript6@6.0.2` command is advisory migration evidence only.
@@ -33,3 +37,21 @@ The earlier raw-transition measurements remain in
 [`verification/issue-18/results.json`](verification/issue-18/results.json).
 Baseline scaffold measurements live in
 [`verification/baseline/scaffold.json`](verification/baseline/scaffold.json).
+
+## Compatibility identities
+
+Package release versions, serialized-schema versions, algorithm sequence
+profiles, and Dice semantic profiles are separate identities:
+
+| Identity | Current value | Change that requires a new identity and reviewed vectors |
+| --- | --- | --- |
+| package release | `@drdice/prng@0.1.0`, `@drdice/dice@0.1.0` | A published package/API compatibility change |
+| PRNG schema | `SCHEMA_VERSION = 1` | Changing Replay Token or Serialized Generator State shape or interpretation |
+| PRNG Sequence Profile | `xoshiro128ss-1.1/direct128-msb-rejection-1` | Changing transition, output conversion, bounds, rejection, state consumption, seed mapping, or replay semantics |
+| Dice semantic profile | `dice-v1/utf16-bounded-left-to-right-1`, version `1` | Changing grammar, UTF-16 offsets, limits, parsing, arithmetic/evaluation order, sampling, failure selection, or result values |
+
+Documentation, checker-performance work, and private refactors may retain an
+identity only when all exact oracle, golden-vector, package-boundary, and
+release-budget gates remain unchanged. The release-candidate qualification
+and stale-evidence checks are documented in
+[`verification/issue-24/README.md`](verification/issue-24/README.md).
