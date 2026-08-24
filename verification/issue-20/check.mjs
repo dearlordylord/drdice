@@ -228,6 +228,8 @@ const checkRequiredCases = (byId) => {
     "zero-dice-count",
     "zero-side-count",
     "domain-beats-supported-side",
+    "utf16-astral-suffix-one-beyond",
+    "utf16-astral-suffix-at-limit",
     "post-consumption-sampling-exhaustion",
     "post-consumption-arithmetic-failure",
     "post-consumption-dynamic-steps",
@@ -249,6 +251,10 @@ const checkRequiredCases = (byId) => {
     "arithmetic-one-beyond",
     "evaluation-steps-one-beyond",
     "rejection-fuel-one-beyond",
+    "ast-arithmetic-tie",
+    "node-term-sample-eval-tie",
+    "term-sample-eval-tie",
+    "arithmetic-evaluation-tie",
   ];
   for (const id of required) assert(byId.has(id), `required golden case ${id} is missing`);
   for (let fuel = 0; fuel <= 4; fuel += 1) {
@@ -313,10 +319,26 @@ const checkBoundaries = (byId) => {
   }
   equal(byId.get("source-length-at-limit").source.length, 64, "source-length at-limit case is not 64 UTF-16 code units");
   equal(byId.get("source-length-one-beyond").source.length, 65, "source-length one-beyond case is not 65 UTF-16 code units");
+  equal(byId.get("utf16-astral-suffix-at-limit").source.length, 64, "UTF-16 astral at-limit case is not 64 code units");
+  equal([...byId.get("utf16-astral-suffix-at-limit").source].length, 63, "UTF-16 astral at-limit case lost its code-point distinction");
+  equal(byId.get("utf16-astral-suffix-one-beyond").source.length, 65, "UTF-16 astral one-beyond case is not 65 code units");
+  equal([...byId.get("utf16-astral-suffix-one-beyond").source].length, 64, "UTF-16 astral one-beyond case does not distinguish code points");
+  assert(byId.get("utf16-astral-suffix-one-beyond").expected.details.dimension === "source-length", "UTF-16 astral suffix did not trigger the source-length guard");
   equal(byId.get("numeric-token-at-limit").source.length, 3, "numeric-token at-limit case is not three digits");
   equal(byId.get("numeric-token-one-beyond").source.length, 4, "numeric-token one-beyond case is not four digits");
   assert(byId.get("term-sample-tie").expected.details.dimension === "dice-term-count", "same-offset term/sample tie must prefer dice-term-count");
   assert(byId.get("static-term-before-side").expected.details.dimension === "dice-term-count", "earlier term excess must beat later supported-side excess");
+  const collisions = [
+    ["ast-arithmetic-tie", 15, "ast-node-count"],
+    ["node-term-sample-eval-tie", 26, "ast-node-count"],
+    ["term-sample-eval-tie", 16, "dice-term-count"],
+    ["arithmetic-evaluation-tie", 12, "arithmetic-magnitude"],
+  ];
+  for (const [id, offset, dimension] of collisions) {
+    const details = byId.get(id).expected.details;
+    equal(details.offset, offset, `${id} collision offset changed`);
+    equal(details.dimension, dimension, `${id} collision winner changed`);
+  }
 };
 
 const checkSideGrid = (golden) => {

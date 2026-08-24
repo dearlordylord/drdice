@@ -1361,6 +1361,55 @@
       }
     },
     {
+      "id": "utf16-astral-suffix-one-beyond",
+      "source": "1                                                              🙂",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 0,
+          "dimension": "source-length",
+          "limit": 64,
+          "actual": 65
+        }
+      }
+    },
+    {
+      "id": "utf16-astral-suffix-at-limit",
+      "source": "1                                                             🙂",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "unexpected-token",
+        "details": {
+          "kind": "syntax",
+          "code": "unexpected-token",
+          "offset": 62,
+          "found": "\ud83d",
+          "expected": [
+            "+",
+            "-",
+            "EOF"
+          ]
+        }
+      }
+    },
+    {
       "id": "source-length-one-beyond",
       "source": "                                                                1",
       "maximumAttempts": 1,
@@ -1713,6 +1762,98 @@
           "dimension": "dice-term-count",
           "limit": 4,
           "actual": 5
+        }
+      }
+    },
+    {
+      "id": "ast-arithmetic-tie",
+      "source": "1+1+1+1+1+1+1+1+100",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 15,
+          "dimension": "ast-node-count",
+          "limit": 15,
+          "actual": 16
+        }
+      }
+    },
+    {
+      "id": "node-term-sample-eval-tie",
+      "source": "((((d1))))+(d1)+(d1)+(d1)+d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 26,
+          "dimension": "ast-node-count",
+          "limit": 15,
+          "actual": 16
+        }
+      }
+    },
+    {
+      "id": "term-sample-eval-tie",
+      "source": "2d1+2d1+2d1+2d1+2d1",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 16,
+          "dimension": "dice-term-count",
+          "limit": 4,
+          "actual": 5
+        }
+      }
+    },
+    {
+      "id": "arithmetic-evaluation-tie",
+      "source": "(8d1+(1+1))+(60+60)",
+      "maximumAttempts": 1,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "kind": "resource",
+          "code": "resource-limit-exceeded",
+          "offset": 12,
+          "dimension": "arithmetic-magnitude",
+          "limit": 100,
+          "actual": 120
         }
       }
     },
