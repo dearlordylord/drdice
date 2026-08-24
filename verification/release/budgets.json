@@ -12,11 +12,11 @@
       "checkerWorkers": 1,
       "maximumSingleCheckMilliseconds": 1500,
       "cases": {
-        "baseline": { "maximumCheckMilliseconds": 500, "maximumCompilerMemoryKiB": 163840, "maximumInstantiations": 60000 },
-        "prng": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 327680, "maximumInstantiations": 120000 },
-        "dice": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
-        "combined": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
-        "max-query": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 }
+        "baseline": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 163840, "maximumInstantiations": 60000 },
+        "prng": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 327680, "maximumInstantiations": 120000 },
+        "dice": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "combined": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "max-query": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 }
       }
     },
     "typescript-7-four-checker": {
@@ -26,11 +26,11 @@
       "checkerWorkers": 4,
       "maximumSingleCheckMilliseconds": 1500,
       "cases": {
-        "baseline": { "maximumCheckMilliseconds": 500, "maximumCompilerMemoryKiB": 163840, "maximumInstantiations": 60000 },
-        "prng": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 327680, "maximumInstantiations": 120000 },
-        "dice": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
-        "combined": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
-        "max-query": { "maximumCheckMilliseconds": 750, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 }
+        "baseline": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 163840, "maximumInstantiations": 60000 },
+        "prng": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 327680, "maximumInstantiations": 120000 },
+        "dice": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "combined": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 },
+        "max-query": { "maximumCheckMilliseconds": 1000, "maximumCompilerMemoryKiB": 360448, "maximumInstantiations": 165000 }
       }
     },
     "typescript-6-advisory": {

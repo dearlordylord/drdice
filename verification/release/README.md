@@ -15,8 +15,9 @@ count, and instantiation count. The declared blocking ceilings are in
 process-tree RSS is retained as host evidence because native checker workers
 can reserve memory outside the compiler's own counter.
 
-The pinned `@typescript/typescript6@6.0.2` / `tsc6` lane is run and recorded as
-advisory migration evidence only. Its reported executable version may be
+The pinned `@typescript/typescript6@6.0.2` / `tsc6` lane records one fresh
+process per case as advisory migration evidence only; it does not repeat the
+blocking warm-up/five-run matrix. Its reported executable version may be
 `Version 6.0.3`; the package coordinate remains the requested `6.0.2`.
 
 After committing source changes, run from the repository root:
@@ -30,11 +31,11 @@ pnpm check:release
 ```
 
 `release:measure` refuses a dirty tree, runs the complete workspace verification
-once, runs the full warm-up plus
-five-run budget matrix, and writes the committed report. It also hashes every
+once, runs the blocking warm-up plus five-run budget matrix, and writes the
+committed report. It also hashes every
 tracked source file except the report itself. `check:release` refuses a dirty
 tree, recomputes that source digest, verifies the report's content digest,
-revalidates all blocking budget ceilings, and reruns workspace verification once. Thus a
+revalidates all blocking budget ceilings without rerunning qualification. Thus a
 report from an earlier declaration, script, fixture, package manifest, or
 budget file cannot be presented as current evidence. Editing the report,
 changing source after measurement, omitting a scored run, or changing the

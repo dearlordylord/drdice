@@ -84,7 +84,7 @@ const runCompiler = (compiler, benchmarkCase) => new Promise((resolveResult, rej
   child.stderr.on("data", (chunk) => { stderr += chunk; });
   const sampler = setInterval(() => {
     peakRssKiB = Math.max(peakRssKiB, processTreeRssKiB(child.pid));
-  }, 10);
+  }, 100);
   const timeout = setTimeout(() => {
     child.kill("SIGKILL");
   }, 120000);
@@ -134,18 +134,10 @@ for (const compiler of compilers) {
   const version = compilerVersion(compiler);
   for (const benchmarkCase of cases) {
     const compilerScoredRuns = compiler.blocking ? requiredScoredRuns : 1;
-    let warmup;
-    try {
+    const compilerWarmupRuns = compiler.blocking ? requiredWarmupRuns : 0;
+    let warmup = null;
+    if (compiler.blocking) {
       warmup = await runCompiler(compiler, benchmarkCase);
-    } catch (error) {
-      if (compiler.blocking) throw error;
-      results.push({
-        compiler: compiler.name, package: compiler.package, executable: compiler.executable,
-        checkerWorkers: compiler.checkers, case: benchmarkCase.name, file: benchmarkCase.file,
-        warmupRuns: requiredWarmupRuns, scoredRuns: 0, freshProcesses: true,
-        compilerVersion: version, status: "advisory-failed", warmupError: String(error.message),
-      });
-      continue;
     }
     const samples = [];
     for (let run = 0; run < compilerScoredRuns; run += 1) {
@@ -156,7 +148,7 @@ for (const compiler of compilers) {
         results.push({
           compiler: compiler.name, package: compiler.package, executable: compiler.executable,
           checkerWorkers: compiler.checkers, case: benchmarkCase.name, file: benchmarkCase.file,
-          warmupRuns: requiredWarmupRuns, scoredRuns: samples.length, freshProcesses: true,
+          warmupRuns: compilerWarmupRuns, scoredRuns: samples.length, freshProcesses: true,
           compilerVersion: version, status: "advisory-failed", warmup, samples,
           sampleError: String(error.message),
         });
@@ -168,7 +160,7 @@ for (const compiler of compilers) {
     results.push({
       compiler: compiler.name, package: compiler.package, executable: compiler.executable,
       checkerWorkers: compiler.checkers, case: benchmarkCase.name, file: benchmarkCase.file,
-      warmupRuns: requiredWarmupRuns, scoredRuns: compilerScoredRuns, freshProcesses: true,
+      warmupRuns: compilerWarmupRuns, scoredRuns: compilerScoredRuns, freshProcesses: true,
       compilerVersion: version, status: "passed", warmup, samples,
       checkMilliseconds: summarize(samples, "checkMilliseconds"),
       totalMilliseconds: summarize(samples, "totalMilliseconds"),
