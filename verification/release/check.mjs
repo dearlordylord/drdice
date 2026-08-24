@@ -1,8 +1,5 @@
-import { spawnSync } from "node:child_process";
 import { readFile as readFileAsync } from "node:fs/promises";
-import { resolve } from "node:path";
 import {
-  ROOT,
   REPORT,
   REPORT_RELATIVE,
   gitStatus,
@@ -14,28 +11,6 @@ import {
 const fail = (message) => {
   throw new Error(`[release qualification] ${message}`);
 };
-const isNonCompilerReleaseChange = (path) => (
-  path === "README.md"
-  || path === "package.json"
-  || path === "scripts/local_release.sh"
-  || path === "verification/baseline/README.md"
-  || path === "verification/check-clean-consumers.mjs"
-  || path === "verification/issue-18/check-budget.mjs"
-  || path === "verification/issue-19/README.md"
-  || path === "verification/issue-19/check-budget.mjs"
-  || path.startsWith("verification/parity/")
-  || path.startsWith("verification/release/")
-);
-const changedPathsSince = (commit) => {
-  if (!/^[0-9a-f]{40}$/.test(commit ?? "")) fail("report measured commit is invalid");
-  const child = spawnSync(
-    "git",
-    ["diff", "--name-only", "--diff-filter=ACDMRTUXB", `${commit}..HEAD`],
-    { cwd: ROOT, encoding: "utf8" },
-  );
-  if (child.status !== 0) fail(`could not compare current source with measured commit\n${child.stderr}`);
-  return child.stdout.split(/\r?\n/).filter(Boolean);
-};
 const report = JSON.parse(await readFileAsync(REPORT, "utf8"));
 if (report.schemaVersion !== 2 || report.qualification !== "v1-release") {
   fail("report schema or qualification identity is incorrect");
@@ -43,20 +18,15 @@ if (report.schemaVersion !== 2 || report.qualification !== "v1-release") {
 if (report.verdict?.status !== "ready") fail(`report verdict is ${report.verdict?.status ?? "missing"}`);
 if (report.reportDigest !== reportDigest(report)) fail("report digest does not match its contents; evidence was edited or truncated");
 if (report.source?.digestExcludes?.join("|") !== REPORT_RELATIVE) fail("report source digest exclusion is incorrect");
-if (report.source?.cleanAtMeasurement !== true) fail("report was not measured from a clean source tree");
+if (report.source?.cleanAtQualification !== true) fail("report was not qualified from a clean source tree");
+if (!/^[0-9a-f]{40}$/.test(report.source?.qualifiedCommit ?? "")) fail("qualified source commit is invalid");
+if (!/^[0-9a-f]{40}$/.test(report.compilerEvidence?.measuredCommit ?? "")) fail("compiler evidence commit is invalid");
 
 const status = gitStatus();
 if (status) fail(`working tree is dirty; release evidence is not attributable to a clean checkout:\n${status}`);
 const currentSourceDigest = await sourceDigest();
-let reusedCompilerEvidence = false;
 if (currentSourceDigest !== report.source.sourceDigest) {
-  const changedPaths = changedPathsSince(report.source.measuredCommit)
-    .filter((path) => path !== REPORT_RELATIVE);
-  const compilerRelevantPaths = changedPaths.filter((path) => !isNonCompilerReleaseChange(path));
-  if (compilerRelevantPaths.length > 0) {
-    fail(`release report is stale: compiler-relevant source changed since measurement:\n${compilerRelevantPaths.join("\n")}`);
-  }
-  reusedCompilerEvidence = true;
+  fail("release report is stale: qualified source digest differs from the current checkout");
 }
 
 const budgetVerdict = validateBudgetResults(report.compilerBudget, report.budgets);
@@ -76,7 +46,4 @@ if (JSON.stringify(expectedLabels) !== JSON.stringify(reportedLabels)) {
 /* Deployment validates committed qualification evidence. Development and new
  * qualification changes run `pnpm verify`; publish retries do not repeat it. */
 console.log(`Release evidence is current and blocking-ready (${report.source.sourceDigest}).`);
-if (reusedCompilerEvidence) {
-  console.log("Reused compiler evidence because only closed release infrastructure changed.");
-}
 console.log(`Validated ${reportedLabels.length} recorded workspace gate and ${report.compilerBudget.results.length} compiler-budget records.`);

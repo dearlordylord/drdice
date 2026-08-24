@@ -138,10 +138,14 @@ const report = {
     statement: "Release candidate meets the declared TypeScript 7.0.2 semantic, package, packed-boundary, and compiler-budget gates.",
   },
   source: {
-    measuredCommit,
+    qualifiedCommit: measuredCommit,
     sourceDigest: measuredSourceDigest,
-    cleanAtMeasurement: true,
+    cleanAtQualification: true,
     digestExcludes: [REPORT_RELATIVE],
+  },
+  compilerEvidence: {
+    measuredCommit,
+    statement: "Compiler-budget evidence was measured from the qualified source.",
   },
   semantic,
   packages,
