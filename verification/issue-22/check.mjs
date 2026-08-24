@@ -18,8 +18,8 @@ const json = (value) => JSON.stringify(value);
 const equal = (actual, expected, label) => { if (json(actual) !== json(expected)) fail(`${label}\nactual: ${json(actual)}\nexpected: ${json(expected)}`); };
 const projectState = (value) => value && value.kind === "GeneratorState" && Array.isArray(value.words) ? [...value.words] : value;
 const projectResult = (result) => result.ok
-  ? { ok: true, value: { total: result.value.total, rollTrace: result.value.rollTrace, successorState: projectState(result.value.successorState) } }
-  : { ok: false, code: result.code, details: { ...result.details, ...(Object.hasOwn(result.details, "state") ? { state: projectState(result.details.state) } : {}), ...(Object.hasOwn(result.details, "successorState") ? { successorState: projectState(result.details.successorState) } : {}) } };
+  ? { ok: true, value: { total: result.value.total, rollTrace: result.value.rollTrace, nextState: projectState(result.value.nextState) } }
+  : { ok: false, code: result.code, details: { ...result.details, ...(Object.hasOwn(result.details, "state") ? { state: projectState(result.details.state) } : {}), ...(Object.hasOwn(result.details, "nextState") ? { nextState: projectState(result.details.nextState) } : {}) } };
 const stateInput = (vector) => vector.stateWords ? oracleStateFromWords([...vector.stateWords]) : vector.stateInput;
 
 if (ids.length < 70) fail(`complete corpus unexpectedly small: ${ids.length}`);

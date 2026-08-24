@@ -21,7 +21,7 @@ type Expected = Success<{
     DieSample<20, number>,
     DieSample<20, number>,
   ];
-  readonly successorState: GeneratorState;
+  readonly nextState: GeneratorState;
 }>;
 
 /* Keep this assertion structural: the exact values are covered by issue-owned

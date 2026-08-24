@@ -8,9 +8,9 @@ type Assert<Value extends true> = Value;
 
 export type PrngBudgetAssertion = Assert<Equal<
   PrngPackageMetadata["declarationOnly"],
-  true
+  false
 >>;
 export type DiceBudgetAssertion = Assert<Equal<
   DicePackageMetadata["declarationOnly"],
-  true
+  false
 >>;

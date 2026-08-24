@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d1+d1+d1+d1", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Success<{ readonly total: 4; readonly rollTrace: [DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>]; readonly successorState: GeneratorState<readonly ["01a02c09", "01883a07", "01e80400", "00c05801"]> }>;
+type Expected = Success<{ readonly total: 4; readonly rollTrace: [DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>]; readonly nextState: GeneratorState<readonly ["01a02c09", "01883a07", "01e80400", "00c05801"]> }>;
 export type dice_terms_at_limit = Assert<Equal<Input, Expected>>;

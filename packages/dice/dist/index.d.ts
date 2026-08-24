@@ -1,5 +1,5 @@
 /**
- * @drdice/dice is a declaration-only Dice Expression evaluator.
+ * @drdice/dice provides matching runtime and literal-computing Dice Expression evaluators.
  *
  * This declaration owns complete scanning/parsing, domain validation, static
  * preflight, and state-consuming Dice evaluation.  The evaluator composes
@@ -7,8 +7,8 @@
  */
 import type { GeneratorState as PrngGeneratorState, Sample } from "@drdice/prng";
 
-export const DICE_SEMANTIC_PROFILE: "dice-v2/utf16-bounded-left-to-right-2";
-export const DICE_SEMANTIC_VERSION: 2;
+export const DICE_SEMANTIC_PROFILE: "dice-v3/utf16-bounded-left-to-right-3";
+export const DICE_SEMANTIC_VERSION: 3;
 
 export type Success<Value> = { readonly ok: true; readonly value: Value };
 export type FailureCode =
@@ -29,7 +29,31 @@ export type DiceEvaluation<
   Total extends number = number,
   Trace extends RollTrace = RollTrace,
   State extends PrngGeneratorState = PrngGeneratorState,
-> = { readonly total: Total; readonly rollTrace: Trace; readonly successorState: State };
+> = { readonly total: Total; readonly rollTrace: Trace; readonly nextState: State };
+
+/** Extract the complete payload of a successful result, or `never` for a failure. */
+export type PayloadOf<Result> = Result extends Success<infer Payload> ? Payload : never;
+
+/** Extract the computed expression value from a successful evaluation. */
+export type ValueOf<Result> = PayloadOf<Result> extends infer Payload
+  ? Payload extends { readonly total: infer Total extends number }
+    ? Total
+    : never
+  : never;
+
+/** Extract the rolls consumed by a successful evaluation. */
+export type RollsOf<Result> = PayloadOf<Result> extends infer Payload
+  ? Payload extends { readonly rollTrace: infer Trace extends RollTrace }
+    ? Trace
+    : never
+  : never;
+
+/** Extract the generator state after a successful evaluation. */
+export type StateOf<Result> = PayloadOf<Result> extends infer Payload
+  ? Payload extends { readonly nextState: infer State extends PrngGeneratorState }
+    ? State
+    : never
+  : never;
 
 export type SyntaxCode =
   | "expected-expression" | "expected-die-sides" | "expected-closing-parenthesis"
@@ -73,26 +97,26 @@ export type DomainDiagnostic = DiceCountZeroDiagnostic | SideCountZeroDiagnostic
 export type ResourceLimitExceededDiagnostic = {
   readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: number;
   readonly dimension: ResourceDimension; readonly limit: number; readonly actual: number | "widened";
-  readonly partialTrace?: never; readonly successorState?: never;
+  readonly partialTrace?: never; readonly nextState?: never;
 };
-export type DynamicResourceLimitExceededDiagnostic = Omit<ResourceLimitExceededDiagnostic, "partialTrace" | "successorState"> & {
-  readonly partialTrace: RollTrace; readonly successorState: PrngGeneratorState;
+export type DynamicResourceLimitExceededDiagnostic = Omit<ResourceLimitExceededDiagnostic, "partialTrace" | "nextState"> & {
+  readonly partialTrace: RollTrace; readonly nextState: PrngGeneratorState;
 };
 export type SamplingAttemptsExhaustedDiagnostic = {
   readonly kind: "evaluation"; readonly code: "sampling-attempts-exhausted"; readonly offset: number;
   readonly maximumAttempts: number; readonly attempts: number;
-  readonly partialTrace: RollTrace; readonly successorState: PrngGeneratorState;
+  readonly partialTrace: RollTrace; readonly nextState: PrngGeneratorState;
 };
 export type Diagnostic = SyntaxDiagnostic | DomainDiagnostic | ResourceLimitExceededDiagnostic
   | DynamicResourceLimitExceededDiagnostic | SamplingAttemptsExhaustedDiagnostic;
 export type DiagnosticFailure<D extends { readonly code: FailureCode }> = Failure<D["code"], D>;
 
 export type EvaluationStateFailure =
-  | Failure<"invalid-state-shape", { readonly state: unknown; readonly partialTrace: []; readonly successorState: null }>
-  | Failure<"invalid-state-word", { readonly state: unknown; readonly partialTrace: []; readonly successorState: null }>
-  | Failure<"invalid-state-zero", { readonly state: unknown; readonly partialTrace: []; readonly successorState: null }>;
+  | Failure<"invalid-state-shape", { readonly state: unknown; readonly partialTrace: []; readonly nextState: null }>
+  | Failure<"invalid-state-word", { readonly state: unknown; readonly partialTrace: []; readonly nextState: null }>
+  | Failure<"invalid-state-zero", { readonly state: unknown; readonly partialTrace: []; readonly nextState: null }>;
 export type EvaluationInputFailure = EvaluationStateFailure | Failure<"invalid-attempt-fuel", {
-  readonly maximumAttempts: number; readonly partialTrace: []; readonly successorState: PrngGeneratorState;
+  readonly maximumAttempts: number; readonly partialTrace: []; readonly nextState: PrngGeneratorState;
 }>;
 export type EvaluationFailure =
   | DiagnosticFailure<ExpectedExpressionDiagnostic> | DiagnosticFailure<ExpectedDieSidesDiagnostic>
@@ -482,14 +506,14 @@ type IsStringWords<W> = W extends readonly [string, string, string, string] ? tr
 type IsZeroWords<W> = W extends readonly ["00000000", "00000000", "00000000", "00000000"] ? true : false;
 type ValidWordTuple<W> = W extends readonly [infer A extends string, infer B extends string, infer C extends string, infer D extends string]
   ? IsCanonicalWord<A> extends true ? IsCanonicalWord<B> extends true ? IsCanonicalWord<C> extends true ? IsCanonicalWord<D> : false : false : false : false;
-type StateFailureWithContext<Code extends "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero", Input> = Failure<Code, { readonly state: Input; readonly partialTrace: []; readonly successorState: null }>;
+type StateFailureWithContext<Code extends "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero", Input> = Failure<Code, { readonly state: Input; readonly partialTrace: []; readonly nextState: null }>;
 type ValidateState<Input> = Input extends { readonly kind: "GeneratorState"; readonly words: infer Words }
   ? IsFourWords<Words> extends true ? IsStringWords<Words> extends true ? ValidWordTuple<Words> extends true
     ? IsZeroWords<Words> extends true ? StateFailureWithContext<"invalid-state-zero", Input> : Success<Input>
     : StateFailureWithContext<"invalid-state-word", Input> : StateFailureWithContext<"invalid-state-word", Input>
   : StateFailureWithContext<"invalid-state-shape", Input> : StateFailureWithContext<"invalid-state-shape", Input>;
 type ValidFuel<F extends number> = number extends F ? false : `${F}` extends `-${string}` ? false : `${F}` extends `${bigint}` ? true : false;
-type FuelFailure<State, MaximumAttempts extends number> = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: MaximumAttempts; readonly partialTrace: []; readonly successorState: State extends PrngGeneratorState ? State : never }>;
+type FuelFailure<State, MaximumAttempts extends number> = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: MaximumAttempts; readonly partialTrace: []; readonly nextState: State extends PrngGeneratorState ? State : never }>;
 type FuelPlan<State, MaximumAttempts extends number> = ValidFuel<MaximumAttempts> extends true
   ? IsGreaterThan<MaximumAttempts, L["rejectionSamplingAttempts"]> extends true ? ResourceFailure<"rejection-sampling-attempts", 0, L["rejectionSamplingAttempts"], MaximumAttempts> : true
   : FuelFailure<State, MaximumAttempts>;
@@ -501,7 +525,7 @@ type EvaluationValue<
 > = {
   readonly total: Total;
   readonly rollTrace: Trace;
-  readonly successorState: State;
+  readonly nextState: State;
   readonly steps: Steps;
 };
 
@@ -538,7 +562,7 @@ type DynamicResourceFailure<
   readonly limit: Dimension extends "evaluation-steps" ? L["evaluationSteps"] : L["arithmeticMagnitude"];
   readonly actual: Actual;
   readonly partialTrace: Trace;
-  readonly successorState: State;
+  readonly nextState: State;
 }>;
 type EvaluationStepFailure<
   Offset extends number,
@@ -559,10 +583,10 @@ type SamplingExhaustionFailure<
   readonly maximumAttempts: MaximumAttempts;
   readonly attempts: Attempts;
   readonly partialTrace: Trace;
-  readonly successorState: State;
+  readonly nextState: State;
 }>;
 type WithPartial<FailureValue, Trace extends RollTrace, State extends PrngGeneratorState> = FailureValue extends Failure<infer Code, infer Details extends object>
-  ? Failure<Code, Details & { readonly partialTrace: Trace; readonly successorState: State }>
+  ? Failure<Code, Details & { readonly partialTrace: Trace; readonly nextState: State }>
   : FailureValue;
 
 /* A die node contributes its own step before consuming any PRNG state. */
@@ -655,7 +679,7 @@ type EvalAst<
               readonly value: {
                 readonly total: infer LeftTotal extends number;
                 readonly rollTrace: infer LeftTrace;
-                readonly successorState: infer LeftState extends PrngGeneratorState;
+                readonly nextState: infer LeftState extends PrngGeneratorState;
                 readonly steps: infer LeftSteps extends number;
               };
             }
@@ -666,7 +690,7 @@ type EvalAst<
                     readonly value: {
                       readonly total: infer RightTotal extends number;
                       readonly rollTrace: infer RightTrace;
-                      readonly successorState: infer RightState extends PrngGeneratorState;
+                      readonly nextState: infer RightState extends PrngGeneratorState;
                       readonly steps: infer RightSteps extends number;
                     };
                   }
@@ -693,7 +717,7 @@ type ProjectEvaluation<Result> = Result extends {
   readonly value: {
     readonly total: infer Total extends number;
     readonly rollTrace: infer Trace extends RollTrace;
-    readonly successorState: infer State extends PrngGeneratorState;
+    readonly nextState: infer State extends PrngGeneratorState;
     readonly steps: number;
   };
 }
@@ -720,6 +744,40 @@ type EvaluateParsed<Source extends string, State, MaximumAttempts extends number
   : never;
 
 /** Arithmetic-only stage of the complete literal Evaluate contract. */
-export type Evaluate<Source extends string, State, MaximumAttempts extends number> = EvaluateParsed<Source, State, MaximumAttempts>;
+export type Evaluate<
+  Source extends string,
+  State,
+  MaximumAttempts extends number = 5,
+> = EvaluateParsed<Source, State, MaximumAttempts>;
 
-export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.2.0"; readonly declarationOnly: true };
+type RuntimeEvaluate<Source extends string, State, MaximumAttempts extends number> =
+  string extends Source
+    ? EvaluationResult
+    : number extends MaximumAttempts
+      ? EvaluationResult
+      : State extends PrngGeneratorState<infer Words>
+        ? string extends Words[number]
+          ? EvaluationResult
+          : Evaluate<Source, State, MaximumAttempts>
+        : Evaluate<Source, State, MaximumAttempts>;
+
+/** Parse and roll a Dice Expression at runtime using exactly the v3 semantics. */
+export function evaluate<
+  const Source extends string,
+  const State,
+  const MaximumAttempts extends number = 5,
+>(source: Source, state: State, maximumAttempts?: MaximumAttempts): RuntimeEvaluate<Source, State, MaximumAttempts>;
+
+/** Extract the complete payload from a successful runtime evaluation. */
+export function payloadOf<const Payload>(result: Success<Payload>): Payload;
+
+/** Extract the numeric value from a successful runtime evaluation. */
+export function valueOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["total"];
+
+/** Extract the consumed rolls from a successful runtime evaluation. */
+export function rollsOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["rollTrace"];
+
+/** Extract the continuation state from a successful runtime evaluation. */
+export function stateOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["nextState"];
+
+export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.3.0-dev.4"; readonly declarationOnly: false };

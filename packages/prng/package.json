@@ -1,16 +1,19 @@
 {
   "name": "@drdice/prng",
-  "version": "0.2.0",
+  "version": "0.3.0-dev.4",
   "description": "Literal-computing seeded pseudorandom generation for TypeScript",
   "type": "module",
   "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist/index.d.ts",
+    "dist/index.js",
     "README.md",
     "LICENSE"
   ],

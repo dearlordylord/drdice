@@ -19,8 +19,8 @@ const json = (value) => JSON.stringify(value);
 const equal = (actual, expected, label) => { if (json(actual) !== json(expected)) fail(`${label}\nactual: ${json(actual)}\nexpected: ${json(expected)}`); };
 const projectState = (value) => value && value.kind === "GeneratorState" && Array.isArray(value.words) ? [...value.words] : value;
 const projectResult = (result) => result.ok
-  ? { ok: true, value: { total: result.value.total, rollTrace: result.value.rollTrace, successorState: projectState(result.value.successorState) } }
-  : { ok: false, code: result.code, details: { ...result.details, ...(Object.hasOwn(result.details, "state") ? { state: projectState(result.details.state) } : {}), ...(Object.hasOwn(result.details, "successorState") ? { successorState: projectState(result.details.successorState) } : {}) } };
+  ? { ok: true, value: { total: result.value.total, rollTrace: result.value.rollTrace, nextState: projectState(result.value.nextState) } }
+  : { ok: false, code: result.code, details: { ...result.details, ...(Object.hasOwn(result.details, "state") ? { state: projectState(result.details.state) } : {}), ...(Object.hasOwn(result.details, "nextState") ? { nextState: projectState(result.details.nextState) } : {}) } };
 const stateInput = (vector) => vector.stateWords ? oracleStateFromWords([...vector.stateWords]) : vector.stateInput;
 
 for (const id of ids) {
@@ -31,7 +31,7 @@ for (const id of ids) {
   equal(projectResult(actual), vector.expected, `${id} oracle/golden disagreement`);
   if (vector.expected.ok && vector.source.toLowerCase().includes("d")) fail(`${id} unexpectedly relies on a sampled success in the arithmetic-only slice`);
   if (!actual.ok && ["expected-expression", "expected-die-sides", "expected-closing-parenthesis", "leading-zero", "unexpected-token", "dice-count-zero", "side-count-zero"].includes(actual.code)) {
-    if (Object.hasOwn(actual.details, "partialTrace") || Object.hasOwn(actual.details, "successorState")) fail(`${id} static diagnostic carries consumption context`);
+    if (Object.hasOwn(actual.details, "partialTrace") || Object.hasOwn(actual.details, "nextState")) fail(`${id} static diagnostic carries consumption context`);
   }
 }
 

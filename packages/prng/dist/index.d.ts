@@ -1,5 +1,5 @@
 /**
- * @drdice/prng is a declaration-only implementation of the
+ * @drdice/prng provides matching runtime and literal-computing implementations of the
  * `xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2` Sequence Profile.
  *
  * The aliases in this file are intentionally the package's complete public
@@ -17,7 +17,7 @@ export const SCHEMA_VERSION: 1;
 export type SchemaVersion = typeof SCHEMA_VERSION;
 
 /** The package release identity is deliberately separate from schema/profile identity. */
-export type PackageVersion = "0.2.0";
+export type PackageVersion = "0.3.0-dev.4";
 
 type HexDigit =
   | "0"
@@ -76,6 +76,32 @@ export type Success<Value> = {
   readonly value: Value;
 };
 
+/** Extract the complete payload of a successful result, or `never` for a failure. */
+export type PayloadOf<Result> = Result extends Success<infer Payload> ? Payload : never;
+
+/** Extract the sampled integer from a successful bounded-sampling result. */
+export type ValueOf<Result> = PayloadOf<Result> extends infer Payload
+  ? Payload extends { readonly value: infer Value extends number }
+    ? Value
+    : never
+  : never;
+
+/** Extract the raw word from a successful generator step. */
+export type WordOf<Result> = PayloadOf<Result> extends infer Payload
+  ? Payload extends { readonly word: infer Word extends Word32Text }
+    ? Word
+    : never
+  : never;
+
+/** Extract the current generator state carried by a successful PRNG result. */
+export type StateOf<Result> = PayloadOf<Result> extends infer Payload
+  ? Payload extends GeneratorState
+    ? Payload
+    : Payload extends { readonly state: infer State extends GeneratorState }
+      ? State
+      : never
+  : never;
+
 export type InvalidSeedFailure =
   | Failure<"invalid-seed-shape", { readonly seed: unknown }>
   | Failure<"invalid-seed-word", { readonly seed: unknown }>
@@ -88,7 +114,7 @@ export type InvalidStateFailure =
 
 export type InvalidReplayFailure = Failure<"invalid-replay-token", { readonly token: unknown }>;
 
-/** Exact successful raw transition: one word and its explicit successor state. */
+/** Exact successful raw transition: one word and its explicit next state. */
 export type StepSuccess<
   Word extends Word32Text = Word32Text,
   State extends GeneratorState = GeneratorState,
@@ -670,7 +696,7 @@ type NextWords<Words, Original> =
       : Failure<"invalid-state-word", { readonly state: Original }>
     : Failure<"invalid-state-shape", { readonly state: Original }>;
 
-/** Request one raw Word32 and receive the explicit successor Generator State. */
+/** Request one raw Word32 and receive the explicit next Generator State. */
 export type Next<Input> = Input extends {
   readonly kind: "GeneratorState";
   readonly words: infer Words;
@@ -1203,7 +1229,7 @@ type SampleAfterStateValidation<
 export type Sample<
   Input,
   Bound extends number,
-  MaximumAttempts extends number,
+  MaximumAttempts extends number = 5,
 > = SampleStateValidation<Input> extends infer Validation
   ? Validation extends Success<infer State extends GeneratorState>
     ? SampleAfterStateValidation<State, Bound, MaximumAttempts>
@@ -1302,9 +1328,80 @@ export type SerializeState<Input> = Input extends {
 
 export type SerializeStateResult = Success<SerializedGeneratorState<StateWords>> | InvalidStateFailure;
 
+/* -------------------------------------------------------------------------- */
+/* Runtime API                                                                 */
+/* -------------------------------------------------------------------------- */
+
+type BroadWords<Words> = Words extends readonly string[]
+  ? string extends Words[number] ? true : false
+  : true;
+
+type RuntimeInitialize<Input> = Input extends Seed<infer Words>
+  ? BroadWords<Words> extends true ? InitializeResult : Initialize<Input>
+  : Input extends SeedWords
+    ? BroadWords<Input> extends true ? InitializeResult : Initialize<Input>
+    : Initialize<Input>;
+
+type RuntimeNext<Input> = Input extends GeneratorState<infer Words>
+  ? BroadWords<Words> extends true ? StepResult : Next<Input>
+  : Next<Input>;
+
+type RuntimeSample<Input, Bound extends number, MaximumAttempts extends number> =
+  number extends Bound | MaximumAttempts
+    ? BoundedResult
+    : Input extends GeneratorState<infer Words>
+      ? BroadWords<Words> extends true ? BoundedResult : Sample<Input, Bound, MaximumAttempts>
+      : Sample<Input, Bound, MaximumAttempts>;
+
+/** Create a fresh runtime Seed using the host's cryptographic entropy source. */
+export function randomSeed(): SeedWords;
+
+/** Initialize and warm a runtime Generator State using the Sequence Profile. */
+export function initialize<const Input>(seed: Input): RuntimeInitialize<Input>;
+
+/** Generate one raw Word32 and its next state at runtime. */
+export function next<const Input>(state: Input): RuntimeNext<Input>;
+
+/** Generate an unbiased bounded integer at runtime; output-word fuel defaults to 5. */
+export function sample<
+  const Input,
+  const Bound extends number,
+  const MaximumAttempts extends number = 5,
+>(state: Input, bound: Bound, maximumAttempts?: MaximumAttempts): RuntimeSample<Input, Bound, MaximumAttempts>;
+
+/** Serialize a current state for later resume. */
+export function serializeState<const Input>(state: Input): SerializeState<Input>;
+
+/** Restore a serialized current state without advancing it. */
+export function restoreState<const Input>(snapshot: Input): RestoreState<Input>;
+
+/** Restore a Replay Token by restarting from its Seed. */
+export function restoreReplay<const Input>(token: Input): RestoreReplay<Input>;
+
+/** Extract the complete payload from a successful runtime result. */
+export function payloadOf<const Payload>(result: Success<Payload>): Payload;
+
+/** Extract the integer from a successful runtime bounded sample. */
+export function valueOf<const Value extends number>(
+  result: Success<{ readonly value: Value }>,
+): Value;
+
+/** Extract the raw word from a successful runtime generator step. */
+export function wordOf<const Word extends Word32Text>(
+  result: Success<{ readonly word: Word }>,
+): Word;
+
+/** Extract the current state from a successful initialization result. */
+export function stateOf<const State extends GeneratorState>(result: Success<State>): State;
+
+/** Extract the current state from a successful step or sample result. */
+export function stateOf<const State extends GeneratorState>(
+  result: Success<{ readonly state: State }>,
+): State;
+
 /* Package boundary metadata is retained for the workspace's generated checks. */
 export type PackageMetadata = {
   readonly name: "@drdice/prng";
   readonly version: PackageVersion;
-  readonly declarationOnly: true;
+  readonly declarationOnly: false;
 };

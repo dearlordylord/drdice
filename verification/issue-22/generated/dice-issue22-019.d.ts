@@ -8,5 +8,5 @@ type Equal<Left, Right> =
 type Assert<Value extends true> = Value;
 
 type Input = Evaluate<"d7", GeneratorState<readonly ["b0e8eac3", "f2d79146", "a51937ed", "21243868"]>, 2>;
-type Expected = Success<{ readonly total: 5; readonly rollTrace: [DieSample<7, 5>]; readonly successorState: GeneratorState<readonly ["631b43ed", "e7264c68", "bad3512e", "9d49769f"]> }>;
+type Expected = Success<{ readonly total: 5; readonly rollTrace: [DieSample<7, 5>]; readonly nextState: GeneratorState<readonly ["631b43ed", "e7264c68", "bad3512e", "9d49769f"]> }>;
 export type forced_rejection_then_acceptance = Assert<Equal<Input, Expected>>;

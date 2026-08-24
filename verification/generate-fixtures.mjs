@@ -36,7 +36,7 @@ const golden = JSON.parse(await readFile(resolve(here, "issue-17/golden-vectors.
 const tuple = (words) => `readonly [${words.map((word) => JSON.stringify(word)).join(", ")}]`;
 const state = (words) => `GeneratorState<${tuple(words)}>`;
 const expectedStep = (transition) =>
-  `Success<{ readonly word: ${JSON.stringify(transition.word)}; readonly state: ${state(transition.successorState)} }>`;
+  `Success<{ readonly word: ${JSON.stringify(transition.word)}; readonly state: ${state(transition.nextState)} }>`;
 
 const prngHeader = [
   `/* GENERATED FILE. Run pnpm generate:fixtures; do not edit by hand. */`,

@@ -38,7 +38,7 @@ work may retain an identity only when every exact gate remains unchanged.
 
 The accepted PRNG profile is
 `xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The accepted Dice semantic
-identity is `dice-v2/utf16-bounded-left-to-right-2`. Replay and serialized-state
+identity is `dice-v3/utf16-bounded-left-to-right-3`. Replay and serialized-state
 values carry the complete PRNG identity.
 
 ## Independent oracle and parity bridge

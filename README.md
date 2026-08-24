@@ -1,79 +1,95 @@
-# drdice
+# DRDice
 
-DRDice is a pnpm workspace containing exactly two independently versioned,
-declaration-only TypeScript packages:
+Full-Typescript deterministic pseudo-random number generator and dice
+expression evaluator.
 
-- `@drdice/prng` — seeded, reproducible pseudorandom type computation;
-- `@drdice/dice` — bounded Dice Expression type computation, depending one-way
-  on `@drdice/prng`.
+## Quick start
 
-The package roots are intentionally the only public export paths. Their
-computation is erased by TypeScript, so consumers use `import type`; there is
-no supported runtime entry point.
+> The runtime API below is available on `main` and will ship in the next npm
+> release. Exact type computation requires TypeScript 7.0.2+.
 
-DRDice is non-cryptographic. Appropriate uses include reproducible board- or
-role-playing-game simulations, deterministic tests, teaching examples, and
-type-system experiments. It must not be used for cryptographic keys, secrets,
-passwords, authentication or reset tokens, security decisions, gambling or
-wagering outcomes, or any application that requires unpredictable entropy.
+```sh
+npm install @drdice/prng @drdice/dice
+```
 
-The supported checker is exactly `typescript@7.0.2`. The pinned
-`@typescript/typescript6@6.0.2` command is advisory migration evidence only.
+```ts
+import { initialize, stateOf as prngStateOf } from "@drdice/prng";
+import { evaluate, rollsOf, stateOf, valueOf } from "@drdice/dice";
 
-From a clean checkout, the normal deterministic lane is:
+// A fixed seed makes the sequence reproducible.
+const initialized = initialize([
+  "00000001",
+  "00000002",
+  "00000003",
+  "00000004",
+] as const);
+
+const d20 = evaluate("d20", prngStateOf(initialized));
+const d20Value = valueOf(d20);
+//    ^? const d20Value: 12
+
+const combinedRoll = evaluate(`4d6 + ${d20Value}`, stateOf(d20));
+const combinedValue = valueOf(combinedRoll);
+//    ^? const combinedValue: 34
+
+console.log({
+  value: combinedValue,
+  rolls: rollsOf(combinedRoll), // faces 5, 6, 6, 5
+  nextState: stateOf(combinedRoll),
+});
+```
+
+Both calls roll at runtime. Because the seed and expressions are literals,
+TypeScript also knows that the results are `12` and `34`—without you
+writing either expected result. Passing `stateOf(d20)` continues the same
+sequence; reusing an earlier state replays the same rolls.
+
+The lowercase functions run at runtime. Their type counterparts—`Initialize`,
+`Sample`, and `Evaluate`—follow the same deterministic rules in TypeScript.
+Inputs known only at runtime still roll normally and use broader result types
+such as `number` and `EvaluationResult`.
+
+## Seeds and replay
+
+Pass four eight-digit lowercase hexadecimal words to `initialize` for a
+reproducible sequence. Call `randomSeed()` when you want the host to create a
+fresh seed.
+
+DRDice never mutates a generator state. After a successful evaluation, pass
+`stateOf(result)` to the next `evaluate` call. Check `result.ok` before using
+the extractor functions when an evaluation can fail.
+
+## Core API
+
+`@drdice/prng` exposes `randomSeed`, `initialize`, `next`, `sample`, and
+state/replay helpers, with compile-time counterparts `Initialize`, `Next`, and
+`Sample`.
+
+`@drdice/dice` exposes `evaluate` for expressions such as `d20`, `4d6 + 3`, and
+`d6 + (2d6 - 1)`. Use `valueOf`, `rollsOf`, and `stateOf` after a successful
+evaluation; `ValueOf`, `RollsOf`, and `StateOf` provide the matching type-level
+projections.
+
+Invalid or overly complex expressions return structured failures. Each die gets
+up to five rejection-sampling attempts by default; ordinary game code can omit
+this option.
+
+## Reproducibility and safety
+
+The runtime and type-level implementations are tested against independent
+reference models and shared golden vectors. Reproducing a result requires the
+same seed or generator state, dice expression, options, and compatibility
+profiles.
+
+DRDice is deterministic, not cryptographic randomness. Use it for games,
+simulations, and tests—not secrets, security decisions, or wagering.
+
+## Development
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-The individual gates are `pnpm typecheck`, `pnpm check:fixtures`,
-`pnpm check:prng`, `pnpm check:clean-consumers`, `pnpm check:packed`, and the
-one-/four-checker budget commands. The exhaustive PRNG artifact lane is
-`pnpm check:prng:budget`; it includes the exhaustive Issue #19 Sample grid and
-its TypeScript 7 focused measurements are recorded in
-[`verification/issue-19/results.json`](verification/issue-19/results.json).
-The earlier raw-transition measurements remain in
-[`verification/issue-18/results.json`](verification/issue-18/results.json).
-Baseline scaffold measurements live in
-[`verification/baseline/scaffold.json`](verification/baseline/scaffold.json).
-The release-only warm-up/five-run matrix for every public PRNG, Dice, combined,
-and maximum query is `pnpm release:measure`; commit its report and run
-`pnpm check:release` as described in
-[`verification/release/README.md`](verification/release/README.md).
-
-## Release
-
-From a clean `master` checkout that matches `origin/master`, authenticate with
-npm and GitHub, then run one command:
-
-```sh
-pnpm local-release
-```
-
-The command installs the exact lockfile, revalidates the source-bound release
-report, creates and checks both packed artifacts, publishes `@drdice/prng`
-before `@drdice/dice`, verifies both registry versions, pushes the tag matching
-their shared package version, attaches the exact tarballs to the GitHub release, and publishes an
-existing draft release. It is safe to rerun after a partial registry publish:
-an exact package version that already exists is skipped. Maintainers can check
-the complete path without registry or GitHub mutations with
-`DRDICE_RELEASE_DRY_RUN=1 pnpm local-release`.
-
-## Compatibility identities
-
-Package release versions, serialized-schema versions, algorithm sequence
-profiles, and Dice semantic profiles are separate identities:
-
-| Identity | Current value | Change that requires a new identity and reviewed vectors |
-| --- | --- | --- |
-| package release | `@drdice/prng@0.2.0`, `@drdice/dice@0.2.0` | A published package/API compatibility change |
-| PRNG schema | `SCHEMA_VERSION = 1` | Changing Replay Token or Serialized Generator State shape or interpretation |
-| PRNG Sequence Profile | `xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2` | Changing transition, output conversion, bounds, rejection, state consumption, seed mapping, or replay semantics |
-| Dice semantic profile | `dice-v2/utf16-bounded-left-to-right-2`, version `2` | Changing grammar, UTF-16 offsets, limits, parsing, arithmetic/evaluation order, sampling, failure selection, or result values |
-
-Documentation, checker-performance work, and private refactors may retain an
-identity only when all exact oracle, golden-vector, package-boundary, and
-release-budget gates remain unchanged. The release-candidate qualification
-and stale-evidence checks are documented in
-[`verification/release/README.md`](verification/release/README.md).
+Compatibility identities and maintainer release steps are documented in the
+package READMEs and [release guide](verification/release/README.md).

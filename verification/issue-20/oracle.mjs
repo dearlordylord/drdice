@@ -16,8 +16,8 @@ import {
  * Sequence Profile, and PRNG schema version.  Any value/consumption/failure
  * semantic change requires a new identity and reviewed vectors.
  */
-export const DICE_SEMANTIC_PROFILE = "dice-v2/utf16-bounded-left-to-right-2";
-export const DICE_SEMANTIC_VERSION = 2;
+export const DICE_SEMANTIC_PROFILE = "dice-v3/utf16-bounded-left-to-right-3";
+export const DICE_SEMANTIC_VERSION = 3;
 export const PRNG_SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 
 export const LIMITS = Object.freeze({
@@ -410,7 +410,7 @@ const stepFailure = (offset, actual, trace, state) => failure("resource-limit-ex
   limit: LIMITS.evaluationSteps,
   actual,
   partialTrace: trace,
-  successorState: state,
+  nextState: state,
 });
 
 const evalAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
@@ -418,7 +418,7 @@ const evalAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
     const steps = consumedSteps + 1;
     return steps > LIMITS.evaluationSteps
       ? stepFailure(ast.offset, steps, trace, state)
-      : success({ total: ast.value, rollTrace: trace, successorState: state, steps });
+      : success({ total: ast.value, rollTrace: trace, nextState: state, steps });
   }
 
   if (ast.kind === "group") {
@@ -447,13 +447,13 @@ const evalAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
             maximumAttempts: sampled.details.maximumAttempts,
             attempts: sampled.details.attempts,
             partialTrace: currentTrace,
-            successorState: sampled.details.state,
+            nextState: sampled.details.state,
           });
         }
         return failure(sampled.code, {
           ...sampled.details,
           partialTrace: currentTrace,
-          successorState: current,
+          nextState: current,
         });
       }
 
@@ -467,18 +467,18 @@ const evalAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
         return failure("resource-limit-exceeded", {
           ...resourceDiagnostic(ast.offset, "arithmetic-magnitude", LIMITS.arithmeticMagnitude, Math.abs(total)).details,
           partialTrace: currentTrace,
-          successorState: current,
+          nextState: current,
         });
       }
     }
-    return success({ total, rollTrace: currentTrace, successorState: current, steps });
+    return success({ total, rollTrace: currentTrace, nextState: current, steps });
   }
 
   const left = evalAst(ast.left, state, maximumAttempts, trace, consumedSteps);
   if (!left.ok) return left;
   const right = evalAst(
     ast.right,
-    left.value.successorState,
+    left.value.nextState,
     maximumAttempts,
     left.value.rollTrace,
     left.value.steps,
@@ -489,18 +489,18 @@ const evalAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
     ? left.value.total + right.value.total
     : left.value.total - right.value.total;
   const steps = right.value.steps + 1;
-  if (steps > LIMITS.evaluationSteps) return stepFailure(ast.offset, steps, right.value.rollTrace, right.value.successorState);
+  if (steps > LIMITS.evaluationSteps) return stepFailure(ast.offset, steps, right.value.rollTrace, right.value.nextState);
   if (Math.abs(total) > LIMITS.arithmeticMagnitude) {
     return failure("resource-limit-exceeded", {
       ...resourceDiagnostic(ast.offset, "arithmetic-magnitude", LIMITS.arithmeticMagnitude, Math.abs(total)).details,
       partialTrace: right.value.rollTrace,
-      successorState: right.value.successorState,
+      nextState: right.value.nextState,
     });
   }
   return success({
     total,
     rollTrace: right.value.rollTrace,
-    successorState: right.value.successorState,
+    nextState: right.value.nextState,
     steps,
   });
 };
@@ -511,7 +511,7 @@ const stateFailureWithContext = (state) => {
   return failure(probe.code, {
     ...probe.details,
     partialTrace: [],
-    successorState: null,
+    nextState: null,
   });
 };
 
@@ -550,7 +550,7 @@ export const oracleEvaluate = (source, state, maximumAttempts) => {
     return failure("invalid-attempt-fuel", {
       maximumAttempts,
       partialTrace: [],
-      successorState: state,
+      nextState: state,
     });
   }
   if (maximumAttempts > LIMITS.rejectionSamplingAttempts) {
@@ -567,6 +567,6 @@ export const oracleEvaluate = (source, state, maximumAttempts) => {
   return success({
     total: evaluated.value.total,
     rollTrace: evaluated.value.rollTrace,
-    successorState: evaluated.value.successorState,
+    nextState: evaluated.value.nextState,
   });
 };

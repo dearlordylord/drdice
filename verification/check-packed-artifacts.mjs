@@ -15,6 +15,7 @@ const expectedMembers = new Set([
   "package/LICENSE",
   "package/README.md",
   "package/dist/index.d.ts",
+  "package/dist/index.js",
   "package/package.json",
 ]);
 
@@ -43,15 +44,17 @@ try {
     }
     if (members.some((member) => {
       const privateDirectory = /(?:^|\/)(?:src|fixtures?|generators?|benchmarks?|oracles?)(?:\/|$)/.test(member);
-      const runtimeFile = /\.(?:js|mjs|cjs|ts|map)$/.test(member) && !member.endsWith(".d.ts");
-      return privateDirectory || runtimeFile;
+      const unsupportedRuntimeFile = /\.(?:js|mjs|cjs|ts|map)$/.test(member)
+        && !member.endsWith(".d.ts")
+        && member !== "package/dist/index.js";
+      return privateDirectory || unsupportedRuntimeFile;
     })) {
       throw new Error(`${packageInfo.name} tarball contains a private or runtime file: ${members.join(", ")}`);
     }
 
     const manifestText = run("tar", ["-xOf", archive, "package/package.json"], root);
     const manifest = JSON.parse(manifestText);
-    if (manifest.name !== packageInfo.name || manifest.version !== "0.2.0") {
+    if (manifest.name !== packageInfo.name || manifest.version !== "0.3.0-dev.4") {
       throw new Error(`${packageInfo.name} packed identity is incorrect`);
     }
     if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {
@@ -63,14 +66,14 @@ try {
     if (manifest.dependencies?.["@drdice/prng"]?.startsWith("workspace:")) {
       throw new Error("packed Dice dependency still contains the workspace protocol");
     }
-    if (packageInfo.dependency && manifest.dependencies?.["@drdice/prng"] !== "^0.2.0") {
-      throw new Error(`packed Dice dependency is not ^0.2.0: ${manifest.dependencies?.["@drdice/prng"]}`);
+    if (packageInfo.dependency && manifest.dependencies?.["@drdice/prng"] !== "^0.3.0-dev.4") {
+      throw new Error(`packed Dice dependency is not ^0.3.0-dev.4: ${manifest.dependencies?.["@drdice/prng"]}`);
     }
-    if (manifest.exports["."].default !== undefined || manifest.main !== undefined) {
-      throw new Error(`${packageInfo.name} exposes an unsupported runtime entry point`);
+    if (manifest.exports["."].default !== "./dist/index.js" || manifest.main !== "./dist/index.js") {
+      throw new Error(`${packageInfo.name} does not expose its runtime entry point`);
     }
     const declaredFiles = new Set((manifest.files ?? []).map((entry) => String(entry).replaceAll("\\", "/")));
-    const expectedAllowlist = new Set(["dist/index.d.ts", "README.md", "LICENSE"]);
+    const expectedAllowlist = new Set(["dist/index.d.ts", "dist/index.js", "README.md", "LICENSE"]);
     if (declaredFiles.size !== expectedAllowlist.size || [...expectedAllowlist].some((entry) => !declaredFiles.has(entry))) {
       throw new Error(`${packageInfo.name} does not declare exactly its packed allowlist: ${JSON.stringify(manifest.files)}`);
     }
@@ -112,7 +115,7 @@ try {
       }
     }
   }
-  console.log("Packed artifacts contain only the two root declaration allowlists.");
+  console.log("Packed artifacts contain only the two typed runtime roots and documentation allowlists.");
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }

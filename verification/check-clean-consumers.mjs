@@ -18,6 +18,7 @@ const expectedMembers = new Set([
   "package/LICENSE",
   "package/README.md",
   "package/dist/index.d.ts",
+  "package/dist/index.js",
   "package/package.json",
 ]);
 const isWithin = (candidate, directory) => (
@@ -59,7 +60,7 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} packed members differ: ${members.join(", ")}`);
   }
   const manifest = JSON.parse(run("tar", ["-xOf", archive, "package/package.json"], root));
-  if (manifest.name !== record.name || manifest.version !== "0.2.0") {
+  if (manifest.name !== record.name || manifest.version !== "0.3.0-dev.4") {
     throw new Error(`${record.name} packed identity is incorrect`);
   }
   if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {
@@ -69,12 +70,13 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} does not expose its declaration root`);
   }
   const declaredMembers = new Set((manifest.files ?? []).map((entry) => `package/${String(entry).replaceAll("\\", "/")}`));
-  if (declaredMembers.size !== 3 || !declaredMembers.has("package/dist/index.d.ts")
+  if (declaredMembers.size !== 4 || !declaredMembers.has("package/dist/index.d.ts")
+    || !declaredMembers.has("package/dist/index.js")
     || !declaredMembers.has("package/README.md") || !declaredMembers.has("package/LICENSE")) {
-    throw new Error(`${record.name} does not declare the curated declaration/documentation allowlist`);
+    throw new Error(`${record.name} does not declare the curated runtime/declaration/documentation allowlist`);
   }
-  if (manifest.exports["."].default !== undefined || manifest.main !== undefined) {
-    throw new Error(`${record.name} unexpectedly exposes a runtime entry point`);
+  if (manifest.exports["."].default !== "./dist/index.js" || manifest.main !== "./dist/index.js") {
+    throw new Error(`${record.name} does not expose its runtime entry point`);
   }
 };
 
@@ -152,7 +154,7 @@ export type PrngRootTypeAssertion = Assert<Equal<Sample<ConsumerState, 1, 1>, Ex
 type ExpectedDiceEvaluation = DiceSuccess<{
   readonly total: 1;
   readonly rollTrace: [DieSample<1, 1>];
-  readonly successorState: PrngGeneratorState<readonly [
+  readonly nextState: PrngGeneratorState<readonly [
     "00000007",
     "00000000",
     "00000402",
@@ -198,7 +200,25 @@ export type DiceReferencesPrngState = Assert<Equal<
     throw new Error("consumer unexpectedly resolved a workspace package instead of a packed artifact");
   }
   await access(resolve(installedPrng, "dist/index.d.ts"));
+  await access(resolve(installedPrng, "dist/index.js"));
   await access(resolve(installedDice, "dist/index.d.ts"));
+  await access(resolve(installedDice, "dist/index.js"));
+
+  const runtimeProbe = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--eval", `
+      import { initialize } from "@drdice/prng";
+      import { evaluate } from "@drdice/dice";
+      const initialized = initialize(["00000001", "00000002", "00000003", "00000004"]);
+      if (!initialized.ok) throw new Error(JSON.stringify(initialized));
+      const rolled = evaluate("d20", initialized.value);
+      if (!rolled.ok || rolled.value.total !== 12) throw new Error(JSON.stringify(rolled));
+    `],
+    { cwd: consumerRoot, encoding: "utf8" },
+  );
+  if (runtimeProbe.status !== 0) {
+    throw new Error(`packed root runtime consumer failed\n${runtimeProbe.stdout}\n${runtimeProbe.stderr}`);
+  }
 
   const compilerOptions = [
     "exec",
@@ -240,13 +260,13 @@ export type DiceReferencesPrngState = Assert<Equal<
       throw new Error(`@drdice/${packageName} deep import did not fail because of the package exports map\n${diagnostics}`);
     }
 
-    const runtimeProbe = spawnSync(
+    const deepRuntimeProbe = spawnSync(
       process.execPath,
       ["--input-type=module", "--eval", `await import('@drdice/${packageName}/dist/index')`],
       { cwd: consumerRoot, encoding: "utf8" },
     );
-    if (runtimeProbe.status === 0 || !/ERR_PACKAGE_PATH_NOT_EXPORTED|not defined by exports/i.test(runtimeProbe.stderr)) {
-      throw new Error(`Node did not prove that @drdice/${packageName} deep path is blocked by exports\n${runtimeProbe.stdout}\n${runtimeProbe.stderr}`);
+    if (deepRuntimeProbe.status === 0 || !/ERR_PACKAGE_PATH_NOT_EXPORTED|not defined by exports/i.test(deepRuntimeProbe.stderr)) {
+      throw new Error(`Node did not prove that @drdice/${packageName} deep path is blocked by exports\n${deepRuntimeProbe.stdout}\n${deepRuntimeProbe.stderr}`);
     }
   }
 
@@ -266,7 +286,7 @@ export type DiceReferencesPrngState = Assert<Equal<
   if (workspace.private !== true) {
     throw new Error("the workspace root must remain private for clean-consumer checks");
   }
-  console.log("Packed clean consumers pass root imports; exports block deep imports in TypeScript and Node.");
+  console.log("Packed clean consumers pass typed runtime root imports; exports block deep imports in TypeScript and Node.");
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }

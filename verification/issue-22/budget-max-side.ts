@@ -7,7 +7,7 @@ type MaximumSide = Evaluate<"d100", State, 4>;
 type Expected = Success<{
   readonly total: 1;
   readonly rollTrace: [DieSample<100, 1>];
-  readonly successorState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]>;
+  readonly nextState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]>;
 }>;
 type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends

@@ -16,7 +16,7 @@ type Expected = Success<{
     DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>,
     DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>, DieSample<1, 1>,
   ];
-  readonly successorState: GeneratorState<readonly [
+  readonly nextState: GeneratorState<readonly [
     "3320a290",
     "ebdc5e1d",
     "90c43618",

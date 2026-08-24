@@ -25,8 +25,8 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const defaultGoldenFile = path.join(directory, "golden-vectors.json");
 const goldenFile = process.env.DRDICE_DICE_GOLDEN_FILE ?? process.argv[2] ?? defaultGoldenFile;
 
-const PINNED_SEMANTIC_PROFILE = "dice-v2/utf16-bounded-left-to-right-2";
-const PINNED_SEMANTIC_VERSION = 2;
+const PINNED_SEMANTIC_PROFILE = "dice-v3/utf16-bounded-left-to-right-3";
+const PINNED_SEMANTIC_VERSION = 3;
 const PINNED_PRNG_SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 const PINNED_LIMITS = {
   sourceLength: 64,
@@ -100,13 +100,13 @@ const projectResult = (result) => {
       value: {
         total: result.value.total,
         rollTrace: result.value.rollTrace,
-        successorState: projectState(result.value.successorState),
+        nextState: projectState(result.value.nextState),
       },
     };
   }
   const details = { ...result.details };
   if (Object.hasOwn(details, "state")) details.state = projectState(details.state);
-  if (Object.hasOwn(details, "successorState")) details.successorState = projectState(details.successorState);
+  if (Object.hasOwn(details, "nextState")) details.nextState = projectState(details.nextState);
   return { ok: false, code: result.code, details };
 };
 
@@ -158,17 +158,17 @@ const checkExpectedShape = (expected, label) => {
   assert(expected && typeof expected === "object", `${label}.expected is missing`);
   assert(typeof expected.ok === "boolean", `${label}.expected.ok is not boolean`);
   if (expected.ok) {
-    assert(Object.keys(expected.value).sort().join(",") === "rollTrace,successorState,total", `${label} success has the wrong fields`);
+    assert(Object.keys(expected.value).sort().join(",") === "nextState,rollTrace,total", `${label} success has the wrong fields`);
     assert(Number.isInteger(expected.value.total), `${label} total is not an integer`);
     checkTrace(expected.value.rollTrace, `${label}.rollTrace`);
-    words(expected.value.successorState, `${label}.successorState`);
+    words(expected.value.nextState, `${label}.nextState`);
   } else {
     assert(typeof expected.code === "string", `${label} failure code is missing`);
     assert(expected.details && typeof expected.details === "object", `${label} failure details are missing`);
     assert(!Object.hasOwn(expected.details, "total"), `${label} failure exposes a total`);
     if (Object.hasOwn(expected.details, "partialTrace")) checkTrace(expected.details.partialTrace, `${label}.partialTrace`);
-    if (Object.hasOwn(expected.details, "successorState") && expected.details.successorState !== null) {
-      words(expected.details.successorState, `${label}.successorState`);
+    if (Object.hasOwn(expected.details, "nextState") && expected.details.nextState !== null) {
+      words(expected.details.nextState, `${label}.nextState`);
     }
   }
 };
@@ -206,7 +206,7 @@ const checkCase = (vector, byId) => {
 
   if (!actual.ok && ["expected-expression", "expected-die-sides", "expected-closing-parenthesis", "leading-zero", "unexpected-token", "dice-count-zero", "side-count-zero"].includes(actual.code)) {
     assert(!Object.hasOwn(actual.details, "partialTrace"), `${vector.id} static diagnostic consumed a trace`);
-    assert(!Object.hasOwn(actual.details, "successorState"), `${vector.id} static diagnostic exposed a successor state`);
+    assert(!Object.hasOwn(actual.details, "nextState"), `${vector.id} static diagnostic exposed a successor state`);
   }
 };
 
@@ -348,7 +348,7 @@ const checkSideGrid = (golden) => {
   equal(grid.sides, Array.from({ length: 100 }, (_, index) => index + 1), "side grid does not cover every supported side");
   equal(grid.expectedFace, 1, "canonical side-grid face changed without review");
   equal(grid.attempts, 1, "canonical side-grid attempt count changed without review");
-  equal(grid.successorState, PINNED_FIRST_SUCCESSOR, "canonical side-grid successor changed without review");
+  equal(grid.nextState, PINNED_FIRST_SUCCESSOR, "canonical side-grid successor changed without review");
   for (const sides of grid.sides) {
     const actual = oracleEvaluate(`d${sides}`, oracleStateFromWords(PINNED_CANONICAL_STATE), 1);
     assert(actual.ok, `d${sides} did not succeed in the supported side grid`);
@@ -357,7 +357,7 @@ const checkSideGrid = (golden) => {
     equal(sampled.value.attempts, grid.attempts, `d${sides} attempt count disagrees with the side-grid literal`);
     equal(actual.value.total, grid.expectedFace, `d${sides} total disagrees with the side-grid literal`);
     equal(actual.value.rollTrace, [{ sideCount: sides, face: grid.expectedFace }], `d${sides} trace disagrees with the side-grid literal`);
-    equal(actual.value.successorState.words, grid.successorState, `d${sides} successor disagrees with the side-grid literal`);
+    equal(actual.value.nextState.words, grid.nextState, `d${sides} successor disagrees with the side-grid literal`);
   }
 };
 

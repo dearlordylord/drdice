@@ -129,7 +129,7 @@ const encounter = (seed) => {
       total: result.value.total,
       faces: result.value.rollTrace.map(({ face }) => face),
     });
-    state = result.value.successorState;
+    state = result.value.nextState;
   }
   return transcript;
 };

@@ -15,9 +15,14 @@ The external value used to initialize a Seeded PRNG's first Generator State.
 _Avoid_: State, random seed
 
 **Generator State**:
-The complete value needed to produce the next pseudorandom word and its successor
+The complete value needed to produce the next pseudorandom word and its next
 Generator State.
 _Avoid_: Seed, cursor
+
+**Next Generator State**:
+The Generator State produced by consuming a PRNG operation or Dice Evaluation
+and used as the input to a later operation.
+_Avoid_: Successor State, continuation state
 
 **Replay Token**:
 The algorithm identity, algorithm version, and initialization input sufficient to
@@ -35,10 +40,10 @@ _Avoid_: Random number, die roll
 
 **Roll Trace**:
 The ordered Die Samples consumed while evaluating a Dice Expression.
-_Avoid_: Rolls, history
+_Avoid_: History
 
 **Dice Evaluation**:
-The deterministic result containing a total, Roll Trace, and successor Generator
+The deterministic result containing a total, Roll Trace, and Next Generator
 State for a Dice Expression and initial Generator State.
 _Avoid_: Roll, result, Evaluation Result
 

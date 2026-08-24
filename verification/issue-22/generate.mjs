@@ -38,12 +38,12 @@ const traceType = (trace) => `[${trace.map((sample) => `DieSample<${sample.sideC
 const expectedType = (vector) => {
   const expected = vector.expected;
   if (expected.ok) {
-    return `Success<{ readonly total: ${literal(expected.value.total)}; readonly rollTrace: ${traceType(expected.value.rollTrace)}; readonly successorState: ${stateType(expected.value.successorState)} }>`;
+    return `Success<{ readonly total: ${literal(expected.value.total)}; readonly rollTrace: ${traceType(expected.value.rollTrace)}; readonly nextState: ${stateType(expected.value.nextState)} }>`;
   }
   const details = { ...expected.details };
   if (vector.id.startsWith("invalid-state-")) details.state = vector.stateInput;
   const rendered = `{ ${Object.entries(details).map(([key, item]) => {
-    if (key === "successorState" && Array.isArray(item)) return `readonly ${key}: ${stateType(item)}`;
+    if (key === "nextState" && Array.isArray(item)) return `readonly ${key}: ${stateType(item)}`;
     if (key === "partialTrace" && Array.isArray(item)) return `readonly ${key}: ${traceType(item)}`;
     return `readonly ${key}: ${literal(item)}`;
   }).join("; ")} }`;
@@ -77,7 +77,7 @@ for (let sides = 1; sides <= LIMITS.supportedSideCount; sides += 1) {
   const source = `d${sides}`;
   const actual = oracleEvaluate(source, oracleStateFromWords([...canonicalState]), 1);
   if (!actual.ok) fail(`${source} side-grid oracle failure: ${actual.code}`);
-  const expected = `Success<{ readonly total: ${actual.value.total}; readonly rollTrace: ${traceType(actual.value.rollTrace)}; readonly successorState: ${stateType(actual.value.successorState.words)} }>`;
+  const expected = `Success<{ readonly total: ${actual.value.total}; readonly rollTrace: ${traceType(actual.value.rollTrace)}; readonly nextState: ${stateType(actual.value.nextState.words)} }>`;
   const name = `dice-issue22-side-${String(sides).padStart(3, "0")}.d.ts`;
   files.push([name, `${header}type Input = Evaluate<${JSON.stringify(source)}, ${stateType(canonicalState)}, 1>;\ntype Expected = ${expected};\nexport type Side${sides} = Assert<Equal<Input, Expected>>;\n`]);
 }

@@ -132,7 +132,7 @@ const checkTransitionCorpus = (golden) => {
   equal(golden.canonicalSeed, PINNED_CANONICAL_SEED, "canonical Seed changed without a reviewed profile change");
   equal(vector.seed, PINNED_CANONICAL_SEED, "raw-word seed must use the established human-seed vector");
   assert(Array.isArray(vector.words) && vector.words.length >= 10, "at least ten literal raw words are required");
-  assert(Array.isArray(vector.successorStates) && vector.successorStates.length >= 3, "at least three literal successor states are required");
+  assert(Array.isArray(vector.nextStates) && vector.nextStates.length >= 3, "at least three literal successor states are required");
   assert(Array.isArray(vector.transitions) && vector.transitions.length >= 10, "at least ten literal transition records are required");
 
   equal(
@@ -141,7 +141,7 @@ const checkTransitionCorpus = (golden) => {
     "canonical raw words changed without a reviewed profile change",
   );
   equal(
-    vector.successorStates.slice(0, PINNED_CANONICAL_SUCCESSOR_STATES.length),
+    vector.nextStates.slice(0, PINNED_CANONICAL_SUCCESSOR_STATES.length),
     PINNED_CANONICAL_SUCCESSOR_STATES,
     "canonical successor states changed without a reviewed profile change",
   );
@@ -149,7 +149,7 @@ const checkTransitionCorpus = (golden) => {
   for (const [index, word] of vector.words.entries()) {
     assert(typeof word === "string" && /^[0-9a-f]{8}$/.test(word), `raw word ${index} is not a canonical lowercase Word32`);
   }
-  for (const [index, state] of vector.successorStates.entries()) words(state, `successorStates[${index}]`);
+  for (const [index, state] of vector.nextStates.entries()) words(state, `nextStates[${index}]`);
 
   const initialized = oracleInitialize(vector.seed);
   assert(initialized.ok, `canonical Seed unexpectedly rejected: ${json(initialized)}`);
@@ -158,17 +158,17 @@ const checkTransitionCorpus = (golden) => {
   for (const [position, transition] of vector.transitions.entries()) {
     assert(transition.index === position, `transition index ${position} is not stable`);
     words(transition.inputState, `transitions[${position}].inputState`);
-    words(transition.successorState, `transitions[${position}].successorState`);
+    words(transition.nextState, `transitions[${position}].nextState`);
     equal(current.words, transition.inputState, `transition ${position} input state disagrees with its predecessor`);
     const actual = oracleNext(current);
     assert(actual.ok, `transition ${position} unexpectedly failed: ${json(actual)}`);
     equal(actual.value.word, transition.word, `transition ${position} word disagrees with committed golden data`);
-    equal(actual.value.state.words, transition.successorState, `transition ${position} successor state disagrees with committed golden data`);
+    equal(actual.value.state.words, transition.nextState, `transition ${position} successor state disagrees with committed golden data`);
     current = actual.value.state;
   }
 
   equal(vector.words, vector.transitions.slice(0, vector.words.length).map(({ word }) => word), "raw word projection disagrees with transition records");
-  equal(vector.successorStates, vector.transitions.slice(0, vector.successorStates.length).map(({ successorState }) => successorState), "successor-state projection disagrees with transition records");
+  equal(vector.nextStates, vector.transitions.slice(0, vector.nextStates.length).map(({ nextState }) => nextState), "successor-state projection disagrees with transition records");
 };
 
 const checkAttemptPath = (vector) => {

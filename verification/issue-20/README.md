@@ -6,7 +6,7 @@ publishable packages and is not a runtime API.
 The immutable Dice semantic identity is:
 
 ```text
-dice-v2/utf16-bounded-left-to-right-2
+dice-v3/utf16-bounded-left-to-right-3
 ```
 
 It is deliberately distinct from the package version, the PRNG schema version,

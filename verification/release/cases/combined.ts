@@ -26,7 +26,7 @@ type DiceShape = DiceSuccess<{
     DieSample<20, number>,
     DieSample<20, number>,
   ];
-  readonly successorState: GeneratorState;
+  readonly nextState: GeneratorState;
 }>;
 type Assert<Value extends true> = Value;
 export type ReleaseCombinedQuery = Assert<

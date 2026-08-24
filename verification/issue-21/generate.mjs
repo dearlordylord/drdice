@@ -29,12 +29,12 @@ const stateType = (vector) => vector.stateWords ? stateTypeFromWords(vector.stat
 const expectedType = (vector) => {
   const expected = vector.expected;
   if (expected.ok) {
-    return `Success<{ readonly total: ${literal(expected.value.total)}; readonly rollTrace: []; readonly successorState: ${stateTypeFromWords(expected.value.successorState)} }>`;
+    return `Success<{ readonly total: ${literal(expected.value.total)}; readonly rollTrace: []; readonly nextState: ${stateTypeFromWords(expected.value.nextState)} }>`;
   }
   const details = { ...expected.details };
   if (vector.id.startsWith("invalid-state-")) details.state = vector.stateInput;
   const rendered = `{ ${Object.entries(details).map(([key, item]) => {
-    if (key === "successorState" && Array.isArray(item)) return `readonly ${key}: ${stateTypeFromWords(item)}`;
+    if (key === "nextState" && Array.isArray(item)) return `readonly ${key}: ${stateTypeFromWords(item)}`;
     return `readonly ${key}: ${literal(item)}`;
   }).join("; ")} }`;
   return `Failure<${JSON.stringify(expected.code)}, ${rendered}>`;

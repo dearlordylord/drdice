@@ -47,11 +47,11 @@
 
 type Evaluate&lt;Source, GeneratorState, MaximumAttempts&gt;
   = { ok: true; value: {
-      total: number; rollTrace: DieSample[]; successorState: GeneratorState
+      total: number; rollTrace: DieSample[]; nextState: GeneratorState
     }}
   | { ok: false; code: "expected-expression" | "expected-die-sides" | "expected-closing-parenthesis" | "leading-zero" | "unexpected-token" | "dice-count-zero" | "side-count-zero" | "resource-limit-exceeded" }
-  | { ok: false; code: "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero" | "invalid-attempt-fuel"; details: { partialTrace: DieSample[]; successorState: GeneratorState | null } }
-  | { ok: false; code: "sampling-attempts-exhausted"; details: { attempts: number; partialTrace: DieSample[]; successorState: GeneratorState } };
+  | { ok: false; code: "invalid-state-shape" | "invalid-state-word" | "invalid-state-zero" | "invalid-attempt-fuel"; details: { partialTrace: DieSample[]; nextState: GeneratorState | null } }
+  | { ok: false; code: "sampling-attempts-exhausted"; details: { attempts: number; partialTrace: DieSample[]; nextState: GeneratorState } };
 
 type DieSample = { sideCount: number; face: number };
 type Sample&lt;GeneratorState, SideCount, MaximumAttempts&gt;
@@ -64,24 +64,24 @@ type Sample&lt;GeneratorState, SideCount, MaximumAttempts&gt;
   ok: true; value: {
     total: 5;
     rollTrace: [{ sideCount: 6; face: 1 }, { sideCount: 6; face: 1 }];
-    successorState: GeneratorState&lt;["00003007", "00000405", "00000405", "01800000"]&gt;;
+    nextState: GeneratorState&lt;["00003007", "00000405", "00000405", "01800000"]&gt;;
   }
 };
 type MaterializedExhaustion = {
   ok: false; code: "sampling-attempts-exhausted"; details: {
     attempts: 1; partialTrace: [{ sideCount: 6; face: 1 }];
-    successorState: GeneratorState&lt;["ffffffff", "00000000", "000001ff", "ffffffff"]&gt;;
+    nextState: GeneratorState&lt;["ffffffff", "00000000", "000001ff", "ffffffff"]&gt;;
   }
 };</code></pre>
   <pre><code>type MaterializedInvalidState = {
   ok: false; code: "invalid-state-word";
-  details: { partialTrace: []; successorState: null }
+  details: { partialTrace: []; nextState: null }
 };
 type MaterializedInvalidFuel = {
   ok: false; code: "invalid-attempt-fuel";
-  details: { partialTrace: []; successorState: GeneratorState }
+  details: { partialTrace: []; nextState: GeneratorState }
 };</code></pre>
-  <p>Successful Dice Evaluations have exactly <code>total</code>, <code>rollTrace</code>, and <code>successorState</code>. A failure has no total. Sampling exhaustion includes the exact attempts, completed partial trace, and advanced state. Pre-consumption syntax/domain/static-resource diagnostics omit <code>partialTrace</code>/<code>successorState</code>; the caller retains unchanged input. State/fuel failures and post-consumption failures carry explicit state and trace.</p>
+  <p>Successful Dice Evaluations have exactly <code>total</code>, <code>rollTrace</code>, and <code>nextState</code>. A failure has no total. Sampling exhaustion includes the exact attempts, completed partial trace, and advanced state. Pre-consumption syntax/domain/static-resource diagnostics omit <code>partialTrace</code>/<code>nextState</code>; the caller retains unchanged input. State/fuel failures and post-consumption failures carry explicit state and trace.</p>
   <p class="muted">The HTML model owns no DOM access. The TypeScript file's <code>oracleEvaluate</code> is an independent runtime correctness oracle; neither implementation is a production package or a parity gate.</p>
   <p class="warning">Thresholds below are prototype-only placeholders. Issue #11 must measure the checker and replace them.</p>
 
@@ -316,11 +316,11 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
       const chosen = candidates.reduce((best, candidate) => !best || candidate.offset < best.offset || (candidate.offset === best.offset && tieIndex(candidate.dimension) < tieIndex(best.dimension)) ? candidate : best, null);
       return resourceDiagnostic(chosen.offset, chosen.dimension, chosen.limit, chosen.actual);
     };
-    const modelStepFailure = (offset, limit, actual, trace, state) => failure("resource-limit-exceeded", { kind: "resource", code: "resource-limit-exceeded", offset, dimension: "evaluation-steps", limit, actual, partialTrace: trace, successorState: state });
+    const modelStepFailure = (offset, limit, actual, trace, state) => failure("resource-limit-exceeded", { kind: "resource", code: "resource-limit-exceeded", offset, dimension: "evaluation-steps", limit, actual, partialTrace: trace, nextState: state });
     const evalAst = (ast, state, maximumAttempts, limits, trace, consumedSteps = 0) => {
       if (ast.kind === "integer") {
         const steps = consumedSteps + 1;
-        return steps > limits.evaluationSteps ? modelStepFailure(ast.offset, limits.evaluationSteps, steps, trace, state) : success({ total: ast.value, rollTrace: trace, successorState: state, steps });
+        return steps > limits.evaluationSteps ? modelStepFailure(ast.offset, limits.evaluationSteps, steps, trace, state) : success({ total: ast.value, rollTrace: trace, nextState: state, steps });
       }
       if (ast.kind === "group") return evalAst(ast.child, state, maximumAttempts, limits, trace, consumedSteps + 1);
       if (ast.kind === "dice") {
@@ -333,9 +333,9 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
             if (sampled.code === "sampling-attempts-exhausted") {
               const attemptedSteps = steps + sampled.details.attempts + 1;
               if (attemptedSteps > limits.evaluationSteps) return modelStepFailure(ast.offset, limits.evaluationSteps, attemptedSteps, currentTrace, sampled.details.state);
-              return failure("sampling-attempts-exhausted", { kind: "evaluation", code: "sampling-attempts-exhausted", offset: ast.offset, maximumAttempts: sampled.details.maximumAttempts, attempts: sampled.details.attempts, partialTrace: currentTrace, successorState: sampled.details.state });
+              return failure("sampling-attempts-exhausted", { kind: "evaluation", code: "sampling-attempts-exhausted", offset: ast.offset, maximumAttempts: sampled.details.maximumAttempts, attempts: sampled.details.attempts, partialTrace: currentTrace, nextState: sampled.details.state });
             }
-            return failure(sampled.code, { ...sampled.details, partialTrace: currentTrace, successorState: current });
+            return failure(sampled.code, { ...sampled.details, partialTrace: currentTrace, nextState: current });
           }
           current = sampled.value.state;
           const face = sampled.value.value + 1;
@@ -345,23 +345,23 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
           if (steps > limits.evaluationSteps) return modelStepFailure(ast.offset, limits.evaluationSteps, steps, currentTrace, current);
           if (Math.abs(total) > limits.arithmeticMagnitude) {
             const detail = resourceDiagnostic(ast.offset, "arithmetic-magnitude", limits.arithmeticMagnitude, Math.abs(total)).details;
-            return failure("resource-limit-exceeded", { ...detail, partialTrace: currentTrace, successorState: current });
+            return failure("resource-limit-exceeded", { ...detail, partialTrace: currentTrace, nextState: current });
           }
         }
-        return success({ total, rollTrace: currentTrace, successorState: current, steps });
+        return success({ total, rollTrace: currentTrace, nextState: current, steps });
       }
       const left = evalAst(ast.left, state, maximumAttempts, limits, trace, consumedSteps);
       if (!left.ok) return left;
-      const right = evalAst(ast.right, left.value.successorState, maximumAttempts, limits, left.value.rollTrace, left.value.steps);
+      const right = evalAst(ast.right, left.value.nextState, maximumAttempts, limits, left.value.rollTrace, left.value.steps);
       if (!right.ok) return right;
       const total = ast.op === "+" ? left.value.total + right.value.total : left.value.total - right.value.total;
       const steps = right.value.steps + 1;
-      if (steps > limits.evaluationSteps) return modelStepFailure(ast.offset, limits.evaluationSteps, steps, right.value.rollTrace, right.value.successorState);
+      if (steps > limits.evaluationSteps) return modelStepFailure(ast.offset, limits.evaluationSteps, steps, right.value.rollTrace, right.value.nextState);
       if (Math.abs(total) > limits.arithmeticMagnitude) {
         const detail = resourceDiagnostic(ast.offset, "arithmetic-magnitude", limits.arithmeticMagnitude, Math.abs(total)).details;
-        return failure("resource-limit-exceeded", { ...detail, partialTrace: right.value.rollTrace, successorState: right.value.successorState });
+        return failure("resource-limit-exceeded", { ...detail, partialTrace: right.value.rollTrace, nextState: right.value.nextState });
       }
-      return success({ total, rollTrace: right.value.rollTrace, successorState: right.value.successorState, steps });
+      return success({ total, rollTrace: right.value.rollTrace, nextState: right.value.nextState, steps });
     };
     const modelEvaluate = (source, state, maximumAttempts, limits = PROTOTYPE_LIMITS) => {
       if (source.length > limits.sourceLength) return resourceDiagnostic(0, "source-length", limits.sourceLength, source.length);
@@ -376,12 +376,12 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
       const planned = modelPreflight(parsed.result.value, limits);
       if (planned) return planned;
       const invalid = stateFailure(state);
-      if (invalid) return failure(invalid.code, { ...invalid.details, partialTrace: [], successorState: null });
-      if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) return failure("invalid-attempt-fuel", { maximumAttempts, partialTrace: [], successorState: state });
+      if (invalid) return failure(invalid.code, { ...invalid.details, partialTrace: [], nextState: null });
+      if (!Number.isInteger(maximumAttempts) || maximumAttempts < 0) return failure("invalid-attempt-fuel", { maximumAttempts, partialTrace: [], nextState: state });
       if (maximumAttempts > limits.rejectionSamplingAttempts) return resourceDiagnostic(0, "rejection-sampling-attempts", limits.rejectionSamplingAttempts, maximumAttempts);
       const evaluated = evalAst(parsed.result.value, state, maximumAttempts, limits, []);
       if (!evaluated.ok) return evaluated;
-      return success({ total: evaluated.value.total, rollTrace: evaluated.value.rollTrace, successorState: evaluated.value.successorState });
+      return success({ total: evaluated.value.total, rollTrace: evaluated.value.rollTrace, nextState: evaluated.value.nextState });
     };
     const modelReset = (source = "2d6 + 3", stateWords = GOLDEN, maximumAttempts = 1, limits = PROTOTYPE_LIMITS) => {
       const initialized = modelInitialize(stateWords);
@@ -429,7 +429,7 @@ evaluation resource: sampling-attempts-exhausted</code></pre>
     let activeGuide = "happy";
     const applyEvaluation = (result) => {
       app.lastResult = result;
-      const successor = result && result.ok ? result.value.successorState : result && result.details && result.details.successorState;
+      const successor = result && result.ok ? result.value.nextState : result && result.details && result.details.nextState;
       if (successor && successor.kind === "GeneratorState") app.state = successor;
     };
     const render = () => {

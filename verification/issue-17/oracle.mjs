@@ -3,9 +3,8 @@
  *
  * This module is intentionally a small, number-based implementation of the
  * selected sequence profile.  It does not import (or share helpers with) a
- * production TypeScript implementation.  The public package must remain
- * declaration-only; this file is verification infrastructure and is kept
- * under verification/ so package publication rules can exclude it.
+ * production implementation. This file remains independent verification
+ * infrastructure and is excluded from package publication.
  */
 
 export const SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
