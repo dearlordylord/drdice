@@ -1,0 +1,1695 @@
+{
+  "schemaVersion": 1,
+  "issue": 24,
+  "verdict": {
+    "status": "ready",
+    "blockingFailures": [],
+    "advisories": [],
+    "statement": "Release candidate meets the declared TypeScript 7.0.2 semantic, package, packed-boundary, and compiler-budget gates."
+  },
+  "source": {
+    "measuredCommit": "94c33c5672b0c90ef96f9b9cba2c216f17be39a4",
+    "sourceDigest": "1b291f6c4c283022548771b70e26fe1de51aa07e8f831d2b06986f08e7a42452",
+    "cleanAtMeasurement": true,
+    "digestExcludes": [
+      "verification/issue-24/release-candidate.json"
+    ]
+  },
+  "semantic": {
+    "prng": {
+      "schemaVersion": 1,
+      "corpus": "issue-17-prng-v1",
+      "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+      "transitionCount": 10,
+      "boundedResultCount": 13
+    },
+    "dice": {
+      "semanticProfile": "dice-v1/utf16-bounded-left-to-right-1",
+      "semanticVersion": 1,
+      "prngSequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+      "limits": {
+        "sourceLength": 64,
+        "numericTokenLength": 3,
+        "nestingDepth": 4,
+        "astNodeCount": 15,
+        "diceTermCount": 4,
+        "dieSampleCount": 8,
+        "supportedSideCount": 100,
+        "arithmeticMagnitude": 100,
+        "evaluationSteps": 24,
+        "rejectionSamplingAttempts": 4
+      },
+      "tieOrder": [
+        "ast-node-count",
+        "dice-term-count",
+        "die-sample-count",
+        "supported-side-count",
+        "arithmetic-magnitude",
+        "evaluation-steps"
+      ],
+      "goldenCaseCount": 75,
+      "completeParityCaseCount": 74
+    }
+  },
+  "packages": [
+    {
+      "name": "@drdice/prng",
+      "version": "0.1.0",
+      "types": "./dist/index.d.ts",
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts"
+        }
+      },
+      "files": [
+        "dist/index.d.ts",
+        "README.md",
+        "LICENSE"
+      ],
+      "dependencies": {},
+      "sideEffects": false,
+      "declarationOnly": true,
+      "declarationBytes": 62294,
+      "identities": {
+        "packageType": "0.1.0",
+        "schemaVersion": 1,
+        "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1"
+      }
+    },
+    {
+      "name": "@drdice/dice",
+      "version": "0.1.0",
+      "types": "./dist/index.d.ts",
+      "exports": {
+        ".": {
+          "types": "./dist/index.d.ts"
+        }
+      },
+      "files": [
+        "dist/index.d.ts",
+        "README.md",
+        "LICENSE"
+      ],
+      "dependencies": {
+        "@drdice/prng": "workspace:^"
+      },
+      "sideEffects": false,
+      "declarationOnly": true,
+      "declarationBytes": 68650,
+      "identities": {
+        "semanticVersion": 1,
+        "semanticProfile": "dice-v1/utf16-bounded-left-to-right-1"
+      }
+    }
+  ],
+  "gates": [
+    {
+      "label": "TypeScript 7 project typecheck",
+      "command": "pnpm typecheck",
+      "status": 0,
+      "stdout": "\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice-issue24\n> tsc --project tsconfig.json --pretty false\n\n",
+      "stderr": ""
+    },
+    {
+      "label": "complete semantic and package parity",
+      "command": "pnpm check:parity",
+      "status": 0,
+      "stdout": "\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice-issue24\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n",
+      "stderr": ""
+    },
+    {
+      "label": "packed clean consumers",
+      "command": "pnpm check:clean-consumers",
+      "status": 0,
+      "stdout": "\n> drdice-workspace@0.0.0 check:clean-consumers /workspace/typescript/drdice-issue24\n> node verification/check-clean-consumers.mjs\n\nPacked clean consumers pass root imports; exports block deep imports in TypeScript and Node.\n",
+      "stderr": ""
+    },
+    {
+      "label": "packed artifact allowlists",
+      "command": "pnpm check:packed",
+      "status": 0,
+      "stdout": "\n> drdice-workspace@0.0.0 check:packed /workspace/typescript/drdice-issue24\n> node verification/check-packed-artifacts.mjs\n\nPacked artifacts contain only the two root declaration allowlists.\n",
+      "stderr": ""
+    },
+    {
+      "label": "advertised workspace verification",
+      "command": "pnpm verify",
+      "status": 0,
+      "stdout": "\n> drdice-workspace@0.0.0 verify /workspace/typescript/drdice-issue24\n> pnpm typecheck && pnpm check:parity && pnpm check:budgets\n\n\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice-issue24\n> tsc --project tsconfig.json --pretty false\n\n\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice-issue24\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n\n> drdice-workspace@0.0.0 check:budgets /workspace/typescript/drdice-issue24\n> node verification/check-budgets.mjs --policy all\n\n{\n  \"schemaVersion\": 1,\n  \"issue\": 16,\n  \"results\": [\n    {\n      \"policy\": \"one-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 215,\n      \"totalMilliseconds\": 257,\n      \"compilerMemoryKiB\": 78059,\n      \"types\": 48435,\n      \"instantiations\": 53393,\n      \"wallMilliseconds\": 536.564\n    },\n    {\n      \"policy\": \"four-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 165,\n      \"totalMilliseconds\": 199,\n      \"compilerMemoryKiB\": 80957,\n      \"types\": 52289,\n      \"instantiations\": 54239,\n      \"wallMilliseconds\": 479.919\n    }\n  ]\n}\n",
+      "stderr": ""
+    }
+  ],
+  "budgets": {
+    "schemaVersion": 1,
+    "requiredWarmupRuns": 1,
+    "requiredScoredRuns": 5,
+    "blockingCompiler": "typescript@7.0.2",
+    "advisoryCompiler": "@typescript/typescript6@6.0.2",
+    "policies": {
+      "typescript-7-single-checker": {
+        "blocking": true,
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 1,
+        "maximumSingleCheckMilliseconds": 1500,
+        "cases": {
+          "baseline": {
+            "maximumCheckMilliseconds": 500,
+            "maximumCompilerMemoryKiB": 163840,
+            "maximumInstantiations": 60000
+          },
+          "prng": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 327680,
+            "maximumInstantiations": 120000
+          },
+          "dice": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 360448,
+            "maximumInstantiations": 165000
+          },
+          "combined": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 360448,
+            "maximumInstantiations": 165000
+          },
+          "max-query": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 360448,
+            "maximumInstantiations": 165000
+          }
+        }
+      },
+      "typescript-7-four-checker": {
+        "blocking": true,
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 4,
+        "maximumSingleCheckMilliseconds": 1500,
+        "cases": {
+          "baseline": {
+            "maximumCheckMilliseconds": 500,
+            "maximumCompilerMemoryKiB": 163840,
+            "maximumInstantiations": 60000
+          },
+          "prng": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 327680,
+            "maximumInstantiations": 120000
+          },
+          "dice": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 360448,
+            "maximumInstantiations": 165000
+          },
+          "combined": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 360448,
+            "maximumInstantiations": 165000
+          },
+          "max-query": {
+            "maximumCheckMilliseconds": 750,
+            "maximumCompilerMemoryKiB": 360448,
+            "maximumInstantiations": 165000
+          }
+        }
+      },
+      "typescript-6-advisory": {
+        "blocking": false,
+        "package": "@typescript/typescript6@6.0.2",
+        "executable": "tsc6",
+        "checkerWorkers": 1,
+        "maximumSingleCheckMilliseconds": 6000,
+        "cases": {
+          "baseline": {
+            "maximumCheckMilliseconds": 3500,
+            "maximumCompilerMemoryKiB": 393216,
+            "maximumInstantiations": 60000
+          },
+          "prng": {
+            "maximumCheckMilliseconds": 4500,
+            "maximumCompilerMemoryKiB": 425984,
+            "maximumInstantiations": 120000
+          },
+          "dice": {
+            "maximumCheckMilliseconds": 4500,
+            "maximumCompilerMemoryKiB": 458752,
+            "maximumInstantiations": 165000
+          },
+          "combined": {
+            "maximumCheckMilliseconds": 4500,
+            "maximumCompilerMemoryKiB": 458752,
+            "maximumInstantiations": 165000
+          },
+          "max-query": {
+            "maximumCheckMilliseconds": 5000,
+            "maximumCompilerMemoryKiB": 458752,
+            "maximumInstantiations": 165000
+          }
+        }
+      }
+    }
+  },
+  "compilerBudget": {
+    "schemaVersion": 1,
+    "generatedAt": "2026-08-24T08:39:35.575Z",
+    "host": {
+      "platform": "linux",
+      "release": "7.0.14-orbstack-00380-ga7e0a2dc9535",
+      "architecture": "arm64",
+      "node": "v20.20.1",
+      "cpuModel": "unknown",
+      "logicalCpuCount": 12,
+      "totalMemoryBytes": 63157764096,
+      "freeMemoryBytesAtReport": 47196172288
+    },
+    "options": [
+      "--ignoreConfig",
+      "--pretty",
+      "false",
+      "--strict",
+      "--noEmit",
+      "--target",
+      "ES2020",
+      "--module",
+      "NodeNext",
+      "--moduleResolution",
+      "NodeNext",
+      "--lib",
+      "ES2020,DOM",
+      "--extendedDiagnostics"
+    ],
+    "requiredWarmupRuns": 1,
+    "requiredScoredRuns": 5,
+    "cases": [
+      {
+        "name": "baseline",
+        "file": "verification/budget-scaffold.ts"
+      },
+      {
+        "name": "prng",
+        "file": "verification/issue-24/cases/prng.ts"
+      },
+      {
+        "name": "dice",
+        "file": "verification/issue-24/cases/dice.ts"
+      },
+      {
+        "name": "combined",
+        "file": "verification/issue-24/cases/combined.ts"
+      },
+      {
+        "name": "max-query",
+        "file": "verification/issue-24/cases/max-query.ts"
+      }
+    ],
+    "compilerVersions": {
+      "typescript-7-single-checker": "Version 7.0.2",
+      "typescript-7-four-checker": "Version 7.0.2",
+      "typescript-6-advisory": "Version 6.0.3"
+    },
+    "results": [
+      {
+        "compiler": "typescript-7-single-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 1,
+        "case": "baseline",
+        "file": "verification/budget-scaffold.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 517.932,
+          "peakRssKiB": 248684,
+          "checkMilliseconds": 209,
+          "totalMilliseconds": 243,
+          "compilerMemoryKiB": 78006,
+          "types": 48435,
+          "instantiations": 53393
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 529.935,
+            "peakRssKiB": 247764,
+            "checkMilliseconds": 211,
+            "totalMilliseconds": 254,
+            "compilerMemoryKiB": 78000,
+            "types": 48435,
+            "instantiations": 53393
+          },
+          {
+            "wallMilliseconds": 549.426,
+            "peakRssKiB": 249040,
+            "checkMilliseconds": 213,
+            "totalMilliseconds": 242,
+            "compilerMemoryKiB": 77922,
+            "types": 48435,
+            "instantiations": 53393
+          },
+          {
+            "wallMilliseconds": 540.667,
+            "peakRssKiB": 254296,
+            "checkMilliseconds": 217,
+            "totalMilliseconds": 255,
+            "compilerMemoryKiB": 78006,
+            "types": 48435,
+            "instantiations": 53393
+          },
+          {
+            "wallMilliseconds": 519.947,
+            "peakRssKiB": 253456,
+            "checkMilliseconds": 200,
+            "totalMilliseconds": 237,
+            "compilerMemoryKiB": 77934,
+            "types": 48435,
+            "instantiations": 53393
+          },
+          {
+            "wallMilliseconds": 510.837,
+            "peakRssKiB": 252212,
+            "checkMilliseconds": 193,
+            "totalMilliseconds": 226,
+            "compilerMemoryKiB": 77987,
+            "types": 48435,
+            "instantiations": 53393
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 211,
+          "minimum": 193,
+          "maximum": 217
+        },
+        "totalMilliseconds": {
+          "median": 242,
+          "minimum": 226,
+          "maximum": 255
+        },
+        "wallMilliseconds": {
+          "median": 529.935,
+          "minimum": 510.837,
+          "maximum": 549.426
+        },
+        "peakRssKiB": {
+          "median": 252212,
+          "minimum": 247764,
+          "maximum": 254296
+        },
+        "compilerMemoryKiB": {
+          "median": 77987,
+          "minimum": 77922,
+          "maximum": 78006
+        },
+        "types": {
+          "median": 48435,
+          "minimum": 48435,
+          "maximum": 48435
+        },
+        "instantiations": {
+          "median": 53393,
+          "minimum": 53393,
+          "maximum": 53393
+        }
+      },
+      {
+        "compiler": "typescript-7-single-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 1,
+        "case": "prng",
+        "file": "verification/issue-24/cases/prng.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 972.207,
+          "peakRssKiB": 287432,
+          "checkMilliseconds": 671,
+          "totalMilliseconds": 703,
+          "compilerMemoryKiB": 80630,
+          "types": 44184,
+          "instantiations": 50513
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 980.928,
+            "peakRssKiB": 285340,
+            "checkMilliseconds": 671,
+            "totalMilliseconds": 704,
+            "compilerMemoryKiB": 80595,
+            "types": 44184,
+            "instantiations": 50513
+          },
+          {
+            "wallMilliseconds": 1064.52,
+            "peakRssKiB": 284956,
+            "checkMilliseconds": 728,
+            "totalMilliseconds": 760,
+            "compilerMemoryKiB": 80557,
+            "types": 44184,
+            "instantiations": 50513
+          },
+          {
+            "wallMilliseconds": 1031.528,
+            "peakRssKiB": 294784,
+            "checkMilliseconds": 696,
+            "totalMilliseconds": 741,
+            "compilerMemoryKiB": 80602,
+            "types": 44184,
+            "instantiations": 50513
+          },
+          {
+            "wallMilliseconds": 978.96,
+            "peakRssKiB": 295680,
+            "checkMilliseconds": 657,
+            "totalMilliseconds": 690,
+            "compilerMemoryKiB": 80634,
+            "types": 44184,
+            "instantiations": 50513
+          },
+          {
+            "wallMilliseconds": 986.693,
+            "peakRssKiB": 292156,
+            "checkMilliseconds": 662,
+            "totalMilliseconds": 702,
+            "compilerMemoryKiB": 80630,
+            "types": 44184,
+            "instantiations": 50513
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 671,
+          "minimum": 657,
+          "maximum": 728
+        },
+        "totalMilliseconds": {
+          "median": 704,
+          "minimum": 690,
+          "maximum": 760
+        },
+        "wallMilliseconds": {
+          "median": 986.693,
+          "minimum": 978.96,
+          "maximum": 1064.52
+        },
+        "peakRssKiB": {
+          "median": 292156,
+          "minimum": 284956,
+          "maximum": 295680
+        },
+        "compilerMemoryKiB": {
+          "median": 80602,
+          "minimum": 80557,
+          "maximum": 80634
+        },
+        "types": {
+          "median": 44184,
+          "minimum": 44184,
+          "maximum": 44184
+        },
+        "instantiations": {
+          "median": 50513,
+          "minimum": 50513,
+          "maximum": 50513
+        }
+      },
+      {
+        "compiler": "typescript-7-single-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 1,
+        "case": "dice",
+        "file": "verification/issue-24/cases/dice.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 1036.827,
+          "peakRssKiB": 319292,
+          "checkMilliseconds": 702,
+          "totalMilliseconds": 735,
+          "compilerMemoryKiB": 91770,
+          "types": 59422,
+          "instantiations": 81427
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 1037.415,
+            "peakRssKiB": 314424,
+            "checkMilliseconds": 693,
+            "totalMilliseconds": 730,
+            "compilerMemoryKiB": 91894,
+            "types": 59422,
+            "instantiations": 81427
+          },
+          {
+            "wallMilliseconds": 998.64,
+            "peakRssKiB": 308400,
+            "checkMilliseconds": 680,
+            "totalMilliseconds": 715,
+            "compilerMemoryKiB": 91787,
+            "types": 59422,
+            "instantiations": 81427
+          },
+          {
+            "wallMilliseconds": 1001.438,
+            "peakRssKiB": 311660,
+            "checkMilliseconds": 674,
+            "totalMilliseconds": 715,
+            "compilerMemoryKiB": 91743,
+            "types": 59422,
+            "instantiations": 81427
+          },
+          {
+            "wallMilliseconds": 1177.134,
+            "peakRssKiB": 316912,
+            "checkMilliseconds": 726,
+            "totalMilliseconds": 761,
+            "compilerMemoryKiB": 91781,
+            "types": 59422,
+            "instantiations": 81427
+          },
+          {
+            "wallMilliseconds": 1021.574,
+            "peakRssKiB": 298472,
+            "checkMilliseconds": 697,
+            "totalMilliseconds": 734,
+            "compilerMemoryKiB": 91848,
+            "types": 59422,
+            "instantiations": 81427
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 693,
+          "minimum": 674,
+          "maximum": 726
+        },
+        "totalMilliseconds": {
+          "median": 730,
+          "minimum": 715,
+          "maximum": 761
+        },
+        "wallMilliseconds": {
+          "median": 1021.574,
+          "minimum": 998.64,
+          "maximum": 1177.134
+        },
+        "peakRssKiB": {
+          "median": 311660,
+          "minimum": 298472,
+          "maximum": 316912
+        },
+        "compilerMemoryKiB": {
+          "median": 91787,
+          "minimum": 91743,
+          "maximum": 91894
+        },
+        "types": {
+          "median": 59422,
+          "minimum": 59422,
+          "maximum": 59422
+        },
+        "instantiations": {
+          "median": 81427,
+          "minimum": 81427,
+          "maximum": 81427
+        }
+      },
+      {
+        "compiler": "typescript-7-single-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 1,
+        "case": "combined",
+        "file": "verification/issue-24/cases/combined.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 1009.999,
+          "peakRssKiB": 322188,
+          "checkMilliseconds": 701,
+          "totalMilliseconds": 739,
+          "compilerMemoryKiB": 89222,
+          "types": 58642,
+          "instantiations": 71805
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 1001.572,
+            "peakRssKiB": 314980,
+            "checkMilliseconds": 672,
+            "totalMilliseconds": 711,
+            "compilerMemoryKiB": 89231,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 997.773,
+            "peakRssKiB": 306932,
+            "checkMilliseconds": 684,
+            "totalMilliseconds": 718,
+            "compilerMemoryKiB": 89306,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 992.993,
+            "peakRssKiB": 314236,
+            "checkMilliseconds": 677,
+            "totalMilliseconds": 713,
+            "compilerMemoryKiB": 89185,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 1019.099,
+            "peakRssKiB": 311904,
+            "checkMilliseconds": 694,
+            "totalMilliseconds": 732,
+            "compilerMemoryKiB": 89167,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 1021.321,
+            "peakRssKiB": 313084,
+            "checkMilliseconds": 688,
+            "totalMilliseconds": 725,
+            "compilerMemoryKiB": 89207,
+            "types": 58642,
+            "instantiations": 71805
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 684,
+          "minimum": 672,
+          "maximum": 694
+        },
+        "totalMilliseconds": {
+          "median": 718,
+          "minimum": 711,
+          "maximum": 732
+        },
+        "wallMilliseconds": {
+          "median": 1001.572,
+          "minimum": 992.993,
+          "maximum": 1021.321
+        },
+        "peakRssKiB": {
+          "median": 313084,
+          "minimum": 306932,
+          "maximum": 314980
+        },
+        "compilerMemoryKiB": {
+          "median": 89207,
+          "minimum": 89167,
+          "maximum": 89306
+        },
+        "types": {
+          "median": 58642,
+          "minimum": 58642,
+          "maximum": 58642
+        },
+        "instantiations": {
+          "median": 71805,
+          "minimum": 71805,
+          "maximum": 71805
+        }
+      },
+      {
+        "compiler": "typescript-7-single-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 1,
+        "case": "max-query",
+        "file": "verification/issue-24/cases/max-query.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 1043.757,
+          "peakRssKiB": 307704,
+          "checkMilliseconds": 710,
+          "totalMilliseconds": 753,
+          "compilerMemoryKiB": 89218,
+          "types": 58608,
+          "instantiations": 72843
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 1055.959,
+            "peakRssKiB": 305608,
+            "checkMilliseconds": 725,
+            "totalMilliseconds": 759,
+            "compilerMemoryKiB": 89132,
+            "types": 58608,
+            "instantiations": 72843
+          },
+          {
+            "wallMilliseconds": 1081.437,
+            "peakRssKiB": 317376,
+            "checkMilliseconds": 738,
+            "totalMilliseconds": 775,
+            "compilerMemoryKiB": 89124,
+            "types": 58608,
+            "instantiations": 72843
+          },
+          {
+            "wallMilliseconds": 1045.274,
+            "peakRssKiB": 306884,
+            "checkMilliseconds": 688,
+            "totalMilliseconds": 730,
+            "compilerMemoryKiB": 89153,
+            "types": 58608,
+            "instantiations": 72843
+          },
+          {
+            "wallMilliseconds": 1015.4,
+            "peakRssKiB": 289424,
+            "checkMilliseconds": 685,
+            "totalMilliseconds": 721,
+            "compilerMemoryKiB": 89236,
+            "types": 58608,
+            "instantiations": 72843
+          },
+          {
+            "wallMilliseconds": 1008.89,
+            "peakRssKiB": 305568,
+            "checkMilliseconds": 691,
+            "totalMilliseconds": 728,
+            "compilerMemoryKiB": 89180,
+            "types": 58608,
+            "instantiations": 72843
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 691,
+          "minimum": 685,
+          "maximum": 738
+        },
+        "totalMilliseconds": {
+          "median": 730,
+          "minimum": 721,
+          "maximum": 775
+        },
+        "wallMilliseconds": {
+          "median": 1045.274,
+          "minimum": 1008.89,
+          "maximum": 1081.437
+        },
+        "peakRssKiB": {
+          "median": 305608,
+          "minimum": 289424,
+          "maximum": 317376
+        },
+        "compilerMemoryKiB": {
+          "median": 89153,
+          "minimum": 89124,
+          "maximum": 89236
+        },
+        "types": {
+          "median": 58608,
+          "minimum": 58608,
+          "maximum": 58608
+        },
+        "instantiations": {
+          "median": 72843,
+          "minimum": 72843,
+          "maximum": 72843
+        }
+      },
+      {
+        "compiler": "typescript-7-four-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 4,
+        "case": "baseline",
+        "file": "verification/budget-scaffold.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 494.947,
+          "peakRssKiB": 253852,
+          "checkMilliseconds": 184,
+          "totalMilliseconds": 222,
+          "compilerMemoryKiB": 80999,
+          "types": 52289,
+          "instantiations": 54239
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 667.303,
+            "peakRssKiB": 250976,
+            "checkMilliseconds": 205,
+            "totalMilliseconds": 288,
+            "compilerMemoryKiB": 80894,
+            "types": 52289,
+            "instantiations": 54239
+          },
+          {
+            "wallMilliseconds": 482.165,
+            "peakRssKiB": 247116,
+            "checkMilliseconds": 168,
+            "totalMilliseconds": 202,
+            "compilerMemoryKiB": 81053,
+            "types": 52289,
+            "instantiations": 54239
+          },
+          {
+            "wallMilliseconds": 479.312,
+            "peakRssKiB": 247708,
+            "checkMilliseconds": 175,
+            "totalMilliseconds": 206,
+            "compilerMemoryKiB": 80978,
+            "types": 52289,
+            "instantiations": 54239
+          },
+          {
+            "wallMilliseconds": 500.048,
+            "peakRssKiB": 250484,
+            "checkMilliseconds": 169,
+            "totalMilliseconds": 203,
+            "compilerMemoryKiB": 80892,
+            "types": 52289,
+            "instantiations": 54239
+          },
+          {
+            "wallMilliseconds": 488.916,
+            "peakRssKiB": 253544,
+            "checkMilliseconds": 183,
+            "totalMilliseconds": 215,
+            "compilerMemoryKiB": 80889,
+            "types": 52289,
+            "instantiations": 54239
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 175,
+          "minimum": 168,
+          "maximum": 205
+        },
+        "totalMilliseconds": {
+          "median": 206,
+          "minimum": 202,
+          "maximum": 288
+        },
+        "wallMilliseconds": {
+          "median": 488.916,
+          "minimum": 479.312,
+          "maximum": 667.303
+        },
+        "peakRssKiB": {
+          "median": 250484,
+          "minimum": 247116,
+          "maximum": 253544
+        },
+        "compilerMemoryKiB": {
+          "median": 80894,
+          "minimum": 80889,
+          "maximum": 81053
+        },
+        "types": {
+          "median": 52289,
+          "minimum": 52289,
+          "maximum": 52289
+        },
+        "instantiations": {
+          "median": 54239,
+          "minimum": 54239,
+          "maximum": 54239
+        }
+      },
+      {
+        "compiler": "typescript-7-four-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 4,
+        "case": "prng",
+        "file": "verification/issue-24/cases/prng.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 1019.778,
+          "peakRssKiB": 295468,
+          "checkMilliseconds": 677,
+          "totalMilliseconds": 716,
+          "compilerMemoryKiB": 84094,
+          "types": 49163,
+          "instantiations": 52381
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 958.439,
+            "peakRssKiB": 288148,
+            "checkMilliseconds": 639,
+            "totalMilliseconds": 668,
+            "compilerMemoryKiB": 84070,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 949.755,
+            "peakRssKiB": 298492,
+            "checkMilliseconds": 628,
+            "totalMilliseconds": 668,
+            "compilerMemoryKiB": 84059,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 933.339,
+            "peakRssKiB": 289204,
+            "checkMilliseconds": 627,
+            "totalMilliseconds": 663,
+            "compilerMemoryKiB": 84019,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 947.703,
+            "peakRssKiB": 288192,
+            "checkMilliseconds": 635,
+            "totalMilliseconds": 664,
+            "compilerMemoryKiB": 84086,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 958.843,
+            "peakRssKiB": 292512,
+            "checkMilliseconds": 649,
+            "totalMilliseconds": 682,
+            "compilerMemoryKiB": 84092,
+            "types": 49163,
+            "instantiations": 52381
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 635,
+          "minimum": 627,
+          "maximum": 649
+        },
+        "totalMilliseconds": {
+          "median": 668,
+          "minimum": 663,
+          "maximum": 682
+        },
+        "wallMilliseconds": {
+          "median": 949.755,
+          "minimum": 933.339,
+          "maximum": 958.843
+        },
+        "peakRssKiB": {
+          "median": 289204,
+          "minimum": 288148,
+          "maximum": 298492
+        },
+        "compilerMemoryKiB": {
+          "median": 84070,
+          "minimum": 84019,
+          "maximum": 84092
+        },
+        "types": {
+          "median": 49163,
+          "minimum": 49163,
+          "maximum": 49163
+        },
+        "instantiations": {
+          "median": 52381,
+          "minimum": 52381,
+          "maximum": 52381
+        }
+      },
+      {
+        "compiler": "typescript-7-four-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 4,
+        "case": "dice",
+        "file": "verification/issue-24/cases/dice.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 846.317,
+          "peakRssKiB": 321876,
+          "checkMilliseconds": 536,
+          "totalMilliseconds": 575,
+          "compilerMemoryKiB": 102709,
+          "types": 72237,
+          "instantiations": 92729
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 861.292,
+            "peakRssKiB": 304688,
+            "checkMilliseconds": 548,
+            "totalMilliseconds": 584,
+            "compilerMemoryKiB": 102627,
+            "types": 72237,
+            "instantiations": 92729
+          },
+          {
+            "wallMilliseconds": 845.021,
+            "peakRssKiB": 309840,
+            "checkMilliseconds": 530,
+            "totalMilliseconds": 561,
+            "compilerMemoryKiB": 102589,
+            "types": 72237,
+            "instantiations": 92729
+          },
+          {
+            "wallMilliseconds": 837.135,
+            "peakRssKiB": 311444,
+            "checkMilliseconds": 517,
+            "totalMilliseconds": 548,
+            "compilerMemoryKiB": 102584,
+            "types": 72237,
+            "instantiations": 92729
+          },
+          {
+            "wallMilliseconds": 899.559,
+            "peakRssKiB": 305408,
+            "checkMilliseconds": 568,
+            "totalMilliseconds": 615,
+            "compilerMemoryKiB": 102743,
+            "types": 72237,
+            "instantiations": 92729
+          },
+          {
+            "wallMilliseconds": 880.358,
+            "peakRssKiB": 305164,
+            "checkMilliseconds": 568,
+            "totalMilliseconds": 605,
+            "compilerMemoryKiB": 102652,
+            "types": 72237,
+            "instantiations": 92729
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 548,
+          "minimum": 517,
+          "maximum": 568
+        },
+        "totalMilliseconds": {
+          "median": 584,
+          "minimum": 548,
+          "maximum": 615
+        },
+        "wallMilliseconds": {
+          "median": 861.292,
+          "minimum": 837.135,
+          "maximum": 899.559
+        },
+        "peakRssKiB": {
+          "median": 305408,
+          "minimum": 304688,
+          "maximum": 311444
+        },
+        "compilerMemoryKiB": {
+          "median": 102627,
+          "minimum": 102584,
+          "maximum": 102743
+        },
+        "types": {
+          "median": 72237,
+          "minimum": 72237,
+          "maximum": 72237
+        },
+        "instantiations": {
+          "median": 92729,
+          "minimum": 92729,
+          "maximum": 92729
+        }
+      },
+      {
+        "compiler": "typescript-7-four-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 4,
+        "case": "combined",
+        "file": "verification/issue-24/cases/combined.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 838.673,
+          "peakRssKiB": 297380,
+          "checkMilliseconds": 522,
+          "totalMilliseconds": 557,
+          "compilerMemoryKiB": 99861,
+          "types": 71312,
+          "instantiations": 82775
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 858.069,
+            "peakRssKiB": 292744,
+            "checkMilliseconds": 527,
+            "totalMilliseconds": 574,
+            "compilerMemoryKiB": 99876,
+            "types": 71312,
+            "instantiations": 82775
+          },
+          {
+            "wallMilliseconds": 908.073,
+            "peakRssKiB": 294820,
+            "checkMilliseconds": 573,
+            "totalMilliseconds": 601,
+            "compilerMemoryKiB": 99944,
+            "types": 71312,
+            "instantiations": 82775
+          },
+          {
+            "wallMilliseconds": 853.33,
+            "peakRssKiB": 299208,
+            "checkMilliseconds": 528,
+            "totalMilliseconds": 563,
+            "compilerMemoryKiB": 99805,
+            "types": 71312,
+            "instantiations": 82775
+          },
+          {
+            "wallMilliseconds": 867.306,
+            "peakRssKiB": 297356,
+            "checkMilliseconds": 547,
+            "totalMilliseconds": 587,
+            "compilerMemoryKiB": 99864,
+            "types": 71312,
+            "instantiations": 82775
+          },
+          {
+            "wallMilliseconds": 843.112,
+            "peakRssKiB": 299320,
+            "checkMilliseconds": 529,
+            "totalMilliseconds": 569,
+            "compilerMemoryKiB": 99858,
+            "types": 71312,
+            "instantiations": 82775
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 529,
+          "minimum": 527,
+          "maximum": 573
+        },
+        "totalMilliseconds": {
+          "median": 574,
+          "minimum": 563,
+          "maximum": 601
+        },
+        "wallMilliseconds": {
+          "median": 858.069,
+          "minimum": 843.112,
+          "maximum": 908.073
+        },
+        "peakRssKiB": {
+          "median": 297356,
+          "minimum": 292744,
+          "maximum": 299320
+        },
+        "compilerMemoryKiB": {
+          "median": 99864,
+          "minimum": 99805,
+          "maximum": 99944
+        },
+        "types": {
+          "median": 71312,
+          "minimum": 71312,
+          "maximum": 71312
+        },
+        "instantiations": {
+          "median": 82775,
+          "minimum": 82775,
+          "maximum": 82775
+        }
+      },
+      {
+        "compiler": "typescript-7-four-checker",
+        "package": "typescript@7.0.2",
+        "executable": "tsc",
+        "checkerWorkers": 4,
+        "case": "max-query",
+        "file": "verification/issue-24/cases/max-query.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 5,
+        "freshProcesses": true,
+        "compilerVersion": "Version 7.0.2",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 835.717,
+          "peakRssKiB": 314324,
+          "checkMilliseconds": 518,
+          "totalMilliseconds": 551,
+          "compilerMemoryKiB": 99206,
+          "types": 70238,
+          "instantiations": 82300
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 838.735,
+            "peakRssKiB": 306592,
+            "checkMilliseconds": 517,
+            "totalMilliseconds": 552,
+            "compilerMemoryKiB": 99076,
+            "types": 70238,
+            "instantiations": 82300
+          },
+          {
+            "wallMilliseconds": 841.53,
+            "peakRssKiB": 306032,
+            "checkMilliseconds": 528,
+            "totalMilliseconds": 564,
+            "compilerMemoryKiB": 99139,
+            "types": 70238,
+            "instantiations": 82300
+          },
+          {
+            "wallMilliseconds": 825.927,
+            "peakRssKiB": 305644,
+            "checkMilliseconds": 514,
+            "totalMilliseconds": 552,
+            "compilerMemoryKiB": 99126,
+            "types": 70238,
+            "instantiations": 82300
+          },
+          {
+            "wallMilliseconds": 838.475,
+            "peakRssKiB": 313448,
+            "checkMilliseconds": 525,
+            "totalMilliseconds": 557,
+            "compilerMemoryKiB": 99141,
+            "types": 70238,
+            "instantiations": 82300
+          },
+          {
+            "wallMilliseconds": 860.716,
+            "peakRssKiB": 322272,
+            "checkMilliseconds": 544,
+            "totalMilliseconds": 584,
+            "compilerMemoryKiB": 99107,
+            "types": 70238,
+            "instantiations": 82300
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 525,
+          "minimum": 514,
+          "maximum": 544
+        },
+        "totalMilliseconds": {
+          "median": 557,
+          "minimum": 552,
+          "maximum": 584
+        },
+        "wallMilliseconds": {
+          "median": 838.735,
+          "minimum": 825.927,
+          "maximum": 860.716
+        },
+        "peakRssKiB": {
+          "median": 306592,
+          "minimum": 305644,
+          "maximum": 322272
+        },
+        "compilerMemoryKiB": {
+          "median": 99126,
+          "minimum": 99076,
+          "maximum": 99141
+        },
+        "types": {
+          "median": 70238,
+          "minimum": 70238,
+          "maximum": 70238
+        },
+        "instantiations": {
+          "median": 82300,
+          "minimum": 82300,
+          "maximum": 82300
+        }
+      },
+      {
+        "compiler": "typescript-6-advisory",
+        "package": "@typescript/typescript6@6.0.2",
+        "executable": "tsc6",
+        "checkerWorkers": 1,
+        "case": "baseline",
+        "file": "verification/budget-scaffold.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 1,
+        "freshProcesses": true,
+        "compilerVersion": "Version 6.0.3",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 1274.27,
+          "peakRssKiB": 322928,
+          "checkMilliseconds": 660,
+          "totalMilliseconds": 920,
+          "compilerMemoryKiB": 138911,
+          "types": 47828,
+          "instantiations": 53201
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 1230.705,
+            "peakRssKiB": 323320,
+            "checkMilliseconds": 660,
+            "totalMilliseconds": 880,
+            "compilerMemoryKiB": 138635,
+            "types": 47828,
+            "instantiations": 53201
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 660,
+          "minimum": 660,
+          "maximum": 660
+        },
+        "totalMilliseconds": {
+          "median": 880,
+          "minimum": 880,
+          "maximum": 880
+        },
+        "wallMilliseconds": {
+          "median": 1230.705,
+          "minimum": 1230.705,
+          "maximum": 1230.705
+        },
+        "peakRssKiB": {
+          "median": 323320,
+          "minimum": 323320,
+          "maximum": 323320
+        },
+        "compilerMemoryKiB": {
+          "median": 138635,
+          "minimum": 138635,
+          "maximum": 138635
+        },
+        "types": {
+          "median": 47828,
+          "minimum": 47828,
+          "maximum": 47828
+        },
+        "instantiations": {
+          "median": 53201,
+          "minimum": 53201,
+          "maximum": 53201
+        }
+      },
+      {
+        "compiler": "typescript-6-advisory",
+        "package": "@typescript/typescript6@6.0.2",
+        "executable": "tsc6",
+        "checkerWorkers": 1,
+        "case": "prng",
+        "file": "verification/issue-24/cases/prng.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 1,
+        "freshProcesses": true,
+        "compilerVersion": "Version 6.0.3",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 2462.155,
+          "peakRssKiB": 339484,
+          "checkMilliseconds": 1900,
+          "totalMilliseconds": 2100,
+          "compilerMemoryKiB": 148498,
+          "types": 43615,
+          "instantiations": 50345
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 2447.626,
+            "peakRssKiB": 337648,
+            "checkMilliseconds": 1880,
+            "totalMilliseconds": 2090,
+            "compilerMemoryKiB": 148226,
+            "types": 43615,
+            "instantiations": 50345
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 1880,
+          "minimum": 1880,
+          "maximum": 1880
+        },
+        "totalMilliseconds": {
+          "median": 2090,
+          "minimum": 2090,
+          "maximum": 2090
+        },
+        "wallMilliseconds": {
+          "median": 2447.626,
+          "minimum": 2447.626,
+          "maximum": 2447.626
+        },
+        "peakRssKiB": {
+          "median": 337648,
+          "minimum": 337648,
+          "maximum": 337648
+        },
+        "compilerMemoryKiB": {
+          "median": 148226,
+          "minimum": 148226,
+          "maximum": 148226
+        },
+        "types": {
+          "median": 43615,
+          "minimum": 43615,
+          "maximum": 43615
+        },
+        "instantiations": {
+          "median": 50345,
+          "minimum": 50345,
+          "maximum": 50345
+        }
+      },
+      {
+        "compiler": "typescript-6-advisory",
+        "package": "@typescript/typescript6@6.0.2",
+        "executable": "tsc6",
+        "checkerWorkers": 1,
+        "case": "dice",
+        "file": "verification/issue-24/cases/dice.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 1,
+        "freshProcesses": true,
+        "compilerVersion": "Version 6.0.3",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 2663.637,
+          "peakRssKiB": 365036,
+          "checkMilliseconds": 2080,
+          "totalMilliseconds": 2320,
+          "compilerMemoryKiB": 171272,
+          "types": 58815,
+          "instantiations": 81235
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 2650.311,
+            "peakRssKiB": 363036,
+            "checkMilliseconds": 2040,
+            "totalMilliseconds": 2300,
+            "compilerMemoryKiB": 176661,
+            "types": 58815,
+            "instantiations": 81235
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 2040,
+          "minimum": 2040,
+          "maximum": 2040
+        },
+        "totalMilliseconds": {
+          "median": 2300,
+          "minimum": 2300,
+          "maximum": 2300
+        },
+        "wallMilliseconds": {
+          "median": 2650.311,
+          "minimum": 2650.311,
+          "maximum": 2650.311
+        },
+        "peakRssKiB": {
+          "median": 363036,
+          "minimum": 363036,
+          "maximum": 363036
+        },
+        "compilerMemoryKiB": {
+          "median": 176661,
+          "minimum": 176661,
+          "maximum": 176661
+        },
+        "types": {
+          "median": 58815,
+          "minimum": 58815,
+          "maximum": 58815
+        },
+        "instantiations": {
+          "median": 81235,
+          "minimum": 81235,
+          "maximum": 81235
+        }
+      },
+      {
+        "compiler": "typescript-6-advisory",
+        "package": "@typescript/typescript6@6.0.2",
+        "executable": "tsc6",
+        "checkerWorkers": 1,
+        "case": "combined",
+        "file": "verification/issue-24/cases/combined.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 1,
+        "freshProcesses": true,
+        "compilerVersion": "Version 6.0.3",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 2648.502,
+          "peakRssKiB": 356684,
+          "checkMilliseconds": 2020,
+          "totalMilliseconds": 2270,
+          "compilerMemoryKiB": 171368,
+          "types": 58035,
+          "instantiations": 71613
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 2925.965,
+            "peakRssKiB": 355256,
+            "checkMilliseconds": 2310,
+            "totalMilliseconds": 2570,
+            "compilerMemoryKiB": 172083,
+            "types": 58035,
+            "instantiations": 71613
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 2310,
+          "minimum": 2310,
+          "maximum": 2310
+        },
+        "totalMilliseconds": {
+          "median": 2570,
+          "minimum": 2570,
+          "maximum": 2570
+        },
+        "wallMilliseconds": {
+          "median": 2925.965,
+          "minimum": 2925.965,
+          "maximum": 2925.965
+        },
+        "peakRssKiB": {
+          "median": 355256,
+          "minimum": 355256,
+          "maximum": 355256
+        },
+        "compilerMemoryKiB": {
+          "median": 172083,
+          "minimum": 172083,
+          "maximum": 172083
+        },
+        "types": {
+          "median": 58035,
+          "minimum": 58035,
+          "maximum": 58035
+        },
+        "instantiations": {
+          "median": 71613,
+          "minimum": 71613,
+          "maximum": 71613
+        }
+      },
+      {
+        "compiler": "typescript-6-advisory",
+        "package": "@typescript/typescript6@6.0.2",
+        "executable": "tsc6",
+        "checkerWorkers": 1,
+        "case": "max-query",
+        "file": "verification/issue-24/cases/max-query.ts",
+        "warmupRuns": 1,
+        "scoredRuns": 1,
+        "freshProcesses": true,
+        "compilerVersion": "Version 6.0.3",
+        "status": "passed",
+        "warmup": {
+          "wallMilliseconds": 2798.295,
+          "peakRssKiB": 357336,
+          "checkMilliseconds": 2100,
+          "totalMilliseconds": 2420,
+          "compilerMemoryKiB": 164677,
+          "types": 58001,
+          "instantiations": 72651
+        },
+        "samples": [
+          {
+            "wallMilliseconds": 2669.457,
+            "peakRssKiB": 358948,
+            "checkMilliseconds": 2070,
+            "totalMilliseconds": 2310,
+            "compilerMemoryKiB": 164923,
+            "types": 58001,
+            "instantiations": 72651
+          }
+        ],
+        "checkMilliseconds": {
+          "median": 2070,
+          "minimum": 2070,
+          "maximum": 2070
+        },
+        "totalMilliseconds": {
+          "median": 2310,
+          "minimum": 2310,
+          "maximum": 2310
+        },
+        "wallMilliseconds": {
+          "median": 2669.457,
+          "minimum": 2669.457,
+          "maximum": 2669.457
+        },
+        "peakRssKiB": {
+          "median": 358948,
+          "minimum": 358948,
+          "maximum": 358948
+        },
+        "compilerMemoryKiB": {
+          "median": 164923,
+          "minimum": 164923,
+          "maximum": 164923
+        },
+        "types": {
+          "median": 58001,
+          "minimum": 58001,
+          "maximum": 58001
+        },
+        "instantiations": {
+          "median": 72651,
+          "minimum": 72651,
+          "maximum": 72651
+        }
+      }
+    ]
+  },
+  "reportDigest": "1b4f577b2e5f8b5fea8ff3a12bccc42475d7efe85dfcbc19318a16ca1dac3759"
+}
