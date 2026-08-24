@@ -8,10 +8,10 @@
  * under verification/ so package publication rules can exclude it.
  */
 
-export const SEQUENCE_PROFILE = "xoshiro128ss-1.1/direct128-msb-rejection-1";
+export const SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 export const SCHEMA_VERSION = 1;
 export const MAX_BOUND = 100;
-export const MAX_ATTEMPTS = 4;
+export const MAX_ATTEMPTS = 5;
 
 const WORD_COUNT = 4;
 const WORD_PATTERN = /^[0-9a-f]{8}$/;
@@ -62,7 +62,18 @@ const stateFailure = (state) => {
   return null;
 };
 
-/** Initialize a Generator State by direct, ordered Seed-word mapping. */
+const transitionStateWords = ([s0, s1, s2, s3]) => {
+  const t = asWord32(s1 << 9);
+  const next2 = asWord32(s2 ^ s0);
+  const next3 = asWord32(s3 ^ s1);
+  const next1 = asWord32(s1 ^ next2);
+  const next0 = asWord32(s0 ^ next3);
+  const next2AfterT = asWord32(next2 ^ t);
+  const next3AfterRotate = asWord32((next3 << 11) | (next3 >>> 21));
+  return [next0, next1, next2AfterT, next3AfterRotate];
+};
+
+/** Initialize a Generator State after sixteen state-only diffusion steps. */
 export const oracleInitialize = (seed) => {
   const words = seedWords(seed);
   if (!Array.isArray(words) || words.length !== WORD_COUNT) {
@@ -72,7 +83,11 @@ export const oracleInitialize = (seed) => {
     return failure("invalid-seed-word", { seed });
   }
   if (allZero(words)) return failure("invalid-seed-zero", { seed });
-  return success(makeState(words));
+  let warmed = words.map(parseWord);
+  for (let transition = 0; transition < 16; transition += 1) {
+    warmed = transitionStateWords(warmed);
+  }
+  return success(makeState(warmed.map(asHexWord)));
 };
 
 /**
@@ -88,22 +103,15 @@ export const oracleNext = (state) => {
   const s1Times5 = asWord32(Math.imul(s1, 5));
   const rotated = asWord32((s1Times5 << 7) | (s1Times5 >>> 25));
   const word = asWord32(Math.imul(rotated, 9));
-  const t = asWord32(s1 << 9);
-
-  const next2 = asWord32(s2 ^ s0);
-  const next3 = asWord32(s3 ^ s1);
-  const next1 = asWord32(s1 ^ next2);
-  const next0 = asWord32(s0 ^ next3);
-  const next2AfterT = asWord32(next2 ^ t);
-  const next3AfterRotate = asWord32((next3 << 11) | (next3 >>> 21));
+  const next = transitionStateWords([s0, s1, s2, s3]);
 
   return success({
     word: asHexWord(word),
     state: makeState([
-      asHexWord(next0),
-      asHexWord(next1),
-      asHexWord(next2AfterT),
-      asHexWord(next3AfterRotate),
+      asHexWord(next[0]),
+      asHexWord(next[1]),
+      asHexWord(next[2]),
+      asHexWord(next[3]),
     ]),
   });
 };
@@ -119,7 +127,7 @@ const widthForBound = (bound) => {
 };
 
 /**
- * Sample [0, bound) using the profile's most-significant-bit rejection rule.
+ * Sample [0, bound) by scanning complete MSB-first chunks in each output word.
  * The state is validated before bound/fuel preflight.  A valid bound-one draw
  * still consumes one transition, and every rejected attempt consumes exactly
  * one transition before fuel is decremented.
@@ -143,9 +151,14 @@ export const oracleSample = (state, bound, maximumAttempts) => {
     if (!step.ok) return step;
     attempts += 1;
     current = step.value.state;
-    const candidate = width === 0 ? 0 : parseWord(step.value.word) >>> (32 - width);
-    if (candidate < bound) {
-      return success({ value: candidate, state: current, attempts });
+    if (width === 0) return success({ value: 0, state: current, attempts });
+    const word = parseWord(step.value.word);
+    const chunkMask = (1 << width) - 1;
+    for (let offset = 0; offset + width <= 32; offset += width) {
+      const candidate = (word >>> (32 - offset - width)) & chunkMask;
+      if (candidate < bound) {
+        return success({ value: candidate, state: current, attempts });
+      }
     }
   }
 

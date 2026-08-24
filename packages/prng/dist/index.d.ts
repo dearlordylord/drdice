@@ -1,6 +1,6 @@
 /**
  * @drdice/prng is a declaration-only implementation of the
- * `xoshiro128ss-1.1/direct128-msb-rejection-1` Sequence Profile.
+ * `xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2` Sequence Profile.
  *
  * The aliases in this file are intentionally the package's complete public
  * root. Arithmetic and validation helpers are private implementation detail;
@@ -9,7 +9,7 @@
  */
 
 /** Immutable PRNG identity. Changing a sequence-affecting rule requires a new profile. */
-export const SEQUENCE_PROFILE: "xoshiro128ss-1.1/direct128-msb-rejection-1";
+export const SEQUENCE_PROFILE: "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 export type SequenceProfile = typeof SEQUENCE_PROFILE;
 
 /** Version of Replay Token and Serialized Generator State schemas. */
@@ -505,7 +505,7 @@ type InitializeWords<Words, Original> =
         ? Words extends StateWords
           ? IsZeroState<Words> extends true
             ? Failure<"invalid-seed-zero", { readonly seed: Original }>
-            : Success<GeneratorState<Words>>
+            : Success<GeneratorState<WarmStateWords<Words, 16>>>
           : Failure<"invalid-seed-shape", { readonly seed: Original }>
         : Failure<"invalid-seed-word", { readonly seed: Original }>
       : Failure<"invalid-seed-word", { readonly seed: Original }>
@@ -604,6 +604,13 @@ type StateWordsOnlyHex<Words extends StateWords> =
       : never
     : never;
 
+/** Diffuse human-readable seed words before the first observable output. */
+type WarmStateWords<Words extends StateWords, Remaining extends number> = Remaining extends 0
+  ? Words
+  : StateWordsOnlyHex<Words> extends infer NextWords extends StateWords
+    ? WarmStateWords<NextWords, Decrement<Remaining>>
+    : never;
+
 type StateBitsHex<Words extends StateWords> = StateWordsOnlyHex<Words> extends infer NextWords extends StateWords
   ? HexWordDigits<Words[1]> extends infer B extends HexDigits
     ? {
@@ -690,18 +697,17 @@ type BoundWidth<M extends number> =
   : never;
 
 type SupportedBound<M extends number> = BoundWidth<M> extends never ? false : true;
-type SupportedFuel<F extends number> = F extends 0 | 1 | 2 | 3 | 4 ? true : false;
+type SupportedFuel<F extends number> = F extends 0 | 1 | 2 | 3 | 4 | 5 ? true : false;
 type PreviousFuel<F extends number> = F extends 1 ? 0
   : F extends 2 ? 1
   : F extends 3 ? 2
   : F extends 4 ? 3
+  : F extends 5 ? 4
   : never;
 
-/* TextToBits is big-endian, so taking its prefix reads the output's
- * most-significant bits directly.  No modulo, clamping, rejected-bit reuse,
- * or reservoir is involved. */
-type PrefixBits<W extends string, N extends number> =
-  TextToBits<W> extends infer Bits extends Bits32 ? Take<Bits, N> : never;
+/* TextToBits is big-endian. Sampling inspects every complete Width-bit chunk
+ * from most to least significant, discarding only rejected chunks and the
+ * incomplete suffix. State advances once per output word, not once per chunk. */
 type BoundBitsMap = {
   readonly b1: [];
   readonly b2: [1, 0];
@@ -1099,6 +1105,20 @@ type BitsToSmallNumber<Bits extends readonly Bit[]> =
     ? SmallNumberMap[`b${SmallBitsToText<Bits>}`]
     : never;
 
+type ScanWordChunks<
+  Bits extends readonly Bit[],
+  Width extends number,
+  Bound extends number,
+> = Take<Bits, Width> extends infer Candidate extends readonly Bit[]
+  ? Candidate["length"] extends Width
+    ? IsBelowBound<Candidate, Bound> extends true
+      ? { readonly found: true; readonly value: BitsToSmallNumber<Candidate> }
+      : Drop<Bits, Width> extends infer Rest extends readonly Bit[]
+        ? ScanWordChunks<Rest, Width, Bound>
+        : never
+    : { readonly found: false }
+  : never;
+
 /* The caller has already completed StateWordsResult validation. Threading
  * this small raw-transition helper through the loop avoids re-running the
  * public state validator for every rejected attempt. */
@@ -1136,10 +1156,11 @@ type SampleLoop<
       : never
     : StateBits<State> extends infer Step
       ? Step extends { readonly word: infer Word extends string; readonly state: infer Words extends StateWords }
-        ? PrefixBits<Word, BoundWidth<Bound>> extends infer CandidateBits extends readonly Bit[]
-          ? IsBelowBound<CandidateBits, Bound> extends true
+        ? TextToBits<Word> extends infer WordBits extends Bits32
+          ? ScanWordChunks<WordBits, BoundWidth<Bound>, Bound> extends infer Scan
+            ? Scan extends { readonly found: true; readonly value: infer Value extends number }
             ? BoundedSuccess<
-                BitsToSmallNumber<CandidateBits>,
+                Value,
                 GeneratorState<readonly [Words[0], Words[1], Words[2], Words[3]]>,
                 [...Attempts, unknown]["length"]
               >
@@ -1150,6 +1171,7 @@ type SampleLoop<
                 MaximumAttempts,
                 [...Attempts, unknown]
               >
+            : never
           : never
         : Step
       : never;
