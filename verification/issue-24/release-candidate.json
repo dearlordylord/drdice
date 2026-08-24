@@ -8,8 +8,8 @@
     "statement": "Release candidate meets the declared TypeScript 7.0.2 semantic, package, packed-boundary, and compiler-budget gates."
   },
   "source": {
-    "measuredCommit": "a04d61829769a6f422516fbea1309cfbdbfe07b3",
-    "sourceDigest": "d3a63d725854c85dd8c543afa339e0491cf3818cccb443b958e77e572b08c006",
+    "measuredCommit": "8bccf70801759b6ee5547c537576ad7e73ad10dd",
+    "sourceDigest": "86cf4da439fa5f1d4c00968da504fa49d6be0debf45b84467e03dc275a56d758",
     "cleanAtMeasurement": true,
     "digestExcludes": [
       "verification/issue-24/release-candidate.json"
@@ -107,35 +107,35 @@
       "label": "TypeScript 7 project typecheck",
       "command": "pnpm typecheck",
       "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice-integration\n> tsc --project tsconfig.json --pretty false\n\n",
+      "stdout": "\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice\n> tsc --project tsconfig.json --pretty false\n\n",
       "stderr": ""
     },
     {
       "label": "complete semantic and package parity",
       "command": "pnpm check:parity",
       "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice-integration\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n",
+      "stdout": "\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n",
       "stderr": ""
     },
     {
       "label": "packed clean consumers",
       "command": "pnpm check:clean-consumers",
       "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 check:clean-consumers /workspace/typescript/drdice-integration\n> node verification/check-clean-consumers.mjs\n\nPacked clean consumers pass root imports; exports block deep imports in TypeScript and Node.\n",
+      "stdout": "\n> drdice-workspace@0.0.0 check:clean-consumers /workspace/typescript/drdice\n> node verification/check-clean-consumers.mjs\n\nPacked clean consumers pass root imports; exports block deep imports in TypeScript and Node.\n",
       "stderr": ""
     },
     {
       "label": "packed artifact allowlists",
       "command": "pnpm check:packed",
       "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 check:packed /workspace/typescript/drdice-integration\n> node verification/check-packed-artifacts.mjs\n\nPacked artifacts contain only the two root declaration allowlists.\n",
+      "stdout": "\n> drdice-workspace@0.0.0 check:packed /workspace/typescript/drdice\n> node verification/check-packed-artifacts.mjs\n\nPacked artifacts contain only the two root declaration allowlists.\n",
       "stderr": ""
     },
     {
       "label": "advertised workspace verification",
       "command": "pnpm verify",
       "status": 0,
-      "stdout": "\n> drdice-workspace@0.0.0 verify /workspace/typescript/drdice-integration\n> pnpm typecheck && pnpm check:parity && pnpm check:budgets\n\n\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice-integration\n> tsc --project tsconfig.json --pretty false\n\n\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice-integration\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n\n> drdice-workspace@0.0.0 check:budgets /workspace/typescript/drdice-integration\n> node verification/check-budgets.mjs --policy all\n\n{\n  \"schemaVersion\": 1,\n  \"issue\": 16,\n  \"results\": [\n    {\n      \"policy\": \"one-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 241,\n      \"totalMilliseconds\": 291,\n      \"compilerMemoryKiB\": 77984,\n      \"types\": 48435,\n      \"instantiations\": 53393,\n      \"wallMilliseconds\": 738.361\n    },\n    {\n      \"policy\": \"four-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 180,\n      \"totalMilliseconds\": 223,\n      \"compilerMemoryKiB\": 80914,\n      \"types\": 52289,\n      \"instantiations\": 54239,\n      \"wallMilliseconds\": 507.008\n    }\n  ]\n}\n",
+      "stdout": "\n> drdice-workspace@0.0.0 verify /workspace/typescript/drdice\n> pnpm typecheck && pnpm check:parity && pnpm check:budgets\n\n\n> drdice-workspace@0.0.0 typecheck /workspace/typescript/drdice\n> tsc --project tsconfig.json --pretty false\n\n\n> drdice-workspace@0.0.0 check:parity /workspace/typescript/drdice\n> node verification/issue-23/check.mjs\n\n[issue-23] complete parity, package-boundary, packed-artifact, and clean-consumer gates passed\n\n> drdice-workspace@0.0.0 check:budgets /workspace/typescript/drdice\n> node verification/check-budgets.mjs --policy all\n\n{\n  \"schemaVersion\": 1,\n  \"issue\": 16,\n  \"results\": [\n    {\n      \"policy\": \"one-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 208,\n      \"totalMilliseconds\": 244,\n      \"compilerMemoryKiB\": 77946,\n      \"types\": 48435,\n      \"instantiations\": 53393,\n      \"wallMilliseconds\": 605.593\n    },\n    {\n      \"policy\": \"four-checker\",\n      \"compiler\": \"Version 7.0.2\",\n      \"checkMilliseconds\": 193,\n      \"totalMilliseconds\": 235,\n      \"compilerMemoryKiB\": 80952,\n      \"types\": 52289,\n      \"instantiations\": 54239,\n      \"wallMilliseconds\": 549.143\n    }\n  ]\n}\n",
       "stderr": ""
     }
   ],
@@ -252,7 +252,7 @@
   },
   "compilerBudget": {
     "schemaVersion": 1,
-    "generatedAt": "2026-08-24T09:31:43.436Z",
+    "generatedAt": "2026-08-24T13:41:44.253Z",
     "host": {
       "platform": "linux",
       "release": "7.0.14-orbstack-00380-ga7e0a2dc9535",
@@ -261,7 +261,7 @@
       "cpuModel": "unknown",
       "logicalCpuCount": 12,
       "totalMemoryBytes": 63157764096,
-      "freeMemoryBytesAtReport": 43960647680
+      "freeMemoryBytesAtReport": 45720367104
     },
     "options": [
       "--ignoreConfig",
@@ -322,85 +322,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 605.25,
-          "peakRssKiB": 247204,
-          "checkMilliseconds": 217,
-          "totalMilliseconds": 266,
-          "compilerMemoryKiB": 77989,
+          "wallMilliseconds": 537.69,
+          "peakRssKiB": 250660,
+          "checkMilliseconds": 202,
+          "totalMilliseconds": 246,
+          "compilerMemoryKiB": 78006,
           "types": 48435,
           "instantiations": 53393
         },
         "samples": [
           {
-            "wallMilliseconds": 527.981,
-            "peakRssKiB": 249032,
-            "checkMilliseconds": 209,
-            "totalMilliseconds": 247,
-            "compilerMemoryKiB": 77912,
+            "wallMilliseconds": 562.125,
+            "peakRssKiB": 243932,
+            "checkMilliseconds": 218,
+            "totalMilliseconds": 265,
+            "compilerMemoryKiB": 77939,
             "types": 48435,
             "instantiations": 53393
           },
           {
-            "wallMilliseconds": 674.019,
-            "peakRssKiB": 252248,
-            "checkMilliseconds": 331,
-            "totalMilliseconds": 370,
-            "compilerMemoryKiB": 78067,
+            "wallMilliseconds": 552.473,
+            "peakRssKiB": 248408,
+            "checkMilliseconds": 216,
+            "totalMilliseconds": 256,
+            "compilerMemoryKiB": 78009,
             "types": 48435,
             "instantiations": 53393
           },
           {
-            "wallMilliseconds": 857.405,
-            "peakRssKiB": 250868,
-            "checkMilliseconds": 207,
-            "totalMilliseconds": 246,
-            "compilerMemoryKiB": 78047,
+            "wallMilliseconds": 550.881,
+            "peakRssKiB": 248688,
+            "checkMilliseconds": 219,
+            "totalMilliseconds": 254,
+            "compilerMemoryKiB": 78049,
             "types": 48435,
             "instantiations": 53393
           },
           {
-            "wallMilliseconds": 550.99,
-            "peakRssKiB": 250112,
-            "checkMilliseconds": 227,
-            "totalMilliseconds": 264,
-            "compilerMemoryKiB": 77942,
+            "wallMilliseconds": 531.179,
+            "peakRssKiB": 252684,
+            "checkMilliseconds": 196,
+            "totalMilliseconds": 228,
+            "compilerMemoryKiB": 78051,
             "types": 48435,
             "instantiations": 53393
           },
           {
-            "wallMilliseconds": 547.167,
-            "peakRssKiB": 253944,
-            "checkMilliseconds": 220,
-            "totalMilliseconds": 255,
-            "compilerMemoryKiB": 78027,
+            "wallMilliseconds": 554.823,
+            "peakRssKiB": 250372,
+            "checkMilliseconds": 236,
+            "totalMilliseconds": 271,
+            "compilerMemoryKiB": 78049,
             "types": 48435,
             "instantiations": 53393
           }
         ],
         "checkMilliseconds": {
-          "median": 220,
-          "minimum": 207,
-          "maximum": 331
+          "median": 218,
+          "minimum": 196,
+          "maximum": 236
         },
         "totalMilliseconds": {
-          "median": 255,
-          "minimum": 246,
-          "maximum": 370
+          "median": 256,
+          "minimum": 228,
+          "maximum": 271
         },
         "wallMilliseconds": {
-          "median": 550.99,
-          "minimum": 527.981,
-          "maximum": 857.405
+          "median": 552.473,
+          "minimum": 531.179,
+          "maximum": 562.125
         },
         "peakRssKiB": {
-          "median": 250868,
-          "minimum": 249032,
-          "maximum": 253944
+          "median": 248688,
+          "minimum": 243932,
+          "maximum": 252684
         },
         "compilerMemoryKiB": {
-          "median": 78027,
-          "minimum": 77912,
-          "maximum": 78067
+          "median": 78049,
+          "minimum": 77939,
+          "maximum": 78051
         },
         "types": {
           "median": 48435,
@@ -426,85 +426,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 1365.222,
-          "peakRssKiB": 297892,
-          "checkMilliseconds": 1036,
-          "totalMilliseconds": 1071,
-          "compilerMemoryKiB": 80630,
+          "wallMilliseconds": 1072.235,
+          "peakRssKiB": 289732,
+          "checkMilliseconds": 709,
+          "totalMilliseconds": 745,
+          "compilerMemoryKiB": 80645,
           "types": 44184,
           "instantiations": 50513
         },
         "samples": [
           {
-            "wallMilliseconds": 1013.097,
-            "peakRssKiB": 288384,
+            "wallMilliseconds": 1025.83,
+            "peakRssKiB": 289064,
+            "checkMilliseconds": 696,
+            "totalMilliseconds": 732,
+            "compilerMemoryKiB": 80545,
+            "types": 44184,
+            "instantiations": 50513
+          },
+          {
+            "wallMilliseconds": 1033.592,
+            "peakRssKiB": 287448,
+            "checkMilliseconds": 712,
+            "totalMilliseconds": 751,
+            "compilerMemoryKiB": 80604,
+            "types": 44184,
+            "instantiations": 50513
+          },
+          {
+            "wallMilliseconds": 1005.927,
+            "peakRssKiB": 285880,
             "checkMilliseconds": 685,
-            "totalMilliseconds": 722,
-            "compilerMemoryKiB": 80559,
+            "totalMilliseconds": 716,
+            "compilerMemoryKiB": 80555,
             "types": 44184,
             "instantiations": 50513
           },
           {
-            "wallMilliseconds": 977.234,
-            "peakRssKiB": 284980,
-            "checkMilliseconds": 665,
-            "totalMilliseconds": 700,
-            "compilerMemoryKiB": 80582,
+            "wallMilliseconds": 1072.915,
+            "peakRssKiB": 295784,
+            "checkMilliseconds": 737,
+            "totalMilliseconds": 773,
+            "compilerMemoryKiB": 80627,
             "types": 44184,
             "instantiations": 50513
           },
           {
-            "wallMilliseconds": 1001.226,
-            "peakRssKiB": 288140,
-            "checkMilliseconds": 676,
-            "totalMilliseconds": 721,
-            "compilerMemoryKiB": 80561,
-            "types": 44184,
-            "instantiations": 50513
-          },
-          {
-            "wallMilliseconds": 1027.111,
-            "peakRssKiB": 286048,
-            "checkMilliseconds": 693,
-            "totalMilliseconds": 730,
-            "compilerMemoryKiB": 80636,
-            "types": 44184,
-            "instantiations": 50513
-          },
-          {
-            "wallMilliseconds": 1005.102,
-            "peakRssKiB": 295556,
-            "checkMilliseconds": 691,
-            "totalMilliseconds": 724,
-            "compilerMemoryKiB": 80634,
+            "wallMilliseconds": 1128.488,
+            "peakRssKiB": 292256,
+            "checkMilliseconds": 707,
+            "totalMilliseconds": 752,
+            "compilerMemoryKiB": 80579,
             "types": 44184,
             "instantiations": 50513
           }
         ],
         "checkMilliseconds": {
-          "median": 685,
-          "minimum": 665,
-          "maximum": 693
+          "median": 707,
+          "minimum": 685,
+          "maximum": 737
         },
         "totalMilliseconds": {
-          "median": 722,
-          "minimum": 700,
-          "maximum": 730
+          "median": 751,
+          "minimum": 716,
+          "maximum": 773
         },
         "wallMilliseconds": {
-          "median": 1005.102,
-          "minimum": 977.234,
-          "maximum": 1027.111
+          "median": 1033.592,
+          "minimum": 1005.927,
+          "maximum": 1128.488
         },
         "peakRssKiB": {
-          "median": 288140,
-          "minimum": 284980,
-          "maximum": 295556
+          "median": 289064,
+          "minimum": 285880,
+          "maximum": 295784
         },
         "compilerMemoryKiB": {
-          "median": 80582,
-          "minimum": 80559,
-          "maximum": 80636
+          "median": 80579,
+          "minimum": 80545,
+          "maximum": 80627
         },
         "types": {
           "median": 44184,
@@ -530,85 +530,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 1047.566,
-          "peakRssKiB": 306708,
-          "checkMilliseconds": 717,
-          "totalMilliseconds": 748,
-          "compilerMemoryKiB": 91801,
+          "wallMilliseconds": 1032.879,
+          "peakRssKiB": 307276,
+          "checkMilliseconds": 710,
+          "totalMilliseconds": 758,
+          "compilerMemoryKiB": 91842,
           "types": 59422,
           "instantiations": 81427
         },
         "samples": [
           {
-            "wallMilliseconds": 1030.049,
-            "peakRssKiB": 311000,
-            "checkMilliseconds": 712,
-            "totalMilliseconds": 744,
-            "compilerMemoryKiB": 91811,
+            "wallMilliseconds": 1176.804,
+            "peakRssKiB": 324612,
+            "checkMilliseconds": 765,
+            "totalMilliseconds": 821,
+            "compilerMemoryKiB": 91810,
             "types": 59422,
             "instantiations": 81427
           },
           {
-            "wallMilliseconds": 1043.138,
-            "peakRssKiB": 301208,
-            "checkMilliseconds": 715,
-            "totalMilliseconds": 750,
-            "compilerMemoryKiB": 91860,
+            "wallMilliseconds": 1057.243,
+            "peakRssKiB": 310108,
+            "checkMilliseconds": 732,
+            "totalMilliseconds": 763,
+            "compilerMemoryKiB": 91807,
             "types": 59422,
             "instantiations": 81427
           },
           {
-            "wallMilliseconds": 1040.224,
-            "peakRssKiB": 304280,
-            "checkMilliseconds": 716,
-            "totalMilliseconds": 749,
-            "compilerMemoryKiB": 91809,
+            "wallMilliseconds": 1026.727,
+            "peakRssKiB": 314944,
+            "checkMilliseconds": 700,
+            "totalMilliseconds": 731,
+            "compilerMemoryKiB": 91806,
             "types": 59422,
             "instantiations": 81427
           },
           {
-            "wallMilliseconds": 1057.16,
-            "peakRssKiB": 312660,
-            "checkMilliseconds": 718,
-            "totalMilliseconds": 750,
-            "compilerMemoryKiB": 91812,
+            "wallMilliseconds": 1040.932,
+            "peakRssKiB": 309092,
+            "checkMilliseconds": 709,
+            "totalMilliseconds": 747,
+            "compilerMemoryKiB": 91850,
             "types": 59422,
             "instantiations": 81427
           },
           {
-            "wallMilliseconds": 1011.788,
-            "peakRssKiB": 297188,
-            "checkMilliseconds": 689,
-            "totalMilliseconds": 725,
-            "compilerMemoryKiB": 91742,
+            "wallMilliseconds": 1053.295,
+            "peakRssKiB": 311288,
+            "checkMilliseconds": 724,
+            "totalMilliseconds": 763,
+            "compilerMemoryKiB": 91798,
             "types": 59422,
             "instantiations": 81427
           }
         ],
         "checkMilliseconds": {
-          "median": 715,
-          "minimum": 689,
-          "maximum": 718
+          "median": 724,
+          "minimum": 700,
+          "maximum": 765
         },
         "totalMilliseconds": {
-          "median": 749,
-          "minimum": 725,
-          "maximum": 750
+          "median": 763,
+          "minimum": 731,
+          "maximum": 821
         },
         "wallMilliseconds": {
-          "median": 1040.224,
-          "minimum": 1011.788,
-          "maximum": 1057.16
+          "median": 1053.295,
+          "minimum": 1026.727,
+          "maximum": 1176.804
         },
         "peakRssKiB": {
-          "median": 304280,
-          "minimum": 297188,
-          "maximum": 312660
+          "median": 311288,
+          "minimum": 309092,
+          "maximum": 324612
         },
         "compilerMemoryKiB": {
-          "median": 91811,
-          "minimum": 91742,
-          "maximum": 91860
+          "median": 91807,
+          "minimum": 91798,
+          "maximum": 91850
         },
         "types": {
           "median": 59422,
@@ -634,85 +634,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 1045.013,
-          "peakRssKiB": 311748,
-          "checkMilliseconds": 685,
-          "totalMilliseconds": 723,
-          "compilerMemoryKiB": 89241,
+          "wallMilliseconds": 1028.498,
+          "peakRssKiB": 306912,
+          "checkMilliseconds": 700,
+          "totalMilliseconds": 738,
+          "compilerMemoryKiB": 89234,
           "types": 58642,
           "instantiations": 71805
         },
         "samples": [
           {
-            "wallMilliseconds": 1040.613,
-            "peakRssKiB": 306636,
+            "wallMilliseconds": 1066.179,
+            "peakRssKiB": 305152,
+            "checkMilliseconds": 733,
+            "totalMilliseconds": 782,
+            "compilerMemoryKiB": 89254,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 1044.477,
+            "peakRssKiB": 299760,
+            "checkMilliseconds": 708,
+            "totalMilliseconds": 742,
+            "compilerMemoryKiB": 89232,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 1065.227,
+            "peakRssKiB": 316644,
+            "checkMilliseconds": 735,
+            "totalMilliseconds": 764,
+            "compilerMemoryKiB": 89220,
+            "types": 58642,
+            "instantiations": 71805
+          },
+          {
+            "wallMilliseconds": 1034.439,
+            "peakRssKiB": 301776,
             "checkMilliseconds": 694,
-            "totalMilliseconds": 726,
-            "compilerMemoryKiB": 89315,
-            "types": 58642,
-            "instantiations": 71805
-          },
-          {
-            "wallMilliseconds": 1009.861,
-            "peakRssKiB": 308800,
-            "checkMilliseconds": 678,
-            "totalMilliseconds": 719,
-            "compilerMemoryKiB": 89248,
-            "types": 58642,
-            "instantiations": 71805
-          },
-          {
-            "wallMilliseconds": 1008.654,
-            "peakRssKiB": 303312,
-            "checkMilliseconds": 703,
             "totalMilliseconds": 733,
-            "compilerMemoryKiB": 89274,
+            "compilerMemoryKiB": 89255,
             "types": 58642,
             "instantiations": 71805
           },
           {
-            "wallMilliseconds": 1007.274,
-            "peakRssKiB": 308264,
-            "checkMilliseconds": 677,
-            "totalMilliseconds": 712,
-            "compilerMemoryKiB": 89227,
-            "types": 58642,
-            "instantiations": 71805
-          },
-          {
-            "wallMilliseconds": 1042.691,
-            "peakRssKiB": 318880,
-            "checkMilliseconds": 711,
-            "totalMilliseconds": 744,
-            "compilerMemoryKiB": 89181,
+            "wallMilliseconds": 1109.717,
+            "peakRssKiB": 305716,
+            "checkMilliseconds": 763,
+            "totalMilliseconds": 802,
+            "compilerMemoryKiB": 89191,
             "types": 58642,
             "instantiations": 71805
           }
         ],
         "checkMilliseconds": {
-          "median": 694,
-          "minimum": 677,
-          "maximum": 711
+          "median": 733,
+          "minimum": 694,
+          "maximum": 763
         },
         "totalMilliseconds": {
-          "median": 726,
-          "minimum": 712,
-          "maximum": 744
+          "median": 764,
+          "minimum": 733,
+          "maximum": 802
         },
         "wallMilliseconds": {
-          "median": 1009.861,
-          "minimum": 1007.274,
-          "maximum": 1042.691
+          "median": 1065.227,
+          "minimum": 1034.439,
+          "maximum": 1109.717
         },
         "peakRssKiB": {
-          "median": 308264,
-          "minimum": 303312,
-          "maximum": 318880
+          "median": 305152,
+          "minimum": 299760,
+          "maximum": 316644
         },
         "compilerMemoryKiB": {
-          "median": 89248,
-          "minimum": 89181,
-          "maximum": 89315
+          "median": 89232,
+          "minimum": 89191,
+          "maximum": 89255
         },
         "types": {
           "median": 58642,
@@ -738,85 +738,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 1030.637,
-          "peakRssKiB": 306608,
-          "checkMilliseconds": 692,
-          "totalMilliseconds": 739,
-          "compilerMemoryKiB": 89151,
+          "wallMilliseconds": 1051.929,
+          "peakRssKiB": 304484,
+          "checkMilliseconds": 708,
+          "totalMilliseconds": 751,
+          "compilerMemoryKiB": 89157,
           "types": 58608,
           "instantiations": 72843
         },
         "samples": [
           {
-            "wallMilliseconds": 1026.108,
-            "peakRssKiB": 300316,
-            "checkMilliseconds": 699,
-            "totalMilliseconds": 735,
-            "compilerMemoryKiB": 89177,
+            "wallMilliseconds": 1199.335,
+            "peakRssKiB": 305180,
+            "checkMilliseconds": 842,
+            "totalMilliseconds": 882,
+            "compilerMemoryKiB": 89174,
             "types": 58608,
             "instantiations": 72843
           },
           {
-            "wallMilliseconds": 1003.953,
-            "peakRssKiB": 315716,
-            "checkMilliseconds": 674,
-            "totalMilliseconds": 711,
-            "compilerMemoryKiB": 89205,
+            "wallMilliseconds": 1021.5,
+            "peakRssKiB": 316352,
+            "checkMilliseconds": 697,
+            "totalMilliseconds": 730,
+            "compilerMemoryKiB": 89201,
             "types": 58608,
             "instantiations": 72843
           },
           {
-            "wallMilliseconds": 1124.759,
-            "peakRssKiB": 295728,
-            "checkMilliseconds": 786,
-            "totalMilliseconds": 825,
-            "compilerMemoryKiB": 89157,
+            "wallMilliseconds": 1026.504,
+            "peakRssKiB": 300032,
+            "checkMilliseconds": 693,
+            "totalMilliseconds": 728,
+            "compilerMemoryKiB": 89132,
             "types": 58608,
             "instantiations": 72843
           },
           {
-            "wallMilliseconds": 1069.964,
-            "peakRssKiB": 311920,
-            "checkMilliseconds": 743,
-            "totalMilliseconds": 775,
-            "compilerMemoryKiB": 89135,
+            "wallMilliseconds": 1011.664,
+            "peakRssKiB": 293424,
+            "checkMilliseconds": 690,
+            "totalMilliseconds": 723,
+            "compilerMemoryKiB": 89200,
             "types": 58608,
             "instantiations": 72843
           },
           {
-            "wallMilliseconds": 1022.834,
-            "peakRssKiB": 324720,
-            "checkMilliseconds": 695,
-            "totalMilliseconds": 735,
-            "compilerMemoryKiB": 89157,
+            "wallMilliseconds": 1040.885,
+            "peakRssKiB": 307728,
+            "checkMilliseconds": 706,
+            "totalMilliseconds": 745,
+            "compilerMemoryKiB": 89209,
             "types": 58608,
             "instantiations": 72843
           }
         ],
         "checkMilliseconds": {
-          "median": 699,
-          "minimum": 674,
-          "maximum": 786
+          "median": 697,
+          "minimum": 690,
+          "maximum": 842
         },
         "totalMilliseconds": {
-          "median": 735,
-          "minimum": 711,
-          "maximum": 825
+          "median": 730,
+          "minimum": 723,
+          "maximum": 882
         },
         "wallMilliseconds": {
-          "median": 1026.108,
-          "minimum": 1003.953,
-          "maximum": 1124.759
+          "median": 1026.504,
+          "minimum": 1011.664,
+          "maximum": 1199.335
         },
         "peakRssKiB": {
-          "median": 311920,
-          "minimum": 295728,
-          "maximum": 324720
+          "median": 305180,
+          "minimum": 293424,
+          "maximum": 316352
         },
         "compilerMemoryKiB": {
-          "median": 89157,
-          "minimum": 89135,
-          "maximum": 89205
+          "median": 89200,
+          "minimum": 89132,
+          "maximum": 89209
         },
         "types": {
           "median": 58608,
@@ -842,85 +842,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 467.935,
-          "peakRssKiB": 252424,
-          "checkMilliseconds": 162,
-          "totalMilliseconds": 197,
-          "compilerMemoryKiB": 80935,
+          "wallMilliseconds": 503.537,
+          "peakRssKiB": 254372,
+          "checkMilliseconds": 176,
+          "totalMilliseconds": 217,
+          "compilerMemoryKiB": 81067,
           "types": 52289,
           "instantiations": 54239
         },
         "samples": [
           {
-            "wallMilliseconds": 483.606,
-            "peakRssKiB": 254976,
+            "wallMilliseconds": 550.422,
+            "peakRssKiB": 253928,
+            "checkMilliseconds": 181,
+            "totalMilliseconds": 217,
+            "compilerMemoryKiB": 80937,
+            "types": 52289,
+            "instantiations": 54239
+          },
+          {
+            "wallMilliseconds": 503.863,
+            "peakRssKiB": 253556,
             "checkMilliseconds": 180,
-            "totalMilliseconds": 208,
-            "compilerMemoryKiB": 80994,
+            "totalMilliseconds": 217,
+            "compilerMemoryKiB": 80899,
             "types": 52289,
             "instantiations": 54239
           },
           {
-            "wallMilliseconds": 497.225,
-            "peakRssKiB": 252060,
-            "checkMilliseconds": 174,
-            "totalMilliseconds": 207,
-            "compilerMemoryKiB": 80954,
+            "wallMilliseconds": 534.781,
+            "peakRssKiB": 254516,
+            "checkMilliseconds": 191,
+            "totalMilliseconds": 236,
+            "compilerMemoryKiB": 81059,
             "types": 52289,
             "instantiations": 54239
           },
           {
-            "wallMilliseconds": 481.537,
-            "peakRssKiB": 249832,
-            "checkMilliseconds": 174,
-            "totalMilliseconds": 207,
-            "compilerMemoryKiB": 80915,
+            "wallMilliseconds": 506.767,
+            "peakRssKiB": 253928,
+            "checkMilliseconds": 186,
+            "totalMilliseconds": 225,
+            "compilerMemoryKiB": 80977,
             "types": 52289,
             "instantiations": 54239
           },
           {
-            "wallMilliseconds": 516.558,
-            "peakRssKiB": 253208,
-            "checkMilliseconds": 187,
-            "totalMilliseconds": 219,
-            "compilerMemoryKiB": 81024,
-            "types": 52289,
-            "instantiations": 54239
-          },
-          {
-            "wallMilliseconds": 494.656,
-            "peakRssKiB": 252860,
-            "checkMilliseconds": 167,
-            "totalMilliseconds": 203,
-            "compilerMemoryKiB": 80993,
+            "wallMilliseconds": 504.321,
+            "peakRssKiB": 252120,
+            "checkMilliseconds": 179,
+            "totalMilliseconds": 216,
+            "compilerMemoryKiB": 81017,
             "types": 52289,
             "instantiations": 54239
           }
         ],
         "checkMilliseconds": {
-          "median": 174,
-          "minimum": 167,
-          "maximum": 187
+          "median": 181,
+          "minimum": 179,
+          "maximum": 191
         },
         "totalMilliseconds": {
-          "median": 207,
-          "minimum": 203,
-          "maximum": 219
+          "median": 217,
+          "minimum": 216,
+          "maximum": 236
         },
         "wallMilliseconds": {
-          "median": 494.656,
-          "minimum": 481.537,
-          "maximum": 516.558
+          "median": 506.767,
+          "minimum": 503.863,
+          "maximum": 550.422
         },
         "peakRssKiB": {
-          "median": 252860,
-          "minimum": 249832,
-          "maximum": 254976
+          "median": 253928,
+          "minimum": 252120,
+          "maximum": 254516
         },
         "compilerMemoryKiB": {
-          "median": 80993,
-          "minimum": 80915,
-          "maximum": 81024
+          "median": 80977,
+          "minimum": 80899,
+          "maximum": 81059
         },
         "types": {
           "median": 52289,
@@ -946,85 +946,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 1008.971,
-          "peakRssKiB": 289188,
-          "checkMilliseconds": 678,
-          "totalMilliseconds": 713,
-          "compilerMemoryKiB": 84016,
+          "wallMilliseconds": 996.089,
+          "peakRssKiB": 285984,
+          "checkMilliseconds": 663,
+          "totalMilliseconds": 700,
+          "compilerMemoryKiB": 84117,
           "types": 49163,
           "instantiations": 52381
         },
         "samples": [
           {
-            "wallMilliseconds": 1029.264,
-            "peakRssKiB": 288144,
-            "checkMilliseconds": 668,
+            "wallMilliseconds": 1015.052,
+            "peakRssKiB": 289500,
+            "checkMilliseconds": 674,
+            "totalMilliseconds": 709,
+            "compilerMemoryKiB": 84028,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 1001.784,
+            "peakRssKiB": 286732,
+            "checkMilliseconds": 678,
+            "totalMilliseconds": 715,
+            "compilerMemoryKiB": 84035,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 1007.204,
+            "peakRssKiB": 291996,
+            "checkMilliseconds": 683,
+            "totalMilliseconds": 718,
+            "compilerMemoryKiB": 84126,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 949.255,
+            "peakRssKiB": 287656,
+            "checkMilliseconds": 621,
+            "totalMilliseconds": 660,
+            "compilerMemoryKiB": 83990,
+            "types": 49163,
+            "instantiations": 52381
+          },
+          {
+            "wallMilliseconds": 985.143,
+            "peakRssKiB": 302280,
+            "checkMilliseconds": 662,
             "totalMilliseconds": 704,
-            "compilerMemoryKiB": 84122,
-            "types": 49163,
-            "instantiations": 52381
-          },
-          {
-            "wallMilliseconds": 1154.713,
-            "peakRssKiB": 291236,
-            "checkMilliseconds": 682,
-            "totalMilliseconds": 716,
-            "compilerMemoryKiB": 84012,
-            "types": 49163,
-            "instantiations": 52381
-          },
-          {
-            "wallMilliseconds": 1051.215,
-            "peakRssKiB": 289720,
-            "checkMilliseconds": 709,
-            "totalMilliseconds": 746,
-            "compilerMemoryKiB": 84052,
-            "types": 49163,
-            "instantiations": 52381
-          },
-          {
-            "wallMilliseconds": 961.037,
-            "peakRssKiB": 290164,
-            "checkMilliseconds": 636,
-            "totalMilliseconds": 665,
-            "compilerMemoryKiB": 84020,
-            "types": 49163,
-            "instantiations": 52381
-          },
-          {
-            "wallMilliseconds": 959.746,
-            "peakRssKiB": 289956,
-            "checkMilliseconds": 628,
-            "totalMilliseconds": 657,
-            "compilerMemoryKiB": 84054,
+            "compilerMemoryKiB": 84059,
             "types": 49163,
             "instantiations": 52381
           }
         ],
         "checkMilliseconds": {
-          "median": 668,
-          "minimum": 628,
-          "maximum": 709
+          "median": 674,
+          "minimum": 621,
+          "maximum": 683
         },
         "totalMilliseconds": {
-          "median": 704,
-          "minimum": 657,
-          "maximum": 746
+          "median": 709,
+          "minimum": 660,
+          "maximum": 718
         },
         "wallMilliseconds": {
-          "median": 1029.264,
-          "minimum": 959.746,
-          "maximum": 1154.713
+          "median": 1001.784,
+          "minimum": 949.255,
+          "maximum": 1015.052
         },
         "peakRssKiB": {
-          "median": 289956,
-          "minimum": 288144,
-          "maximum": 291236
+          "median": 289500,
+          "minimum": 286732,
+          "maximum": 302280
         },
         "compilerMemoryKiB": {
-          "median": 84052,
-          "minimum": 84012,
-          "maximum": 84122
+          "median": 84035,
+          "minimum": 83990,
+          "maximum": 84126
         },
         "types": {
           "median": 49163,
@@ -1050,85 +1050,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 879.884,
-          "peakRssKiB": 307352,
-          "checkMilliseconds": 529,
-          "totalMilliseconds": 571,
-          "compilerMemoryKiB": 102693,
+          "wallMilliseconds": 868.569,
+          "peakRssKiB": 300612,
+          "checkMilliseconds": 548,
+          "totalMilliseconds": 585,
+          "compilerMemoryKiB": 102654,
           "types": 72237,
           "instantiations": 92729
         },
         "samples": [
           {
-            "wallMilliseconds": 898.027,
-            "peakRssKiB": 314372,
-            "checkMilliseconds": 557,
+            "wallMilliseconds": 1060.744,
+            "peakRssKiB": 310956,
+            "checkMilliseconds": 739,
+            "totalMilliseconds": 771,
+            "compilerMemoryKiB": 102588,
+            "types": 72237,
+            "instantiations": 92729
+          },
+          {
+            "wallMilliseconds": 1104.665,
+            "peakRssKiB": 319968,
+            "checkMilliseconds": 556,
             "totalMilliseconds": 593,
-            "compilerMemoryKiB": 102665,
+            "compilerMemoryKiB": 102572,
             "types": 72237,
             "instantiations": 92729
           },
           {
-            "wallMilliseconds": 879.104,
-            "peakRssKiB": 313996,
-            "checkMilliseconds": 559,
-            "totalMilliseconds": 595,
-            "compilerMemoryKiB": 102526,
+            "wallMilliseconds": 867.732,
+            "peakRssKiB": 309500,
+            "checkMilliseconds": 552,
+            "totalMilliseconds": 593,
+            "compilerMemoryKiB": 102622,
             "types": 72237,
             "instantiations": 92729
           },
           {
-            "wallMilliseconds": 935.232,
-            "peakRssKiB": 297784,
-            "checkMilliseconds": 580,
-            "totalMilliseconds": 630,
-            "compilerMemoryKiB": 102500,
+            "wallMilliseconds": 880.572,
+            "peakRssKiB": 314128,
+            "checkMilliseconds": 537,
+            "totalMilliseconds": 581,
+            "compilerMemoryKiB": 102636,
             "types": 72237,
             "instantiations": 92729
           },
           {
-            "wallMilliseconds": 949.21,
-            "peakRssKiB": 328284,
-            "checkMilliseconds": 588,
-            "totalMilliseconds": 626,
-            "compilerMemoryKiB": 102512,
-            "types": 72237,
-            "instantiations": 92729
-          },
-          {
-            "wallMilliseconds": 914.264,
-            "peakRssKiB": 303400,
-            "checkMilliseconds": 554,
-            "totalMilliseconds": 598,
-            "compilerMemoryKiB": 102545,
+            "wallMilliseconds": 872.517,
+            "peakRssKiB": 302516,
+            "checkMilliseconds": 556,
+            "totalMilliseconds": 592,
+            "compilerMemoryKiB": 102711,
             "types": 72237,
             "instantiations": 92729
           }
         ],
         "checkMilliseconds": {
-          "median": 559,
-          "minimum": 554,
-          "maximum": 588
+          "median": 556,
+          "minimum": 537,
+          "maximum": 739
         },
         "totalMilliseconds": {
-          "median": 598,
-          "minimum": 593,
-          "maximum": 630
+          "median": 593,
+          "minimum": 581,
+          "maximum": 771
         },
         "wallMilliseconds": {
-          "median": 914.264,
-          "minimum": 879.104,
-          "maximum": 949.21
+          "median": 880.572,
+          "minimum": 867.732,
+          "maximum": 1104.665
         },
         "peakRssKiB": {
-          "median": 313996,
-          "minimum": 297784,
-          "maximum": 328284
+          "median": 310956,
+          "minimum": 302516,
+          "maximum": 319968
         },
         "compilerMemoryKiB": {
-          "median": 102526,
-          "minimum": 102500,
-          "maximum": 102665
+          "median": 102622,
+          "minimum": 102572,
+          "maximum": 102711
         },
         "types": {
           "median": 72237,
@@ -1154,85 +1154,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 898.506,
-          "peakRssKiB": 312884,
-          "checkMilliseconds": 566,
-          "totalMilliseconds": 602,
-          "compilerMemoryKiB": 99821,
+          "wallMilliseconds": 843.419,
+          "peakRssKiB": 303860,
+          "checkMilliseconds": 537,
+          "totalMilliseconds": 573,
+          "compilerMemoryKiB": 99843,
           "types": 71312,
           "instantiations": 82775
         },
         "samples": [
           {
-            "wallMilliseconds": 978.991,
-            "peakRssKiB": 312820,
-            "checkMilliseconds": 587,
-            "totalMilliseconds": 622,
-            "compilerMemoryKiB": 100046,
+            "wallMilliseconds": 880.42,
+            "peakRssKiB": 300272,
+            "checkMilliseconds": 551,
+            "totalMilliseconds": 589,
+            "compilerMemoryKiB": 99878,
             "types": 71312,
             "instantiations": 82775
           },
           {
-            "wallMilliseconds": 957.055,
-            "peakRssKiB": 294880,
-            "checkMilliseconds": 602,
-            "totalMilliseconds": 651,
-            "compilerMemoryKiB": 99892,
+            "wallMilliseconds": 870.097,
+            "peakRssKiB": 316716,
+            "checkMilliseconds": 549,
+            "totalMilliseconds": 582,
+            "compilerMemoryKiB": 99900,
             "types": 71312,
             "instantiations": 82775
           },
           {
-            "wallMilliseconds": 938.629,
-            "peakRssKiB": 302448,
-            "checkMilliseconds": 595,
-            "totalMilliseconds": 640,
-            "compilerMemoryKiB": 99840,
+            "wallMilliseconds": 843.094,
+            "peakRssKiB": 317392,
+            "checkMilliseconds": 525,
+            "totalMilliseconds": 555,
+            "compilerMemoryKiB": 99921,
             "types": 71312,
             "instantiations": 82775
           },
           {
-            "wallMilliseconds": 1062.862,
-            "peakRssKiB": 301660,
-            "checkMilliseconds": 669,
-            "totalMilliseconds": 733,
-            "compilerMemoryKiB": 99990,
+            "wallMilliseconds": 837.705,
+            "peakRssKiB": 306852,
+            "checkMilliseconds": 518,
+            "totalMilliseconds": 551,
+            "compilerMemoryKiB": 99844,
             "types": 71312,
             "instantiations": 82775
           },
           {
-            "wallMilliseconds": 988.081,
-            "peakRssKiB": 312992,
-            "checkMilliseconds": 640,
-            "totalMilliseconds": 685,
-            "compilerMemoryKiB": 99888,
+            "wallMilliseconds": 852.395,
+            "peakRssKiB": 305304,
+            "checkMilliseconds": 517,
+            "totalMilliseconds": 557,
+            "compilerMemoryKiB": 99893,
             "types": 71312,
             "instantiations": 82775
           }
         ],
         "checkMilliseconds": {
-          "median": 602,
-          "minimum": 587,
-          "maximum": 669
+          "median": 525,
+          "minimum": 517,
+          "maximum": 551
         },
         "totalMilliseconds": {
-          "median": 651,
-          "minimum": 622,
-          "maximum": 733
+          "median": 557,
+          "minimum": 551,
+          "maximum": 589
         },
         "wallMilliseconds": {
-          "median": 978.991,
-          "minimum": 938.629,
-          "maximum": 1062.862
+          "median": 852.395,
+          "minimum": 837.705,
+          "maximum": 880.42
         },
         "peakRssKiB": {
-          "median": 302448,
-          "minimum": 294880,
-          "maximum": 312992
+          "median": 306852,
+          "minimum": 300272,
+          "maximum": 317392
         },
         "compilerMemoryKiB": {
-          "median": 99892,
-          "minimum": 99840,
-          "maximum": 100046
+          "median": 99893,
+          "minimum": 99844,
+          "maximum": 99921
         },
         "types": {
           "median": 71312,
@@ -1258,85 +1258,85 @@
         "compilerVersion": "Version 7.0.2",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 956.477,
-          "peakRssKiB": 309468,
-          "checkMilliseconds": 601,
-          "totalMilliseconds": 655,
-          "compilerMemoryKiB": 98811,
+          "wallMilliseconds": 847.171,
+          "peakRssKiB": 296032,
+          "checkMilliseconds": 531,
+          "totalMilliseconds": 562,
+          "compilerMemoryKiB": 99207,
           "types": 70238,
           "instantiations": 82300
         },
         "samples": [
           {
-            "wallMilliseconds": 891.497,
-            "peakRssKiB": 295656,
-            "checkMilliseconds": 544,
-            "totalMilliseconds": 589,
-            "compilerMemoryKiB": 99138,
+            "wallMilliseconds": 863.779,
+            "peakRssKiB": 310240,
+            "checkMilliseconds": 539,
+            "totalMilliseconds": 576,
+            "compilerMemoryKiB": 99153,
             "types": 70238,
             "instantiations": 82300
           },
           {
-            "wallMilliseconds": 900.497,
-            "peakRssKiB": 298768,
-            "checkMilliseconds": 573,
-            "totalMilliseconds": 614,
-            "compilerMemoryKiB": 99096,
+            "wallMilliseconds": 864.599,
+            "peakRssKiB": 319544,
+            "checkMilliseconds": 527,
+            "totalMilliseconds": 559,
+            "compilerMemoryKiB": 99127,
             "types": 70238,
             "instantiations": 82300
           },
           {
-            "wallMilliseconds": 924.095,
-            "peakRssKiB": 295620,
-            "checkMilliseconds": 589,
-            "totalMilliseconds": 632,
-            "compilerMemoryKiB": 99179,
+            "wallMilliseconds": 819.64,
+            "peakRssKiB": 314520,
+            "checkMilliseconds": 504,
+            "totalMilliseconds": 540,
+            "compilerMemoryKiB": 99152,
             "types": 70238,
             "instantiations": 82300
           },
           {
-            "wallMilliseconds": 951.992,
-            "peakRssKiB": 314796,
-            "checkMilliseconds": 591,
-            "totalMilliseconds": 630,
-            "compilerMemoryKiB": 99111,
+            "wallMilliseconds": 837.28,
+            "peakRssKiB": 322232,
+            "checkMilliseconds": 514,
+            "totalMilliseconds": 551,
+            "compilerMemoryKiB": 99157,
             "types": 70238,
             "instantiations": 82300
           },
           {
-            "wallMilliseconds": 910.619,
-            "peakRssKiB": 312100,
-            "checkMilliseconds": 553,
-            "totalMilliseconds": 609,
-            "compilerMemoryKiB": 99069,
+            "wallMilliseconds": 838.472,
+            "peakRssKiB": 324936,
+            "checkMilliseconds": 527,
+            "totalMilliseconds": 560,
+            "compilerMemoryKiB": 99144,
             "types": 70238,
             "instantiations": 82300
           }
         ],
         "checkMilliseconds": {
-          "median": 573,
-          "minimum": 544,
-          "maximum": 591
+          "median": 527,
+          "minimum": 504,
+          "maximum": 539
         },
         "totalMilliseconds": {
-          "median": 614,
-          "minimum": 589,
-          "maximum": 632
+          "median": 559,
+          "minimum": 540,
+          "maximum": 576
         },
         "wallMilliseconds": {
-          "median": 910.619,
-          "minimum": 891.497,
-          "maximum": 951.992
+          "median": 838.472,
+          "minimum": 819.64,
+          "maximum": 864.599
         },
         "peakRssKiB": {
-          "median": 298768,
-          "minimum": 295620,
-          "maximum": 314796
+          "median": 319544,
+          "minimum": 310240,
+          "maximum": 324936
         },
         "compilerMemoryKiB": {
-          "median": 99111,
-          "minimum": 99069,
-          "maximum": 99179
+          "median": 99152,
+          "minimum": 99127,
+          "maximum": 99157
         },
         "types": {
           "median": 70238,
@@ -1362,49 +1362,49 @@
         "compilerVersion": "Version 6.0.3",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 1339.423,
-          "peakRssKiB": 323908,
-          "checkMilliseconds": 690,
-          "totalMilliseconds": 970,
-          "compilerMemoryKiB": 138922,
+          "wallMilliseconds": 1239.792,
+          "peakRssKiB": 322932,
+          "checkMilliseconds": 650,
+          "totalMilliseconds": 890,
+          "compilerMemoryKiB": 138757,
           "types": 47828,
           "instantiations": 53201
         },
         "samples": [
           {
-            "wallMilliseconds": 1275.702,
-            "peakRssKiB": 322924,
-            "checkMilliseconds": 690,
-            "totalMilliseconds": 930,
-            "compilerMemoryKiB": 138660,
+            "wallMilliseconds": 1375.001,
+            "peakRssKiB": 323000,
+            "checkMilliseconds": 670,
+            "totalMilliseconds": 920,
+            "compilerMemoryKiB": 138760,
             "types": 47828,
             "instantiations": 53201
           }
         ],
         "checkMilliseconds": {
-          "median": 690,
-          "minimum": 690,
-          "maximum": 690
+          "median": 670,
+          "minimum": 670,
+          "maximum": 670
         },
         "totalMilliseconds": {
-          "median": 930,
-          "minimum": 930,
-          "maximum": 930
+          "median": 920,
+          "minimum": 920,
+          "maximum": 920
         },
         "wallMilliseconds": {
-          "median": 1275.702,
-          "minimum": 1275.702,
-          "maximum": 1275.702
+          "median": 1375.001,
+          "minimum": 1375.001,
+          "maximum": 1375.001
         },
         "peakRssKiB": {
-          "median": 322924,
-          "minimum": 322924,
-          "maximum": 322924
+          "median": 323000,
+          "minimum": 323000,
+          "maximum": 323000
         },
         "compilerMemoryKiB": {
-          "median": 138660,
-          "minimum": 138660,
-          "maximum": 138660
+          "median": 138760,
+          "minimum": 138760,
+          "maximum": 138760
         },
         "types": {
           "median": 47828,
@@ -1430,49 +1430,49 @@
         "compilerVersion": "Version 6.0.3",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 2484.308,
-          "peakRssKiB": 336592,
-          "checkMilliseconds": 1900,
-          "totalMilliseconds": 2120,
-          "compilerMemoryKiB": 147955,
+          "wallMilliseconds": 2502.641,
+          "peakRssKiB": 337192,
+          "checkMilliseconds": 1940,
+          "totalMilliseconds": 2150,
+          "compilerMemoryKiB": 148357,
           "types": 43615,
           "instantiations": 50345
         },
         "samples": [
           {
-            "wallMilliseconds": 2484.669,
-            "peakRssKiB": 338252,
-            "checkMilliseconds": 1940,
-            "totalMilliseconds": 2130,
-            "compilerMemoryKiB": 148666,
+            "wallMilliseconds": 2443.534,
+            "peakRssKiB": 338336,
+            "checkMilliseconds": 1890,
+            "totalMilliseconds": 2090,
+            "compilerMemoryKiB": 149128,
             "types": 43615,
             "instantiations": 50345
           }
         ],
         "checkMilliseconds": {
-          "median": 1940,
-          "minimum": 1940,
-          "maximum": 1940
+          "median": 1890,
+          "minimum": 1890,
+          "maximum": 1890
         },
         "totalMilliseconds": {
-          "median": 2130,
-          "minimum": 2130,
-          "maximum": 2130
+          "median": 2090,
+          "minimum": 2090,
+          "maximum": 2090
         },
         "wallMilliseconds": {
-          "median": 2484.669,
-          "minimum": 2484.669,
-          "maximum": 2484.669
+          "median": 2443.534,
+          "minimum": 2443.534,
+          "maximum": 2443.534
         },
         "peakRssKiB": {
-          "median": 338252,
-          "minimum": 338252,
-          "maximum": 338252
+          "median": 338336,
+          "minimum": 338336,
+          "maximum": 338336
         },
         "compilerMemoryKiB": {
-          "median": 148666,
-          "minimum": 148666,
-          "maximum": 148666
+          "median": 149128,
+          "minimum": 149128,
+          "maximum": 149128
         },
         "types": {
           "median": 43615,
@@ -1498,49 +1498,49 @@
         "compilerVersion": "Version 6.0.3",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 3037.1,
-          "peakRssKiB": 365604,
-          "checkMilliseconds": 2430,
-          "totalMilliseconds": 2670,
-          "compilerMemoryKiB": 177452,
+          "wallMilliseconds": 2674.356,
+          "peakRssKiB": 365236,
+          "checkMilliseconds": 2090,
+          "totalMilliseconds": 2320,
+          "compilerMemoryKiB": 177365,
           "types": 58815,
           "instantiations": 81235
         },
         "samples": [
           {
-            "wallMilliseconds": 2611.889,
-            "peakRssKiB": 361224,
-            "checkMilliseconds": 2009.9999999999998,
-            "totalMilliseconds": 2250,
-            "compilerMemoryKiB": 177575,
+            "wallMilliseconds": 2643.661,
+            "peakRssKiB": 365156,
+            "checkMilliseconds": 2040,
+            "totalMilliseconds": 2270,
+            "compilerMemoryKiB": 177449,
             "types": 58815,
             "instantiations": 81235
           }
         ],
         "checkMilliseconds": {
-          "median": 2009.9999999999998,
-          "minimum": 2009.9999999999998,
-          "maximum": 2009.9999999999998
+          "median": 2040,
+          "minimum": 2040,
+          "maximum": 2040
         },
         "totalMilliseconds": {
-          "median": 2250,
-          "minimum": 2250,
-          "maximum": 2250
+          "median": 2270,
+          "minimum": 2270,
+          "maximum": 2270
         },
         "wallMilliseconds": {
-          "median": 2611.889,
-          "minimum": 2611.889,
-          "maximum": 2611.889
+          "median": 2643.661,
+          "minimum": 2643.661,
+          "maximum": 2643.661
         },
         "peakRssKiB": {
-          "median": 361224,
-          "minimum": 361224,
-          "maximum": 361224
+          "median": 365156,
+          "minimum": 365156,
+          "maximum": 365156
         },
         "compilerMemoryKiB": {
-          "median": 177575,
-          "minimum": 177575,
-          "maximum": 177575
+          "median": 177449,
+          "minimum": 177449,
+          "maximum": 177449
         },
         "types": {
           "median": 58815,
@@ -1566,49 +1566,49 @@
         "compilerVersion": "Version 6.0.3",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 2659.897,
-          "peakRssKiB": 355900,
-          "checkMilliseconds": 2050,
-          "totalMilliseconds": 2290,
-          "compilerMemoryKiB": 172081,
+          "wallMilliseconds": 2708.012,
+          "peakRssKiB": 355788,
+          "checkMilliseconds": 2110,
+          "totalMilliseconds": 2340,
+          "compilerMemoryKiB": 171754,
           "types": 58035,
           "instantiations": 71613
         },
         "samples": [
           {
-            "wallMilliseconds": 2603.232,
-            "peakRssKiB": 355412,
-            "checkMilliseconds": 2009.9999999999998,
-            "totalMilliseconds": 2250,
-            "compilerMemoryKiB": 172299,
+            "wallMilliseconds": 2702.059,
+            "peakRssKiB": 356016,
+            "checkMilliseconds": 2110,
+            "totalMilliseconds": 2350,
+            "compilerMemoryKiB": 171988,
             "types": 58035,
             "instantiations": 71613
           }
         ],
         "checkMilliseconds": {
-          "median": 2009.9999999999998,
-          "minimum": 2009.9999999999998,
-          "maximum": 2009.9999999999998
+          "median": 2110,
+          "minimum": 2110,
+          "maximum": 2110
         },
         "totalMilliseconds": {
-          "median": 2250,
-          "minimum": 2250,
-          "maximum": 2250
+          "median": 2350,
+          "minimum": 2350,
+          "maximum": 2350
         },
         "wallMilliseconds": {
-          "median": 2603.232,
-          "minimum": 2603.232,
-          "maximum": 2603.232
+          "median": 2702.059,
+          "minimum": 2702.059,
+          "maximum": 2702.059
         },
         "peakRssKiB": {
-          "median": 355412,
-          "minimum": 355412,
-          "maximum": 355412
+          "median": 356016,
+          "minimum": 356016,
+          "maximum": 356016
         },
         "compilerMemoryKiB": {
-          "median": 172299,
-          "minimum": 172299,
-          "maximum": 172299
+          "median": 171988,
+          "minimum": 171988,
+          "maximum": 171988
         },
         "types": {
           "median": 58035,
@@ -1634,49 +1634,49 @@
         "compilerVersion": "Version 6.0.3",
         "status": "passed",
         "warmup": {
-          "wallMilliseconds": 2607.309,
-          "peakRssKiB": 356332,
-          "checkMilliseconds": 2000,
-          "totalMilliseconds": 2240,
-          "compilerMemoryKiB": 164878,
+          "wallMilliseconds": 2708.665,
+          "peakRssKiB": 357680,
+          "checkMilliseconds": 2090,
+          "totalMilliseconds": 2350,
+          "compilerMemoryKiB": 164762,
           "types": 58001,
           "instantiations": 72651
         },
         "samples": [
           {
-            "wallMilliseconds": 2554.469,
-            "peakRssKiB": 356744,
-            "checkMilliseconds": 1970,
-            "totalMilliseconds": 2200,
-            "compilerMemoryKiB": 165219,
+            "wallMilliseconds": 2689.56,
+            "peakRssKiB": 357460,
+            "checkMilliseconds": 2070,
+            "totalMilliseconds": 2320,
+            "compilerMemoryKiB": 165571,
             "types": 58001,
             "instantiations": 72651
           }
         ],
         "checkMilliseconds": {
-          "median": 1970,
-          "minimum": 1970,
-          "maximum": 1970
+          "median": 2070,
+          "minimum": 2070,
+          "maximum": 2070
         },
         "totalMilliseconds": {
-          "median": 2200,
-          "minimum": 2200,
-          "maximum": 2200
+          "median": 2320,
+          "minimum": 2320,
+          "maximum": 2320
         },
         "wallMilliseconds": {
-          "median": 2554.469,
-          "minimum": 2554.469,
-          "maximum": 2554.469
+          "median": 2689.56,
+          "minimum": 2689.56,
+          "maximum": 2689.56
         },
         "peakRssKiB": {
-          "median": 356744,
-          "minimum": 356744,
-          "maximum": 356744
+          "median": 357460,
+          "minimum": 357460,
+          "maximum": 357460
         },
         "compilerMemoryKiB": {
-          "median": 165219,
-          "minimum": 165219,
-          "maximum": 165219
+          "median": 165571,
+          "minimum": 165571,
+          "maximum": 165571
         },
         "types": {
           "median": 58001,
@@ -1691,5 +1691,5 @@
       }
     ]
   },
-  "reportDigest": "a3cf2fc6e316db72bd6e06007eadd4c2ee62596729c29b9965e9a42c6ebb56c1"
+  "reportDigest": "2d8ab0a0ce494dcfccc8353494ab6dba97672f09544e6c8502698573faeecbbd"
 }
