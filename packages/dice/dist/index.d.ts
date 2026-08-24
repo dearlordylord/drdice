@@ -427,7 +427,7 @@ type LiteralArithmeticCandidate<Value extends Stats["integerValues"][number]> = 
 type FirstArithmeticLiterals<Values extends readonly Stats["integerValues"][number][], Current = never> = Values extends readonly [infer Head extends Stats["integerValues"][number], ...infer Tail extends Stats["integerValues"][number][]]
   ? FirstArithmeticLiterals<Tail, ChooseCandidate<Current, LiteralArithmeticCandidate<Head>>> : Current;
 type FirstArithmeticCandidate<Ast, Current = never> = Ast extends GroupNode<infer Child, number>
-  ? ChooseCandidate<Current, ChooseCandidate<ArithmeticCandidate<Ast>, FirstArithmeticCandidate<Child>>> 
+  ? ChooseCandidate<Current, ChooseCandidate<ArithmeticCandidate<Ast>, FirstArithmeticCandidate<Child>>>
   : Ast extends BinaryNode<"+" | "-", infer Left, infer Right, number>
     ? ChooseCandidate<Current, ChooseCandidate<ArithmeticCandidate<Ast>, ChooseCandidate<FirstArithmeticCandidate<Left>, FirstArithmeticCandidate<Right>>>>
     : ChooseCandidate<Current, ArithmeticCandidate<Ast>>;
