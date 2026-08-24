@@ -5,6 +5,7 @@ RELEASE_BRANCH="master"
 RELEASE_TAG="v0.1.0"
 PRNG_PACKAGE_NAME="@drdice/prng"
 DICE_PACKAGE_NAME="@drdice/dice"
+EXPECTED_GITHUB_LOGIN="dearlordylord"
 DRY_RUN="${DRDICE_RELEASE_DRY_RUN:-0}"
 
 fail() {
@@ -65,7 +66,9 @@ remote_commit="$(git rev-parse "origin/$RELEASE_BRANCH")"
 
 if [[ "$DRY_RUN" != "1" ]]; then
   npm whoami >/dev/null
-  gh auth status >/dev/null
+  github_login="$(gh api user --jq .login)"
+  [[ "$github_login" == "$EXPECTED_GITHUB_LOGIN" ]] ||
+    fail "active GitHub account is '$github_login'; expected '$EXPECTED_GITHUB_LOGIN'"
 fi
 
 pnpm check:release
