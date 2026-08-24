@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "issue": 16,
+  "artifact": "verification/budget-scaffold.ts",
+  "blockingCompiler": {
+    "package": "typescript@7.0.2",
+    "reportedVersion": "Version 7.0.2"
+  },
+  "advisoryCompiler": {
+    "package": "@typescript/typescript6@6.0.2",
+    "reportedVersion": "Version 6.0.3"
+  },
+  "policies": {
+    "oneChecker": {
+      "checkers": 1,
+      "portableLimits": {
+        "maximumCheckMilliseconds": 5000,
+        "maximumInstantiations": 50000
+      },
+      "observed": {
+        "checkMilliseconds": 319,
+        "totalMilliseconds": 370,
+        "compilerMemoryKiB": 57812,
+        "types": 28079,
+        "instantiations": 26998
+      }
+    },
+    "fourChecker": {
+      "checkers": 4,
+      "portableLimits": {
+        "maximumCheckMilliseconds": 5000,
+        "maximumInstantiations": 50000
+      },
+      "observed": {
+        "checkMilliseconds": 211,
+        "totalMilliseconds": 266,
+        "compilerMemoryKiB": 60027,
+        "types": 30880,
+        "instantiations": 27718
+      }
+    }
+  },
+  "measurement": {
+    "status": "recorded",
+    "recordedAt": "2026-08-23",
+    "runner": "Linux container, Node 20.20.1",
+    "advisoryTypeScript6": {
+      "package": "@typescript/typescript6@6.0.2",
+      "reportedVersion": "Version 6.0.3",
+      "checkMilliseconds": 700,
+      "totalMilliseconds": 1000,
+      "compilerMemoryKiB": 109943,
+      "types": 27732,
+      "instantiations": 26998
+    }
+  }
+}

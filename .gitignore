@@ -1,0 +1,12 @@
+node_modules/
+.pnpm-store/
+pnpm-debug.log
+*.log
+
+# Verification scripts use these as disposable staging areas.
+.verification-tmp/
+verification/.tmp/
+
+# Generated compiler traces are diagnostic-only.
+trace/
+typescript-trace/

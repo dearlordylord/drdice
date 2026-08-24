@@ -1,2 +1,29 @@
 # drdice
-Type-level seeded pseudorandom generation and dice evaluation for TypeScript
+
+DRDice is a pnpm workspace containing exactly two independently versioned,
+declaration-only TypeScript packages:
+
+- `@drdice/prng` — seeded, reproducible pseudorandom type computation;
+- `@drdice/dice` — bounded Dice Expression type computation, depending one-way
+  on `@drdice/prng`.
+
+The package roots are intentionally the only public export paths. Their
+computation is erased by TypeScript, so consumers use `import type`; there is
+no supported runtime entry point. DRDice is for reproducible games, tests, and
+type-system experimentation, not cryptographic randomness, secrets, security
+tokens, gambling, or unpredictable entropy.
+
+The supported checker is exactly `typescript@7.0.2`. The pinned
+`@typescript/typescript6@6.0.2` command is advisory migration evidence only.
+
+From a clean checkout:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm verify
+```
+
+The individual gates are `pnpm typecheck`, `pnpm check:fixtures`,
+`pnpm check:clean-consumers`, `pnpm check:packed`, and the one-/four-checker
+budget commands. Baseline scaffold measurements live in
+[`verification/baseline/scaffold.json`](verification/baseline/scaffold.json).

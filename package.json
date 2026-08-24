@@ -1,0 +1,31 @@
+{
+  "name": "drdice-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Development workspace for the DRDice declaration-only packages",
+  "license": "MIT",
+  "packageManager": "pnpm@10.29.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --project tsconfig.json --pretty false",
+    "typecheck:ts7": "pnpm exec tsc --project tsconfig.json --pretty false",
+    "typecheck:ts6": "pnpm exec tsc6 --project tsconfig.json --pretty false",
+    "generate:fixtures": "node verification/generate-fixtures.mjs",
+    "check:fixtures": "node verification/check-generated-fixtures.mjs",
+    "check:clean-consumers": "node verification/check-clean-consumers.mjs",
+    "check:packed": "node verification/check-packed-artifacts.mjs",
+    "check:budgets": "node verification/check-budgets.mjs --policy all",
+    "check:budgets:one-checker": "node verification/check-budgets.mjs --policy one-checker",
+    "check:budgets:four-checker": "node verification/check-budgets.mjs --policy four-checker",
+    "verify": "pnpm typecheck && pnpm check:fixtures && pnpm check:clean-consumers && pnpm check:packed && pnpm check:budgets",
+    "verify:ts6": "pnpm typecheck:ts6"
+  },
+  "devDependencies": {
+    "@typescript/typescript6": "6.0.2",
+    "typescript": "7.0.2",
+    "@drdice/dice": "workspace:*",
+    "@drdice/prng": "workspace:*"
+  }
+}

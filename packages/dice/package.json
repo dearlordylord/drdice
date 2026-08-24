@@ -1,0 +1,31 @@
+{
+  "name": "@drdice/dice",
+  "version": "0.1.0",
+  "description": "Literal-computing dice expression evaluation for TypeScript",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist/index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dearlordylord/drdice.git",
+    "directory": "packages/dice"
+  },
+  "dependencies": {
+    "@drdice/prng": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
