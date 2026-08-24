@@ -5,8 +5,7 @@ expression evaluator.
 
 ## Quick start
 
-> The runtime API below is available on `main` and will ship in the next npm
-> release. Exact type computation requires TypeScript 7.0.2+.
+Exact literal type computation requires TypeScript 7.0.2.
 
 ```sh
 npm install @drdice/prng @drdice/dice

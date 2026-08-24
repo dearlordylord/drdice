@@ -5,14 +5,14 @@ literal-computing types. It is intended for reproducible games, tests, and TypeS
 type-system experimentation; it is not a source of cryptographic randomness,
 secrets, security tokens, gambling outcomes, or unpredictable entropy.
 
-The v2 implementation is checked by exactly `typescript@7.0.2`. The pinned
-`@typescript/typescript6@6.0.2` lane is advisory migration evidence only.
+Exact literal type computation is checked with `typescript@7.0.2`. The pinned
+`@typescript/typescript6@6.0.2` lane is advisory compatibility evidence only.
 
 Only the package root is public. Runtime values and type-only helpers are both
 imported from `@drdice/prng`; deep imports are unsupported.
 
 The immutable PRNG Sequence Profile is
-`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The development package version (`0.3.0-dev.5`),
+`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The package version (`0.3.0-dev.5`),
 Replay Token/Serialized Generator State schema version (`1`), and Sequence
 Profile identity are separate compatibility identities. A package contract
 change requires a new package release; a serialized-shape change requires a
@@ -53,7 +53,7 @@ runtime counterparts of the capitalized extractor types.
 All-zero and malformed Seed or Generator State values fail structurally and do
 not advance state. Invalid bounds and attempt fuel are rejected before any
 transition. The public type API is literal-computing: widened strings and
-numbers are outside the v2 contract. This package is suitable for reproducible
+numbers are outside that contract. This package is suitable for reproducible
 game simulations, deterministic tests, examples, and type-system experiments.
 It is not cryptographic and must not be used for keys, secrets, passwords,
 authentication or reset tokens, security decisions, gambling or wagering, or

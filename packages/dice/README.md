@@ -10,8 +10,8 @@ deterministic tests, examples, and type-system experiments. Do not use it for
 keys, secrets, passwords, authentication or reset tokens, security decisions,
 gambling or wagering, or unpredictable entropy.
 
-The v2 implementation is checked by exactly `typescript@7.0.2`. The pinned
-`@typescript/typescript6@6.0.2` lane is advisory migration evidence only.
+Exact literal type computation is checked with `typescript@7.0.2`. The pinned
+`@typescript/typescript6@6.0.2` lane is advisory compatibility evidence only.
 
 Only the package root is public. Runtime values and type-only helpers are both
 imported from `@drdice/dice`; deep imports are unsupported. PRNG-owned
