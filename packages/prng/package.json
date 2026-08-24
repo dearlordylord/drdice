@@ -1,6 +1,6 @@
 {
   "name": "@drdice/prng",
-  "version": "0.3.0-dev.5",
+  "version": "0.3.0",
   "description": "Literal-computing seeded pseudorandom generation for TypeScript",
   "type": "module",
   "types": "./dist/index.d.ts",
