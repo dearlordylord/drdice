@@ -23,13 +23,18 @@ The root provides exact literal type operations:
   words and returns a tagged `GeneratorState` or a structured failure.
 - `Next<GeneratorState>` returns one raw Word32 and its explicit successor
   state. It never mutates or advances an input type.
+- `Sample<GeneratorState, Bound, MaximumAttempts>` returns an exact unbiased
+  integer in `[0, Bound)` for every bound from 1 through 100. Each attempt
+  consumes one successor state; bound one consumes one output, and exhaustion
+  reports its exact attempt count and advanced state.
 - `ReplayToken<SeedWords>` and `RestoreReplay<Token>` restart from the Seed.
 - `SerializedGeneratorState<StateWords>`, `RestoreState<Snapshot>`, and
   `SerializeState<State>` preserve the current state and resume at its next
   word. Replay restart and serialized-state resume are intentionally distinct.
 
 All-zero and malformed Seed or Generator State values fail structurally and do
-not advance state. The public type API is literal-computing: widened strings
-and numbers are outside the v1 contract. DRDice is reproducible but not
+do not advance state. Invalid bounds and attempt fuel are rejected before any
+transition. The public type API is literal-computing: widened strings and
+numbers are outside the v1 contract. DRDice is reproducible but not
 cryptographic; do not use it for secrets, security tokens, gambling, or
 unpredictable entropy.

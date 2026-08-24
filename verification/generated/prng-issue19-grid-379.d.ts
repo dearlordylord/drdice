@@ -1,0 +1,14 @@
+/* GENERATED FILE. Run pnpm generate:fixtures; do not edit by hand. */
+import type {
+  Failure,
+  GeneratorState,
+  Sample,
+  Success,
+} from "@drdice/prng";
+
+type Equal<Left, Right> =
+  (<Value>() => Value extends Left ? 1 : 2) extends
+  (<Value>() => Value extends Right ? 1 : 2) ? true : false;
+type Assert<Value extends true> = Value;
+type Grid379_0 = Sample<GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 76, 4>;
+type _Grid379_0 = Assert<Equal<Grid379_0, Success<{ readonly value: 0; readonly state: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]>; readonly attempts: 1 }>>>;

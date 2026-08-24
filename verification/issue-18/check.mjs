@@ -49,6 +49,11 @@ const expectedExports = [
   "InvalidReplayFailure",
   "StepSuccess",
   "StepResult",
+  "BoundedSuccess",
+  "InvalidBoundFailure",
+  "InvalidAttemptFuelFailure",
+  "SamplingExhausted",
+  "BoundedResult",
   "Initialize",
   "InitializeResult",
   "Next",
@@ -60,6 +65,7 @@ const expectedExports = [
   "RestoreStateResult",
   "SerializeState",
   "SerializeStateResult",
+  "Sample",
   "PackageMetadata",
 ];
 const actualExports = [...declaration.matchAll(/^export (?:const|type) (\w+)/gm)]

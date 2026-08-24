@@ -1,6 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { oracleSample, oracleStateFromWords } from "./issue-17/oracle.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultOutput = resolve(here, "generated");
@@ -157,11 +159,191 @@ const replayFixture = [
   ...replayAssertions,
 ].join("\n");
 
+/* -------------------------------------------------------------------------- */
+/* Issue #19 bounded-sampling fixtures                                       */
+/* -------------------------------------------------------------------------- */
+
+/* The fixture generator is the only place that consults the private numeric
+ * oracle.  Generated declarations contain only literal inputs and expected
+ * public results, so the package and its consumers never depend on runtime
+ * verification code. */
+const samplingHeader = [
+  `/* GENERATED FILE. Run pnpm generate:fixtures; do not edit by hand. */`,
+  `import type {`,
+  `  Failure,`,
+  `  GeneratorState,`,
+  `  Sample,`,
+  `  Success,`,
+  `} from "@drdice/prng";`,
+  ``,
+  `type Equal<Left, Right> =`,
+  `  (<Value>() => Value extends Left ? 1 : 2) extends`,
+  `  (<Value>() => Value extends Right ? 1 : 2) ? true : false;`,
+  `type Assert<Value extends true> = Value;`,
+  ``,
+].join("\n");
+
+const sampleExpected = (vector) => {
+  const result = vector.result;
+  const inputState = vector.state === null
+    ? "null"
+    : vector.state.kind === "GeneratorState"
+      ? `GeneratorState<${tuple(vector.state.words)}>`
+      : JSON.stringify(vector.state);
+  if (result.ok) {
+    return `Success<{ readonly value: ${result.value.value}; readonly state: ${state(result.value.state.words)}; readonly attempts: ${result.value.attempts} }>`;
+  }
+  if (result.code === "sampling-attempts-exhausted") {
+    return `Failure<"sampling-attempts-exhausted", { readonly maximumAttempts: ${result.details.maximumAttempts}; readonly attempts: ${result.details.attempts}; readonly state: ${state(result.details.state.words)} }>`;
+  }
+  if (result.code === "invalid-bound") {
+    return `Failure<"invalid-bound", { readonly bound: ${String(result.details.bound)} }>`;
+  }
+  if (result.code === "invalid-attempt-fuel") {
+    return `Failure<"invalid-attempt-fuel", { readonly maximumAttempts: ${String(result.details.maximumAttempts)} }>`;
+  }
+  if (result.code === "invalid-state-shape") {
+    return `Failure<"invalid-state-shape", { readonly state: ${inputState} }>`;
+  }
+  if (result.code === "invalid-state-word") {
+    return `Failure<"invalid-state-word", { readonly state: ${inputState} }>`;
+  }
+  if (result.code === "invalid-state-zero") {
+    return `Failure<"invalid-state-zero", { readonly state: ${inputState} }>`;
+  }
+  throw new Error(`unsupported issue-19 fixture result: ${JSON.stringify(result)}`);
+};
+
+const sampleAssertion = (vector) => {
+  const input = vector.state === null
+    ? "null"
+    : vector.state.kind === "GeneratorState"
+      ? `GeneratorState<${tuple(vector.state.words)}>`
+      : JSON.stringify(vector.state);
+  const expected = sampleExpected(vector);
+  return [
+    `type ${vector.alias} = Sample<${input}, ${String(vector.bound)}, ${String(vector.maximumAttempts)}>;`,
+    `type _${vector.alias} = Assert<Equal<${vector.alias}, ${expected}>>;`,
+    ``,
+  ].join("\n");
+};
+
+const stateWordsPool = [
+  golden.canonicalSeed,
+  ...golden.rawWordVector.transitions.slice(0, 10).map(({ inputState }) => inputState),
+  golden.craftedRejectionState,
+];
+
+const makeState = (words) => oracleStateFromWords(words);
+const gridVectors = [];
+for (let bound = 1; bound <= 100; bound += 1) {
+  for (let maximumAttempts = 0; maximumAttempts <= 4; maximumAttempts += 1) {
+    const words = stateWordsPool[(bound * 5 + maximumAttempts) % stateWordsPool.length];
+    const inputState = makeState(words);
+    gridVectors.push({
+      id: `grid-bound-${bound}-fuel-${maximumAttempts}`,
+      state: inputState,
+      bound,
+      maximumAttempts,
+      result: oracleSample(inputState, bound, maximumAttempts),
+    });
+  }
+}
+
+const specialInputs = [
+  {
+    id: "bound-one-consumes-one",
+    state: makeState(golden.canonicalSeed),
+    bound: 1,
+    maximumAttempts: 1,
+  },
+  {
+    id: "forced-rejection-then-acceptance",
+    state: makeState(golden.craftedRejectionState),
+    bound: 7,
+    maximumAttempts: 2,
+  },
+  {
+    id: "forced-rejection-exhaustion-zero",
+    state: makeState(golden.craftedRejectionState),
+    bound: 6,
+    maximumAttempts: 0,
+  },
+  {
+    id: "forced-rejection-exhaustion-four",
+    state: makeState(golden.craftedRejectionState),
+    bound: 6,
+    maximumAttempts: 4,
+  },
+  {
+    id: "invalid-state-precedes-bound-and-fuel",
+    state: null,
+    bound: 101,
+    maximumAttempts: 5,
+  },
+  {
+    id: "invalid-bound-precedes-fuel",
+    state: makeState(golden.canonicalSeed),
+    bound: 101,
+    maximumAttempts: 5,
+  },
+  {
+    id: "invalid-fuel-after-valid-bound",
+    state: makeState(golden.canonicalSeed),
+    bound: 1,
+    maximumAttempts: 5,
+  },
+  {
+    id: "invalid-state-word-precedes-preflight",
+    state: { kind: "GeneratorState", words: ["0000000A", "00000000", "00000000", "00000001"] },
+    bound: 101,
+    maximumAttempts: 5,
+  },
+  {
+    id: "invalid-state-zero-precedes-preflight",
+    state: { kind: "GeneratorState", words: ["00000000", "00000000", "00000000", "00000000"] },
+    bound: 101,
+    maximumAttempts: 5,
+  },
+];
+
+const specialVectors = specialInputs.map((input) => ({
+  ...input,
+  result: oracleSample(input.state, input.bound, input.maximumAttempts),
+}));
+
+/* Keep every bound/fuel query in its own real artifact.  The checker discovers
+ * these exact names and rejects missing, extra, or dirty shards; the budget
+ * lane therefore measures the complete 500-query grid rather than a bundled
+ * representative subset. */
+const samplingShardSize = 1;
+const chunk = (values, size) => Array.from(
+  { length: Math.ceil(values.length / size) },
+  (_, index) => values.slice(index * size, (index + 1) * size),
+);
+const samplingShards = chunk(gridVectors, samplingShardSize);
+const samplingFixtureFiles = samplingShards.map((vectors, shardIndex) => [
+  `prng-issue19-grid-${String(shardIndex).padStart(3, "0")}.d.ts`,
+  `${samplingHeader}${vectors.map((vector, vectorIndex) => sampleAssertion({
+    ...vector,
+    alias: `Grid${shardIndex}_${vectorIndex}`,
+  })).join("")}`,
+]);
+const specialFixtureFiles = chunk(specialVectors, 3).map((vectors, shardIndex) => [
+  `prng-issue19-special-${String(shardIndex).padStart(3, "0")}.d.ts`,
+  `${samplingHeader}${vectors.map((vector, vectorIndex) => sampleAssertion({
+    ...vector,
+    alias: `Special${shardIndex}_${vectorIndex}`,
+  })).join("")}`,
+]);
+
 /* Keep each exact transition and the replay assertions in separate artifacts.
  * The budget gate checks every artifact under both TypeScript 7 checker policies. */
 const fixtureFiles = [
   ...prngAssertions.map((contents, index) => [`prng-issue18-transitions-${index}.d.ts`, contents]),
   ["prng-issue18-replay.d.ts", replayFixture],
+  ...samplingFixtureFiles,
+  ...specialFixtureFiles,
 ];
 
 /* The old monolithic construction is intentionally gone; this assertion keeps
@@ -171,5 +353,9 @@ for (const [filename, contents] of fixtureFiles) {
 }
 
 await mkdir(output, { recursive: true });
+const generatedNames = new Set(fixtureFiles.map(([filename]) => filename).concat("scaffold.d.ts"));
+const staleIssue19 = (await readdir(output))
+  .filter((filename) => /^prng-issue19-.*\.d\.ts$/.test(filename) && !generatedNames.has(filename));
+await Promise.all(staleIssue19.map((filename) => unlink(resolve(output, filename))));
 await writeFile(resolve(output, "scaffold.d.ts"), scaffold, "utf8");
 await Promise.all(fixtureFiles.map(([filename, contents]) => writeFile(resolve(output, filename), contents, "utf8")));
