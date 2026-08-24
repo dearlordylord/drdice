@@ -42,6 +42,24 @@ and maximum query is `pnpm release:measure`; commit its report and run
 `pnpm check:release` as described in
 [`verification/issue-24/README.md`](verification/issue-24/README.md).
 
+## Release
+
+From a clean `master` checkout that matches `origin/master`, authenticate with
+npm and GitHub, then run one command:
+
+```sh
+pnpm local-release
+```
+
+The command installs the exact lockfile, revalidates the source-bound release
+report, creates and checks both packed artifacts, publishes `@drdice/prng`
+before `@drdice/dice`, verifies both registry versions, pushes the `v0.1.0`
+tag, attaches the exact tarballs to the GitHub release, and publishes an
+existing draft release. It is safe to rerun after a partial registry publish:
+an exact package version that already exists is skipped. Maintainers can check
+the complete path without registry or GitHub mutations with
+`DRDICE_RELEASE_DRY_RUN=1 pnpm local-release`.
+
 ## Compatibility identities
 
 Package release versions, serialized-schema versions, algorithm sequence
