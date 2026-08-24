@@ -567,7 +567,7 @@ type WithPartial<FailureValue, Trace extends RollTrace, State extends PrngGenera
 
 /* A die node contributes its own step before consuming any PRNG state. */
 type EvalDice<
-  Count extends number,
+  CountMagnitude extends readonly unknown[],
   Sides extends number,
   State extends PrngGeneratorState,
   Fuel extends number,
@@ -577,11 +577,11 @@ type EvalDice<
 > = AddNatural<ConsumedSteps, 1> extends infer Steps extends number
   ? IsGreaterThan<Steps, L["evaluationSteps"]> extends true
     ? EvaluationStepFailure<Offset, Steps, Trace, State>
-    : EvalDiceRest<Count, Sides, State, Fuel, Trace, Offset, 0, Steps>
+    : EvalDiceRest<CountMagnitude, Sides, State, Fuel, Trace, Offset, 0, Steps>
   : never;
 
 type EvalDiceRest<
-  Count extends number,
+  Remaining extends readonly unknown[],
   Sides extends number,
   State extends PrngGeneratorState,
   Fuel extends number,
@@ -589,7 +589,7 @@ type EvalDiceRest<
   Offset extends number,
   Total extends number,
   Steps extends number,
-> = Count extends 0
+> = Remaining extends readonly []
   ? Success<EvaluationValue<Total, Trace, State, Steps>>
 : Sample<State, Sides, Fuel> extends infer SampleResult
     ? SampleResult extends {
@@ -608,7 +608,7 @@ type EvalDiceRest<
                 ? EvaluationStepFailure<Offset, NextSteps, NextTrace, NextState>
                 : IsGreaterThan<NextTotal, L["arithmeticMagnitude"]> extends true
                   ? DynamicResourceFailure<"arithmetic-magnitude", Offset, NextTotal, NextTrace, NextState>
-                  : EvalDiceRest<Decrement<Count>, Sides, NextState, Fuel, NextTrace, Offset, NextTotal, NextSteps>
+                  : EvalDiceRest<Remaining extends readonly [unknown, ...infer Tail] ? Tail : [], Sides, NextState, Fuel, NextTrace, Offset, NextTotal, NextSteps>
               : never
             : never
           : never
@@ -642,8 +642,8 @@ type EvalAst<
       ? EvaluationStepFailure<Offset, Steps, Trace, State>
       : Success<EvaluationValue<Value, Trace, State, Steps>>
     : never
-  : Ast extends DiceNode<infer Count, readonly unknown[], infer Sides, readonly unknown[], infer Offset, number>
-    ? EvalDice<Count, Sides, State, Fuel, Trace, Offset, ConsumedSteps>
+  : Ast extends DiceNode<number, infer CountMagnitude extends readonly unknown[], infer Sides, readonly unknown[], infer Offset, number>
+    ? EvalDice<CountMagnitude, Sides, State, Fuel, Trace, Offset, ConsumedSteps>
     : Ast extends GroupNode<infer Child, number>
       ? AddNatural<ConsumedSteps, 1> extends infer Steps extends number
         ? EvalAst<Child, State, Fuel, Trace, Steps>
