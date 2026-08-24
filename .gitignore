@@ -3,6 +3,9 @@ node_modules/
 pnpm-debug.log
 *.log
 
+# Package output is recreated from tracked src files before verification/packing.
+packages/*/dist/
+
 # Verification scripts use these as disposable staging areas.
 .verification-tmp/
 verification/.tmp/

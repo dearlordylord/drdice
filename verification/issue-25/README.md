@@ -7,7 +7,8 @@ then uses that literal for both an exact inferred-type witness and runtime deep
 equality against the lowercase public `evaluate` function.
 
 The normal gate compiles each bounded 12-case shard once with pinned TypeScript
-7.0.2 and enforces the committed shard/wall budget. A failure reports the corpus-generator seed, replay path, serialized input,
+7.0.2 and enforces the committed shard budget. Wall time is advisory on shared
+hosts and blocking on the dedicated reference runner. A failure reports the corpus-generator seed, replay path, serialized input,
 actual result, and expected result. Replay one case with
 `node verification/issue-25/check.mjs --replay PATH`; explicit compiler-per-case
 shrinking is available with `--shrink PATH`. Generated shards are committed and

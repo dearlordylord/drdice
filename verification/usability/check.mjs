@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import {
   initialize as runtimeInitialize,
   sample as runtimeSample,
-} from "../../packages/prng/dist/index.js";
-import { evaluate } from "../../packages/dice/dist/index.js";
+} from "../../packages/prng/src/index.js";
+import { evaluate } from "../../packages/dice/src/index.js";
 
 const GAMEPLAY_OUTPUT_FUEL = 5;
 const MAX_EXHAUSTION_PROBABILITY = 1e-6;

@@ -1,6 +1,6 @@
 # Issue #18: declaration-only PRNG implementation checks
 
-The production PRNG root in `packages/prng/dist/index.d.ts` exposes only the
+The production PRNG source in `packages/prng/src/index.d.ts` exposes only the
 literal type API. Its private fixed-width arithmetic and validation aliases are
 not exported, and no runtime implementation is shipped. The public operations
 are `Initialize`, `Next`, `ReplayToken`, `RestoreReplay`,

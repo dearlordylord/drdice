@@ -89,5 +89,8 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
+Package source lives in `packages/*/src`. `pnpm build` recreates the ignored
+`packages/*/dist` output, and package packing runs that build automatically.
+
 Maintainer qualification and publishing steps are documented in the
 [release guide](verification/release/README.md).

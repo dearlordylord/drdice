@@ -21,4 +21,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:prng:budget
       - run: pnpm check:dice:budget
+      - run: pnpm check:property-parity:budget
       - run: pnpm check:budgets

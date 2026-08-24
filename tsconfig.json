@@ -11,7 +11,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "packages/*/dist/**/*.d.ts",
+    "packages/*/src/**/*.d.ts",
     "verification/**/*.ts"
   ],
   "exclude": [

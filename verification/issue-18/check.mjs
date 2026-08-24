@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
-const declaration = await readFile(resolve(root, "packages/prng/dist/index.d.ts"), "utf8");
+const declaration = await readFile(resolve(root, "packages/prng/src/index.d.ts"), "utf8");
 const generatedNames = [
   "prng-issue18-transitions-0.d.ts",
   "prng-issue18-transitions-1.d.ts",

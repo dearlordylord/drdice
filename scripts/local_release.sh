@@ -101,6 +101,8 @@ if [[ "$DRY_RUN" != "1" ]]; then
     fail "active GitHub account is '$github_login'; expected '$EXPECTED_GITHUB_LOGIN'"
 fi
 
+pnpm build
+pnpm check:build
 pnpm check:release
 
 release_directory="$(mktemp -d)"
