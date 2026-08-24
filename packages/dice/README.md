@@ -1,24 +1,21 @@
-# @drdice/dice
+# DRDice
 
-Deterministic dice-expression evaluation with matching runtime behavior and
-literal-computing TypeScript types. It uses `@drdice/prng` for reproducible
-randomness.
+Deterministic pseudo-random generation and dice-expression evaluation with
+matching runtime and literal-computing TypeScript APIs.
 
-## Install
+## Quick start
+
+Exact literal result types require TypeScript 7.0.2.
 
 ```sh
 npm install @drdice/prng @drdice/dice
 ```
 
-Exact literal result types require TypeScript 7.0.2. Inputs known only at
-runtime still work normally and receive broader result types.
-
-## Quick start
-
 ```ts
 import { initialize, stateOf as prngStateOf } from "@drdice/prng";
 import { evaluate, rollsOf, stateOf, valueOf } from "@drdice/dice";
 
+// A fixed seed makes the sequence reproducible.
 const initialized = initialize([
   "00000001",
   "00000002",
@@ -27,36 +24,60 @@ const initialized = initialize([
 ] as const);
 
 const d20 = evaluate("d20", prngStateOf(initialized));
-const value = valueOf(d20);
-//    ^? const value: 12
+const d20Value = valueOf(d20);
+//    ^? const d20Value: 12
 
-console.log({ value, rolls: rollsOf(d20), nextState: stateOf(d20) });
+const combinedRoll = evaluate(`4d6 + ${d20Value}`, stateOf(d20));
+const combinedValue = valueOf(combinedRoll);
+//    ^? const combinedValue: 34
+
+console.log({
+  value: combinedValue,
+  rolls: rollsOf(combinedRoll), // faces 5, 6, 6, 5
+  nextState: stateOf(combinedRoll),
+});
 ```
 
-The roll happens at runtime. Because the seed and expression are literals,
-TypeScript also computes the exact result. Pass `stateOf(d20)` to the next
-evaluation to continue the sequence.
+Both calls roll at runtime. Because the seed and expressions are literals,
+TypeScript also knows that the results are `12` and `34`—without you
+writing either expected result. Passing `stateOf(d20)` continues the same
+sequence; reusing an earlier state replays the same rolls.
 
-## Expressions and API
+The lowercase functions run at runtime. Their type counterparts—`Initialize`,
+`Sample`, and `Evaluate`—follow the same deterministic rules in TypeScript.
+Inputs known only at runtime still roll normally and use broader result types
+such as `number` and `EvaluationResult`.
 
-`evaluate(source, state, maximumAttempts?)` supports nonnegative integers,
-`dS` and `NdS` dice terms, parentheses, and left-associative `+` and `-`.
-Examples include `d20`, `4d6 + 3`, and `d6 + (2d6 - 1)`.
+## Seeds and replay
 
-Successful results contain the total, the ordered roll trace, and the next
-generator state. Use `payloadOf`, `valueOf`, `rollsOf`, and `stateOf` to extract
-them. Their type-level counterparts are `Evaluate`, `PayloadOf`, `ValueOf`,
-`RollsOf`, and `StateOf`.
+Pass four eight-digit lowercase hexadecimal words to `initialize` for a
+reproducible sequence. Call `randomSeed()` when you want the host to create a
+fresh seed.
 
-Invalid or overly complex expressions return structured failures without
-silently consuming state. Check `result.ok` before using an extractor when an
-evaluation can fail. Each die receives up to five rejection-sampling attempts
-by default; ordinary game code can omit this option.
+DRDice never mutates a generator state. After a successful evaluation, pass
+`stateOf(result)` to the next `evaluate` call. Check `result.ok` before using
+the extractor functions when an evaluation can fail.
+
+## Core API
+
+`@drdice/prng` exposes `randomSeed`, `initialize`, `next`, `sample`, and
+state/replay helpers, with compile-time counterparts `Initialize`, `Next`, and
+`Sample`.
+
+`@drdice/dice` exposes `evaluate` for expressions such as `d20`, `4d6 + 3`, and
+`d6 + (2d6 - 1)`. Use `valueOf`, `rollsOf`, and `stateOf` after a successful
+evaluation; `ValueOf`, `RollsOf`, and `StateOf` provide the matching type-level
+projections.
+
+Invalid or overly complex expressions return structured failures. Each die gets
+up to five rejection-sampling attempts by default; ordinary game code can omit
+this option.
 
 ## Reproducibility and safety
 
-Reproducing a result requires the same generator state, expression, options,
-and package versions.
+The runtime and type-level implementations are checked against the same
+deterministic examples. Reproducing a result requires the same package versions,
+seed or generator state, dice expression, and options.
 
-DRDice is deterministic, not cryptographic randomness. Do not use it for
-secrets, authentication, security decisions, or wagering.
+DRDice is deterministic, not cryptographic randomness. Use it for games,
+simulations, and tests—not secrets, security decisions, or wagering.

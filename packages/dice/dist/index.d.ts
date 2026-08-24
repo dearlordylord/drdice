@@ -769,4 +769,4 @@ export function rollsOf<const Payload extends DiceEvaluation>(result: Success<Pa
 /** Extract the Next Generator State from a successful runtime evaluation. */
 export function stateOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["nextState"];
 
-export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.3.0"; readonly declarationOnly: false };
+export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.3.1"; readonly declarationOnly: false };

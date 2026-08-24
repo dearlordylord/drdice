@@ -60,7 +60,7 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} packed members differ: ${members.join(", ")}`);
   }
   const manifest = JSON.parse(run("tar", ["-xOf", archive, "package/package.json"], root));
-  if (manifest.name !== record.name || manifest.version !== "0.3.0") {
+  if (manifest.name !== record.name || manifest.version !== "0.3.1") {
     throw new Error(`${record.name} packed identity is incorrect`);
   }
   if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {
