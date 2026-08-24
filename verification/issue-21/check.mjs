@@ -9,6 +9,7 @@ import { oracleStateFromWords } from "../issue-17/oracle.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
+const utf16Boundary = resolve(here, "utf16-boundary.ts");
 const ids = JSON.parse(await readFile(resolve(here, "cases.json"), "utf8"));
 const golden = JSON.parse(await readFile(resolve(root, "verification/issue-20/golden-vectors.json"), "utf8"));
 const byId = new Map(golden.cases.map((vector) => [vector.id, vector]));
@@ -53,7 +54,7 @@ try {
   }
   const version = spawnSync("pnpm", ["exec", "tsc", "--version"], { cwd: root, encoding: "utf8" });
   if (version.status !== 0 || version.stdout.trim() !== "Version 7.0.2") fail(`expected TypeScript 7.0.2, got ${version.stdout.trim()}`);
-  const files = committedNames.map((name) => resolve(root, "verification/generated", name));
+  const files = [utf16Boundary, ...committedNames.map((name) => resolve(root, "verification/generated", name))];
   const checked = spawnSync("pnpm", ["exec", "tsc", "--ignoreConfig", "--pretty", "false", "--strict", "--noEmit", "--target", "ES2020", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--lib", "ES2020,DOM", ...files], { cwd: root, encoding: "utf8" });
   if (checked.status !== 0) fail(`exact arithmetic/static fixtures failed TypeScript 7\n${checked.stdout}\n${checked.stderr}`);
 } finally {

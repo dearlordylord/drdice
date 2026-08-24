@@ -7,11 +7,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 const generatedDirectory = resolve(root, "verification/generated");
 const focusedQuery = resolve(here, "budget.ts");
+const maximumTokenQuery = resolve(here, "budget-max-token.ts");
+const importOnlyQuery = resolve(here, "budget-import-only.ts");
+const utf16Boundary = resolve(here, "utf16-boundary.ts");
 const generatedNames = (await readdir(generatedDirectory)).filter((name) => /^dice-issue21-\d{3}\.d\.ts$/.test(name)).sort();
 const expectedNames = Array.from({ length: 52 }, (_, index) => `dice-issue21-${String(index).padStart(3, "0")}.d.ts`);
 if (JSON.stringify(generatedNames) !== JSON.stringify(expectedNames)) throw new Error(`issue-21 budget artifacts differ; expected ${expectedNames.length}, got ${generatedNames.length}`);
-const artifacts = [focusedQuery, ...generatedNames.map((name) => resolve(generatedDirectory, name))];
-const limits = { maximumCheckMilliseconds: 750, maximumSingleCheckMilliseconds: 1500, maximumCompilerMemoryKiB: 360448, maximumInstantiations: 165000 };
+const artifacts = [focusedQuery, maximumTokenQuery, importOnlyQuery, utf16Boundary, ...generatedNames.map((name) => resolve(generatedDirectory, name))];
+const limits = { maximumCheckMilliseconds: 750, maximumSingleCheckMilliseconds: 1500, maximumCompilerMemoryKiB: 360448, maximumInstantiations: 165000, maximumTokenDeltaInstantiations: 32000 };
 const scoredRuns = Number.parseInt(process.env.DRDICE_DICE_BUDGET_RUNS ?? "1", 10);
 const enforceOperational = process.argv.includes("--reference-runner");
 if (!Number.isInteger(scoredRuns) || scoredRuns < 1) throw new Error("DRDICE_DICE_BUDGET_RUNS must be a positive integer");
@@ -46,5 +49,12 @@ for (const checkers of [1, 4]) {
     if (observed.instantiations.maximum > limits.maximumInstantiations) throw new Error(`${label} instantiations ${observed.instantiations.maximum} exceeds ${limits.maximumInstantiations}`);
     results.push(observed);
   }
+}
+for (const checkers of [1, 4]) {
+  const token = results.find((result) => result.checkers === checkers && result.artifact === relative(root, maximumTokenQuery));
+  const baseline = results.find((result) => result.checkers === checkers && result.artifact === relative(root, importOnlyQuery));
+  if (!token || !baseline) throw new Error(`issue-21 budget did not record maximum-token/import-only results for ${checkers} checkers`);
+  const delta = token.instantiations.maximum - baseline.instantiations.maximum;
+  if (delta > limits.maximumTokenDeltaInstantiations) throw new Error(`${checkers}-checker maximum-token import delta ${delta} exceeds ${limits.maximumTokenDeltaInstantiations}`);
 }
 console.log(JSON.stringify({ schemaVersion: 1, issue: 21, focusedQuery: relative(root, focusedQuery), artifacts: artifacts.map((artifact) => relative(root, artifact)), limits, results }, null, 2));
