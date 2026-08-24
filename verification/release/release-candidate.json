@@ -7,12 +7,16 @@
     "statement": "Release candidate meets the declared TypeScript 7.0.2 semantic, package, packed-boundary, and compiler-budget gates."
   },
   "source": {
-    "measuredCommit": "1b8ed2e19d916bccdc211acb12e51d679becdf6a",
-    "sourceDigest": "a73d1c3351273222aa820678eb47f0a827de5ad5490891e5d992f1e5ae8a3dee",
-    "cleanAtMeasurement": true,
+    "qualifiedCommit": "0f7110d8d0b0782c66aa86860fbd605377370f98",
+    "sourceDigest": "710cbe4efd435defd55d547e70292d5e82d4be3df1ec2decc55002e8bc2a75de",
+    "cleanAtQualification": true,
     "digestExcludes": [
       "verification/release/release-candidate.json"
     ]
+  },
+  "compilerEvidence": {
+    "measuredCommit": "1b8ed2e19d916bccdc211acb12e51d679becdf6a",
+    "statement": "Compiler-budget inputs are unchanged; measurements originate from this source commit."
   },
   "semantic": {
     "prng": {
@@ -1660,6 +1664,6 @@
       }
     ]
   },
-  "reportDigest": "f1f1b60d175036a36d8e674bafa4e2cd11e2a78d8df3c860cea6ea2299fa12f8",
+  "reportDigest": "1a264aed09e30b035ebabd8a16aa0e8cc1b84fdc4473cd78ac4776ce2f091b23",
   "qualification": "v1-release"
 }
