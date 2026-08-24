@@ -16,9 +16,9 @@ import {
  * Sequence Profile, and PRNG schema version.  Any value/consumption/failure
  * semantic change requires a new identity and reviewed vectors.
  */
-export const DICE_SEMANTIC_PROFILE = "dice-v1/utf16-bounded-left-to-right-1";
-export const DICE_SEMANTIC_VERSION = 1;
-export const PRNG_SEQUENCE_PROFILE = "xoshiro128ss-1.1/direct128-msb-rejection-1";
+export const DICE_SEMANTIC_PROFILE = "dice-v2/utf16-bounded-left-to-right-2";
+export const DICE_SEMANTIC_VERSION = 2;
+export const PRNG_SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 
 export const LIMITS = Object.freeze({
   sourceLength: 64,
@@ -30,7 +30,7 @@ export const LIMITS = Object.freeze({
   supportedSideCount: 100,
   arithmeticMagnitude: 100,
   evaluationSteps: 24,
-  rejectionSamplingAttempts: 4,
+  rejectionSamplingAttempts: 5,
 });
 
 export const RESOURCE_DIMENSIONS = Object.freeze([

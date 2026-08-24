@@ -1,6 +1,6 @@
 {
   "name": "@drdice/dice",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Literal-computing dice expression evaluation for TypeScript",
   "type": "module",
   "types": "./dist/index.d.ts",

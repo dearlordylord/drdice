@@ -7,8 +7,8 @@
  */
 import type { GeneratorState as PrngGeneratorState, Sample } from "@drdice/prng";
 
-export const DICE_SEMANTIC_PROFILE: "dice-v1/utf16-bounded-left-to-right-1";
-export const DICE_SEMANTIC_VERSION: 1;
+export const DICE_SEMANTIC_PROFILE: "dice-v2/utf16-bounded-left-to-right-2";
+export const DICE_SEMANTIC_VERSION: 2;
 
 export type Success<Value> = { readonly ok: true; readonly value: Value };
 export type FailureCode =
@@ -107,7 +107,7 @@ type Limits = {
   readonly sourceLength: 64; readonly numericTokenLength: 3; readonly nestingDepth: 4;
   readonly astNodeCount: 15; readonly diceTermCount: 4; readonly dieSampleCount: 8;
   readonly supportedSideCount: 100; readonly arithmeticMagnitude: 100; readonly evaluationSteps: 24;
-  readonly rejectionSamplingAttempts: 4;
+  readonly rejectionSamplingAttempts: 5;
 };
 type L = Limits;
 
@@ -722,4 +722,4 @@ type EvaluateParsed<Source extends string, State, MaximumAttempts extends number
 /** Arithmetic-only stage of the complete literal Evaluate contract. */
 export type Evaluate<Source extends string, State, MaximumAttempts extends number> = EvaluateParsed<Source, State, MaximumAttempts>;
 
-export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.1.0"; readonly declarationOnly: true };
+export type PackageMetadata = { readonly name: "@drdice/dice"; readonly version: "0.2.0"; readonly declarationOnly: true };
