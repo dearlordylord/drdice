@@ -1,0 +1,713 @@
+{
+  "schemaVersion": 1,
+  "corpus": "issue-17-prng-v1",
+  "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+  "canonicalSeed": [
+    "00000001",
+    "00000002",
+    "00000003",
+    "00000004"
+  ],
+  "craftedRejectionState": [
+    "b0e8eac3",
+    "f2d79146",
+    "a51937ed",
+    "21243868"
+  ],
+  "rawWordVector": {
+    "seed": [
+      "00000001",
+      "00000002",
+      "00000003",
+      "00000004"
+    ],
+    "words": [
+      "00002d00",
+      "00000000",
+      "005a7080",
+      "04389d80",
+      "79199d9b",
+      "61963b24",
+      "4cb9b57a",
+      "de9d7431",
+      "de458f35",
+      "fdce1a54"
+    ],
+    "successorStates": [
+      [
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ],
+      [
+        "00003007",
+        "00000405",
+        "00000405",
+        "01800000"
+      ],
+      [
+        "01803402",
+        "00003007",
+        "00083e02",
+        "0020280c"
+      ]
+    ],
+    "transitions": [
+      {
+        "index": 0,
+        "inputState": [
+          "00000001",
+          "00000002",
+          "00000003",
+          "00000004"
+        ],
+        "word": "00002d00",
+        "successorState": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      },
+      {
+        "index": 1,
+        "inputState": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ],
+        "word": "00000000",
+        "successorState": [
+          "00003007",
+          "00000405",
+          "00000405",
+          "01800000"
+        ]
+      },
+      {
+        "index": 2,
+        "inputState": [
+          "00003007",
+          "00000405",
+          "00000405",
+          "01800000"
+        ],
+        "word": "005a7080",
+        "successorState": [
+          "01803402",
+          "00003007",
+          "00083e02",
+          "0020280c"
+        ]
+      },
+      {
+        "index": 3,
+        "inputState": [
+          "01803402",
+          "00003007",
+          "00083e02",
+          "0020280c"
+        ],
+        "word": "04389d80",
+        "successorState": [
+          "01a02c09",
+          "01883a07",
+          "01e80400",
+          "00c05801"
+        ]
+      },
+      {
+        "index": 4,
+        "inputState": [
+          "01a02c09",
+          "01883a07",
+          "01e80400",
+          "00c05801"
+        ],
+        "word": "79199d9b",
+        "successorState": [
+          "00e84e0f",
+          "01c0120e",
+          "103c2609",
+          "4310300a"
+        ]
+      },
+      {
+        "index": 5,
+        "inputState": [
+          "00e84e0f",
+          "01c0120e",
+          "103c2609",
+          "4310300a"
+        ],
+        "word": "61963b24",
+        "successorState": [
+          "42386c0b",
+          "11147a08",
+          "90f07406",
+          "81102216"
+        ]
+      },
+      {
+        "index": 6,
+        "inputState": [
+          "42386c0b",
+          "11147a08",
+          "90f07406",
+          "81102216"
+        ],
+        "word": "4cb9b57a",
+        "successorState": [
+          "d23c3415",
+          "c3dc6205",
+          "fa3c080d",
+          "22c0f480"
+        ]
+      },
+      {
+        "index": 7,
+        "inputState": [
+          "d23c3415",
+          "c3dc6205",
+          "fa3c080d",
+          "22c0f480"
+        ],
+        "word": "de9d7431",
+        "successorState": [
+          "3320a290",
+          "ebdc5e1d",
+          "90c43618",
+          "e4b42f08"
+        ]
+      },
+      {
+        "index": 8,
+        "inputState": [
+          "3320a290",
+          "ebdc5e1d",
+          "90c43618",
+          "e4b42f08"
+        ],
+        "word": "de458f35",
+        "successorState": [
+          "3c48d385",
+          "4838ca95",
+          "1b58ae88",
+          "4388a87b"
+        ]
+      },
+      {
+        "index": 9,
+        "inputState": [
+          "3c48d385",
+          "4838ca95",
+          "1b58ae88",
+          "4388a87b"
+        ],
+        "word": "fdce1a54",
+        "successorState": [
+          "37f8b16b",
+          "6f28b798",
+          "5685570d",
+          "8317705d"
+        ]
+      }
+    ]
+  },
+  "sampling": [
+    {
+      "id": "bound-one-consumes-one",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 1,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "bound-two",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 2,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "bound-three-non-power",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 3,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "bound-eight-power",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 8,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "bound-sixteen-power",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 16,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "bound-six-non-power",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 6,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "bound-one-hundred",
+      "inputState": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "bound": 100,
+      "maximumAttempts": 1,
+      "attemptWords": ["00002d00"],
+      "candidates": [0],
+      "attemptStates": [[
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]],
+      "expected": {
+        "ok": true,
+        "value": 0,
+        "attempts": 1,
+        "state": [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      }
+    },
+    {
+      "id": "forced-rejection-then-acceptance",
+      "inputState": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "bound": 7,
+      "maximumAttempts": 2,
+      "attemptWords": ["f244aa57", "ddb72649"],
+      "candidates": [7, 6],
+      "attemptStates": [
+        [
+          "631b43ed",
+          "e7264c68",
+          "bad3512e",
+          "9d49769f"
+        ],
+        [
+          "1974791a",
+          "3eee5eab",
+          "9550c2c3",
+          "79d7bbd3"
+        ]
+      ],
+      "expected": {
+        "ok": true,
+        "value": 6,
+        "attempts": 2,
+        "state": [
+          "1974791a",
+          "3eee5eab",
+          "9550c2c3",
+          "79d7bbd3"
+        ]
+      }
+    },
+    {
+      "id": "exact-exhaustion-0",
+      "inputState": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "bound": 6,
+      "maximumAttempts": 0,
+      "attemptWords": [],
+      "candidates": [],
+      "attemptStates": [],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "maximumAttempts": 0,
+          "attempts": 0,
+          "state": [
+            "b0e8eac3",
+            "f2d79146",
+            "a51937ed",
+            "21243868"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exact-exhaustion-1",
+      "inputState": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "bound": 6,
+      "maximumAttempts": 1,
+      "attemptWords": ["f244aa57"],
+      "candidates": [7],
+      "attemptStates": [[
+        "631b43ed",
+        "e7264c68",
+        "bad3512e",
+        "9d49769f"
+      ]],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "maximumAttempts": 1,
+          "attempts": 1,
+          "state": [
+            "631b43ed",
+            "e7264c68",
+            "bad3512e",
+            "9d49769f"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exact-exhaustion-2",
+      "inputState": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "bound": 6,
+      "maximumAttempts": 2,
+      "attemptWords": ["f244aa57", "ddb72649"],
+      "candidates": [7, 6],
+      "attemptStates": [
+        [
+          "631b43ed",
+          "e7264c68",
+          "bad3512e",
+          "9d49769f"
+        ],
+        [
+          "1974791a",
+          "3eee5eab",
+          "9550c2c3",
+          "79d7bbd3"
+        ]
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "maximumAttempts": 2,
+          "attempts": 2,
+          "state": [
+            "1974791a",
+            "3eee5eab",
+            "9550c2c3",
+            "79d7bbd3"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exact-exhaustion-3",
+      "inputState": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "bound": 6,
+      "maximumAttempts": 3,
+      "attemptWords": ["f244aa57", "ddb72649", "f3520885"],
+      "candidates": [7, 6, 7],
+      "attemptStates": [
+        [
+          "631b43ed",
+          "e7264c68",
+          "bad3512e",
+          "9d49769f"
+        ],
+        [
+          "1974791a",
+          "3eee5eab",
+          "9550c2c3",
+          "79d7bbd3"
+        ],
+        [
+          "5e4d9c62",
+          "b2cae572",
+          "5099edd9",
+          "cf2bc239"
+        ]
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "maximumAttempts": 3,
+          "attempts": 3,
+          "state": [
+            "5e4d9c62",
+            "b2cae572",
+            "5099edd9",
+            "cf2bc239"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exact-exhaustion-4",
+      "inputState": [
+        "b0e8eac3",
+        "f2d79146",
+        "a51937ed",
+        "21243868"
+      ],
+      "bound": 6,
+      "maximumAttempts": 4,
+      "attemptWords": ["f244aa57", "ddb72649", "f3520885", "d52a872e"],
+      "candidates": [7, 6, 7, 6],
+      "attemptStates": [
+        [
+          "631b43ed",
+          "e7264c68",
+          "bad3512e",
+          "9d49769f"
+        ],
+        [
+          "1974791a",
+          "3eee5eab",
+          "9550c2c3",
+          "79d7bbd3"
+        ],
+        [
+          "5e4d9c62",
+          "b2cae572",
+          "5099edd9",
+          "cf2bc239"
+        ],
+        [
+          "23acbb29",
+          "bc1e94c9",
+          "9b1e95bb",
+          "093a5bef"
+        ]
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "maximumAttempts": 4,
+          "attempts": 4,
+          "state": [
+            "23acbb29",
+            "bc1e94c9",
+            "9b1e95bb",
+            "093a5bef"
+          ]
+        }
+      }
+    }
+  ],
+  "replay": {
+    "token": {
+      "schemaVersion": 1,
+      "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+      "seed": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ]
+    },
+    "restartState": [
+      "00000001",
+      "00000002",
+      "00000003",
+      "00000004"
+    ],
+    "firstWord": "00002d00",
+    "firstSuccessorState": [
+      "00000007",
+      "00000000",
+      "00000402",
+      "00003000"
+    ],
+    "serializedState": {
+      "schemaVersion": 1,
+      "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+      "state": [
+        "00000007",
+        "00000000",
+        "00000402",
+        "00003000"
+      ]
+    },
+    "resumedWord": "00000000",
+    "resumedSuccessorState": [
+      "00003007",
+      "00000405",
+      "00000405",
+      "01800000"
+    ]
+  }
+}
