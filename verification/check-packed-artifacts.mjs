@@ -69,6 +69,29 @@ try {
     if (manifest.exports["."].default !== undefined || manifest.main !== undefined) {
       throw new Error(`${packageInfo.name} exposes an unsupported runtime entry point`);
     }
+    const declaredFiles = new Set((manifest.files ?? []).map((entry) => String(entry).replaceAll("\\", "/")));
+    const expectedAllowlist = new Set(["dist/index.d.ts", "README.md", "LICENSE"]);
+    if (declaredFiles.size !== expectedAllowlist.size || [...expectedAllowlist].some((entry) => !declaredFiles.has(entry))) {
+      throw new Error(`${packageInfo.name} does not declare exactly its packed allowlist: ${JSON.stringify(manifest.files)}`);
+    }
+
+    const declaration = await readFile(resolve(directory, "dist/index.d.ts"), "utf8");
+    if (packageInfo.name === "@drdice/dice") {
+      const prngDeclaration = await readFile(resolve(root, "packages/prng/dist/index.d.ts"), "utf8");
+      const prngExports = new Set([...prngDeclaration.matchAll(/^export\s+(?:const|type)\s+(\w+)/gm)].map(([, name]) => name));
+      if (/\bexport\s+\*\s+from\s+["']@drdice\/prng["']/.test(declaration)) {
+        throw new Error("@drdice/dice re-exports the PRNG declaration root");
+      }
+      for (const match of declaration.matchAll(/\bexport\s+(?:type\s+)?\{([^}]*)\}\s+from\s+["']@drdice\/prng["']/g)) {
+        const names = match[1].split(",").map((entry) => entry.trim().split(/\s+as\s+/i)[0]).filter(Boolean);
+        if (names.some((name) => prngExports.has(name))) {
+          throw new Error(`@drdice/dice re-exports PRNG-owned type(s): ${names.join(", ")}`);
+        }
+      }
+      if (!/import type\s+\{[^}]*\b(?:GeneratorState|Sample)\b[^}]*\}\s+from\s+["']@drdice\/prng["']/s.test(declaration)) {
+        throw new Error("@drdice/dice declaration root no longer records its PRNG type dependency");
+      }
+    }
   }
   console.log("Packed artifacts contain only the two root declaration allowlists.");
 } finally {

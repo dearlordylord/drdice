@@ -1,6 +1,6 @@
 import { access, mkdtemp, mkdir, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, resolve } from "node:path";
+import { basename, dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
@@ -64,6 +64,11 @@ const inspectArchive = (record, archive) => {
   if (manifest.types !== "./dist/index.d.ts" || manifest.exports["."]?.types !== "./dist/index.d.ts") {
     throw new Error(`${record.name} does not expose its declaration root`);
   }
+  const declaredMembers = new Set((manifest.files ?? []).map((entry) => `package/${String(entry).replaceAll("\\", "/")}`));
+  if (declaredMembers.size !== 3 || !declaredMembers.has("package/dist/index.d.ts")
+    || !declaredMembers.has("package/README.md") || !declaredMembers.has("package/LICENSE")) {
+    throw new Error(`${record.name} does not declare the curated declaration/documentation allowlist`);
+  }
   if (manifest.exports["."].default !== undefined || manifest.main !== undefined) {
     throw new Error(`${record.name} unexpectedly exposes a runtime entry point`);
   }
@@ -101,8 +106,18 @@ try {
   );
   await writeFile(
     resolve(consumerRoot, "src/root-import.ts"),
-    `import type { PackageMetadata as PrngPackageMetadata } from "@drdice/prng";
-import type { PackageMetadata as DicePackageMetadata } from "@drdice/dice";
+    `import type {
+  GeneratorState as PrngGeneratorState,
+  PackageMetadata as PrngPackageMetadata,
+  Sample,
+  Success as PrngSuccess,
+} from "@drdice/prng";
+import type {
+  DieSample,
+  Evaluate,
+  PackageMetadata as DicePackageMetadata,
+  Success as DiceSuccess,
+} from "@drdice/dice";
 
 type Assert<Value extends true> = Value;
 type Equal<Left, Right> =
@@ -111,12 +126,55 @@ type Equal<Left, Right> =
 
 export type PrngRootAssertion = Assert<Equal<PrngPackageMetadata["name"], "@drdice/prng">>;
 export type DiceRootAssertion = Assert<Equal<DicePackageMetadata["name"], "@drdice/dice">>;
+
+type ConsumerState = PrngGeneratorState<readonly [
+  "00000001",
+  "00000002",
+  "00000003",
+  "00000004",
+]>;
+type ExpectedSample = PrngSuccess<{
+  readonly value: 0;
+  readonly state: PrngGeneratorState<readonly [
+    "00000007",
+    "00000000",
+    "00000402",
+    "00003000",
+  ]>;
+  readonly attempts: 1;
+}>;
+export type PrngRootTypeAssertion = Assert<Equal<Sample<ConsumerState, 1, 1>, ExpectedSample>>;
+
+type ExpectedDiceEvaluation = DiceSuccess<{
+  readonly total: 1;
+  readonly rollTrace: [DieSample<1, 1>];
+  readonly successorState: PrngGeneratorState<readonly [
+    "00000007",
+    "00000000",
+    "00000402",
+    "00003000",
+  ]>;
+}>;
+export type DiceReferencesPrngState = Assert<Equal<
+  Evaluate<"d1", ConsumerState, 1>,
+  ExpectedDiceEvaluation
+>>;
 `,
     "utf8",
   );
   await writeFile(
-    resolve(consumerRoot, "src/deep-import.ts"),
+    resolve(consumerRoot, "src/deep-import-prng.ts"),
     'import type { PackageMetadata } from "@drdice/prng/dist/index";\nexport type Unsupported = PackageMetadata;\n',
+    "utf8",
+  );
+  await writeFile(
+    resolve(consumerRoot, "src/deep-import-dice.ts"),
+    'import type { PackageMetadata } from "@drdice/dice/dist/index";\nexport type Unsupported = PackageMetadata;\n',
+    "utf8",
+  );
+  await writeFile(
+    resolve(consumerRoot, "src/dice-reexport.ts"),
+    'import type { GeneratorState } from "@drdice/dice";\nexport type Unsupported = GeneratorState;\n',
     "utf8",
   );
 
@@ -128,7 +186,11 @@ export type DiceRootAssertion = Assert<Equal<DicePackageMetadata["name"], "@drdi
   if (!installedPrng.startsWith(temporary) || !installedDice.startsWith(temporary)) {
     throw new Error(`consumer resolved outside its isolated install: ${installedPrng}; ${installedDice}`);
   }
-  if (installedPrng.includes("/workspace/typescript/drdice-issue16/packages") || installedDice.includes("/workspace/typescript/drdice-issue16/packages")) {
+  const workspacePackageRoots = await Promise.all(packageRecords.map(async (record) => realpath(resolve(root, record.directory))));
+  const isWorkspacePackage = (candidate) => workspacePackageRoots.some((workspacePackageRoot) => (
+    candidate === workspacePackageRoot || candidate.startsWith(`${workspacePackageRoot}${sep}`)
+  ));
+  if (isWorkspacePackage(installedPrng) || isWorkspacePackage(installedDice)) {
     throw new Error("consumer unexpectedly resolved a workspace package instead of a packed artifact");
   }
   await access(resolve(installedPrng, "dist/index.d.ts"));
@@ -160,26 +222,40 @@ export type DiceRootAssertion = Assert<Equal<DicePackageMetadata["name"], "@drdi
     throw new Error(`packed root consumer failed to typecheck\n${checked.stdout}\n${checked.stderr}`);
   }
 
-  const deepImport = resolve(consumerRoot, "src/deep-import.ts");
-  const rejected = spawnSync("pnpm", [...compilerOptions, "--traceResolution", deepImport], {
+  for (const packageName of ["prng", "dice"]) {
+    const deepImport = resolve(consumerRoot, `src/deep-import-${packageName}.ts`);
+    const rejected = spawnSync("pnpm", [...compilerOptions, "--traceResolution", deepImport], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    if (rejected.status === 0) {
+      throw new Error(`an undeclared packed @drdice/${packageName} deep import unexpectedly typechecked`);
+    }
+    const diagnostics = `${rejected.stdout}\n${rejected.stderr}`;
+    if (!/(package path|exports|export specifier|package\.json scope|subpath|not exported)/i.test(diagnostics)) {
+      throw new Error(`@drdice/${packageName} deep import did not fail because of the package exports map\n${diagnostics}`);
+    }
+
+    const runtimeProbe = spawnSync(
+      process.execPath,
+      ["--input-type=module", "--eval", `await import('@drdice/${packageName}/dist/index')`],
+      { cwd: consumerRoot, encoding: "utf8" },
+    );
+    if (runtimeProbe.status === 0 || !/ERR_PACKAGE_PATH_NOT_EXPORTED|not defined by exports/i.test(runtimeProbe.stderr)) {
+      throw new Error(`Node did not prove that @drdice/${packageName} deep path is blocked by exports\n${runtimeProbe.stdout}\n${runtimeProbe.stderr}`);
+    }
+  }
+
+  const diceReexport = resolve(consumerRoot, "src/dice-reexport.ts");
+  const reexportRejected = spawnSync("pnpm", [...compilerOptions, diceReexport], {
     cwd: root,
     encoding: "utf8",
   });
-  if (rejected.status === 0) {
-    throw new Error("an undeclared packed-package deep import unexpectedly typechecked");
+  if (reexportRejected.status === 0) {
+    throw new Error("Dice unexpectedly re-exported the PRNG-owned GeneratorState type");
   }
-  const diagnostics = `${rejected.stdout}\n${rejected.stderr}`;
-  if (!/(package path|exports|export specifier|package\.json scope|subpath|not exported)/i.test(diagnostics)) {
-    throw new Error(`deep import did not fail because of the package exports map\n${diagnostics}`);
-  }
-
-  const runtimeProbe = spawnSync(
-    process.execPath,
-    ["--input-type=module", "--eval", "await import('@drdice/prng/dist/index')"],
-    { cwd: consumerRoot, encoding: "utf8" },
-  );
-  if (runtimeProbe.status === 0 || !/ERR_PACKAGE_PATH_NOT_EXPORTED|not defined by exports/i.test(runtimeProbe.stderr)) {
-    throw new Error(`Node did not prove that the packed deep path is blocked by exports\n${runtimeProbe.stdout}\n${runtimeProbe.stderr}`);
+  if (!/has no exported member ['"]?GeneratorState/i.test(`${reexportRejected.stdout}\n${reexportRejected.stderr}`)) {
+    throw new Error(`Dice PRNG re-export rejection was not an explicit curated-root diagnostic\n${reexportRejected.stdout}\n${reexportRejected.stderr}`);
   }
 
   const workspace = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));

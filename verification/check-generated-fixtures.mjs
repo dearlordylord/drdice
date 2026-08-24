@@ -7,46 +7,65 @@ import { spawnSync } from "node:child_process";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const generator = resolve(here, "generate-fixtures.mjs");
+const issue21Generator = resolve(here, "issue-21/generate.mjs");
+const issue22Generator = resolve(here, "issue-22/generate.mjs");
 const committed = resolve(here, "generated");
 const temporary = await mkdtemp(resolve(tmpdir(), "drdice-generated-"));
+const temporaryIssue22 = await mkdtemp(resolve(tmpdir(), "drdice-issue22-generated-"));
 
-try {
-  const generated = spawnSync(process.execPath, [generator, "--output", temporary], {
-    cwd: resolve(here, ".."),
+const fail = (message) => {
+  throw new Error(`[generated fixtures] ${message}`);
+};
+
+const runGenerator = (script, output) => {
+  const generated = spawnSync(process.execPath, [script, "--output", output], {
+    cwd: root,
     encoding: "utf8",
   });
   if (generated.status !== 0) {
-    throw new Error(`fixture generator failed\n${generated.stdout}\n${generated.stderr}`);
+    fail(`${script} failed\n${generated.stdout}\n${generated.stderr}`);
   }
+};
 
+const compareDirectory = async (expectedDirectory, actualDirectory, label) => {
   const [expectedNames, actualNames] = await Promise.all([
-    readdir(committed).then((names) => names.filter((name) => !name.startsWith("dice-issue21-"))),
-    readdir(temporary),
+    readdir(expectedDirectory),
+    readdir(actualDirectory),
   ]);
   expectedNames.sort();
   actualNames.sort();
   if (JSON.stringify(expectedNames) !== JSON.stringify(actualNames)) {
-    throw new Error(
-      `generated fixture set differs: expected ${expectedNames.join(", ")}, got ${actualNames.join(", ")}`,
-    );
+    fail(`${label} set differs: expected ${expectedNames.join(", ")}, got ${actualNames.join(", ")}`);
   }
 
   for (const name of expectedNames) {
     const [expected, actual] = await Promise.all([
-      readFile(resolve(committed, name), "utf8"),
-      readFile(resolve(temporary, name), "utf8"),
+      readFile(resolve(expectedDirectory, name), "utf8"),
+      readFile(resolve(actualDirectory, name), "utf8"),
     ]);
     if (expected !== actual) {
-      throw new Error(`generated fixture ${name} is dirty; run pnpm generate:fixtures and review the diff`);
+      fail(`${label} ${name} is dirty; run pnpm generate:fixtures and review the diff`);
     }
   }
+};
+
+try {
+  /* All three generators are checked in fresh isolated directories.  The
+   * former #21 filename filter made it possible for the top-level gate to
+   * overlook a dirty arithmetic shard; each owner now has an explicit output
+   * directory and exact name/content comparison. */
+  runGenerator(generator, temporary);
+  runGenerator(issue21Generator, temporary);
+  runGenerator(issue22Generator, temporaryIssue22);
+  await compareDirectory(committed, temporary, "root generated fixture");
+  await compareDirectory(resolve(root, "verification/issue-22/generated"), temporaryIssue22, "Issue #22 generated fixture");
 
   const version = spawnSync("pnpm", ["exec", "tsc", "--version"], {
     cwd: root,
     encoding: "utf8",
   });
   if (version.status !== 0 || version.stdout.trim() !== "Version 7.0.2") {
-    throw new Error(`generated fixture gate requires TypeScript 7.0.2, got ${version.stdout.trim()}\n${version.stderr}`);
+    fail(`generated fixture gate requires TypeScript 7.0.2, got ${version.stdout.trim()}\n${version.stderr}`);
   }
 
   const checked = spawnSync(
@@ -55,9 +74,10 @@ try {
     { cwd: root, encoding: "utf8" },
   );
   if (checked.status !== 0) {
-    throw new Error(`generated fixtures failed the pinned TypeScript 7 assertion gate\n${checked.stdout}\n${checked.stderr}`);
+    fail(`generated fixtures failed the pinned TypeScript 7 assertion gate\n${checked.stdout}\n${checked.stderr}`);
   }
-  console.log(`Generated fixtures are clean and typecheck under TypeScript 7 (${expectedNames.length} file).`);
+  console.log("All generated fixture directories are clean and root shards typecheck under TypeScript 7.");
 } finally {
   await rm(temporary, { recursive: true, force: true });
+  await rm(temporaryIssue22, { recursive: true, force: true });
 }
