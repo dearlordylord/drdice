@@ -53,8 +53,8 @@ pnpm local-release
 
 The command installs the exact lockfile, revalidates the source-bound release
 report, creates and checks both packed artifacts, publishes `@drdice/prng`
-before `@drdice/dice`, verifies both registry versions, pushes the `v0.1.0`
-tag, attaches the exact tarballs to the GitHub release, and publishes an
+before `@drdice/dice`, verifies both registry versions, pushes the tag matching
+their shared package version, attaches the exact tarballs to the GitHub release, and publishes an
 existing draft release. It is safe to rerun after a partial registry publish:
 an exact package version that already exists is skipped. Maintainers can check
 the complete path without registry or GitHub mutations with
@@ -67,10 +67,10 @@ profiles, and Dice semantic profiles are separate identities:
 
 | Identity | Current value | Change that requires a new identity and reviewed vectors |
 | --- | --- | --- |
-| package release | `@drdice/prng@0.1.0`, `@drdice/dice@0.1.0` | A published package/API compatibility change |
+| package release | `@drdice/prng@0.2.0`, `@drdice/dice@0.2.0` | A published package/API compatibility change |
 | PRNG schema | `SCHEMA_VERSION = 1` | Changing Replay Token or Serialized Generator State shape or interpretation |
-| PRNG Sequence Profile | `xoshiro128ss-1.1/direct128-msb-rejection-1` | Changing transition, output conversion, bounds, rejection, state consumption, seed mapping, or replay semantics |
-| Dice semantic profile | `dice-v1/utf16-bounded-left-to-right-1`, version `1` | Changing grammar, UTF-16 offsets, limits, parsing, arithmetic/evaluation order, sampling, failure selection, or result values |
+| PRNG Sequence Profile | `xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2` | Changing transition, output conversion, bounds, rejection, state consumption, seed mapping, or replay semantics |
+| Dice semantic profile | `dice-v2/utf16-bounded-left-to-right-2`, version `2` | Changing grammar, UTF-16 offsets, limits, parsing, arithmetic/evaluation order, sampling, failure selection, or result values |
 
 Documentation, checker-performance work, and private refactors may retain an
 identity only when all exact oracle, golden-vector, package-boundary, and

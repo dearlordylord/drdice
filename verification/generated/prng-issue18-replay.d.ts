@@ -24,7 +24,7 @@ type TaggedCanonicalSeed = Seed<CanonicalSeed>;
 type InvalidStateWordInput = { readonly kind: "GeneratorState"; readonly words: readonly ["0000000A", "00000000", "00000000", "00000001"] };
 type InvalidStateNonStringInput = { readonly kind: "GeneratorState"; readonly words: readonly ["00000001", 2, "00000000", "00000001"] };
 type InvalidStateZeroInput = { readonly kind: "GeneratorState"; readonly words: readonly ["00000000", "00000000", "00000000", "00000000"] };
-type FirstSuccessorState = GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]>;
+type FirstSuccessorState = GeneratorState<readonly ["dcd45053", "a4b0c23c", "1026cbfd", "4248c1a7"]>;
 type Replay = ReplayToken<CanonicalSeed>;
 type ExpectedReplay = {
   readonly schemaVersion: 1;
@@ -32,11 +32,11 @@ type ExpectedReplay = {
   readonly seed: CanonicalSeed;
 };
 type _Replay = Assert<Equal<Replay, ExpectedReplay>>;
-type _TaggedInitialize = Assert<Equal<Initialize<TaggedCanonicalSeed>, Success<GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>>>>;
+type _TaggedInitialize = Assert<Equal<Initialize<TaggedCanonicalSeed>, Success<GeneratorState<readonly ["e83c194b", "b7818bc1", "fb0d50b6", "8369c2d9"]>>>>;
 type Restarted = RestoreReplay<Replay>;
-type _Restarted = Assert<Equal<Restarted, Success<GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>>>>;
-type RestartedStep = Next<GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>>;
-type _RestartedStep = Assert<Equal<RestartedStep, Success<{ readonly word: "00002d00"; readonly state: FirstSuccessorState }>>>;
+type _Restarted = Assert<Equal<Restarted, Success<GeneratorState<readonly ["e83c194b", "b7818bc1", "fb0d50b6", "8369c2d9"]>>>>;
+type RestartedStep = Next<GeneratorState<readonly ["e83c194b", "b7818bc1", "fb0d50b6", "8369c2d9"]>>;
+type _RestartedStep = Assert<Equal<RestartedStep, Success<{ readonly word: "e2c8791a"; readonly state: FirstSuccessorState }>>>;
 
 type Serialized = SerializedGeneratorState<FirstSuccessorState["words"]>;
 type ExpectedSerialized = {
@@ -48,7 +48,7 @@ type _Serialized = Assert<Equal<Serialized, ExpectedSerialized>>;
 type Resumed = RestoreState<Serialized>;
 type _Resumed = Assert<Equal<Resumed, Success<FirstSuccessorState>>>;
 type ResumedStep = Next<FirstSuccessorState>;
-type _ResumedStep = Assert<Equal<ResumedStep, Success<{ readonly word: "00000000"; readonly state: GeneratorState<readonly ["00003007", "00000405", "00000405", "01800000"]> }>>>;
+type _ResumedStep = Assert<Equal<ResumedStep, Success<{ readonly word: "891246f3"; readonly state: GeneratorState<readonly ["3a2c53c8", "68425992", "ad76e3ae", "c01cdf37"]> }>>>;
 type RoundTrip = SerializeState<FirstSuccessorState>;
 type _RoundTrip = Assert<Equal<RoundTrip, Success<ExpectedSerialized>>>;
 

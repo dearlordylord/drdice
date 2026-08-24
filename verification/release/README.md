@@ -52,7 +52,7 @@ committed and `pnpm check:release` passes from a clean checkout.
 The cases are deliberately named and closed:
 
 - `baseline` imports the two package roots and measures package overhead;
-- `prng` exercises public bounded sampling at the four-attempt sampling
+- `prng` exercises public bounded sampling at the five-output sampling
   ceiling;
 - `dice` exercises public parsing, arithmetic, and multiple bounded samples;
 - `combined` imports both roots in one source and composes both public APIs;

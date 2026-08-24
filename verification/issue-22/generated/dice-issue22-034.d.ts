@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"d6)", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"unexpected-token", { readonly kind: "syntax"; readonly code: "unexpected-token"; readonly offset: 2; readonly found: ")"; readonly expected: readonly ["EOF"] }>;
-export type unmatched_closing_parenthesis = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"d6 trailing", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Failure<"unexpected-token", { readonly kind: "syntax"; readonly code: "unexpected-token"; readonly offset: 3; readonly found: "t"; readonly expected: readonly ["+", "-", "EOF"] }>;
+export type trailing_token = Assert<Equal<Input, Expected>>;

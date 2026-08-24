@@ -9,7 +9,7 @@ are `Initialize`, `Next`, `ReplayToken`, `RestoreReplay`,
 Replay restoration restarts by initializing the token's Seed. Serialized-state
 restoration resumes the supplied current Generator State without consuming a
 word. Both schemas carry `schemaVersion: 1` and the immutable
-`xoshiro128ss-1.1/direct128-msb-rejection-1` Sequence Profile. Shape, canonical
+`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2` Sequence Profile. Shape, canonical
 lowercase Word32 text, and all-zero checks return structured failures before a
 transition is evaluated.
 

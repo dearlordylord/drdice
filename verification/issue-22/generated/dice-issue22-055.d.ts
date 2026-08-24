@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"101", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 0; readonly dimension: "arithmetic-magnitude"; readonly limit: 100; readonly actual: 101 }>;
-export type arithmetic_one_beyond = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"100", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Success<{ readonly total: 100; readonly rollTrace: []; readonly successorState: GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]> }>;
+export type arithmetic_at_limit = Assert<Equal<Input, Expected>>;

@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"8d5", GeneratorState<readonly ["f6d4d22f", "179359c2", "e89fce39", "dc482244"]>, 4>;
-type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 0; readonly dimension: "evaluation-steps"; readonly limit: 24; readonly actual: 25; readonly partialTrace: [DieSample<5, 4>, DieSample<5, 5>, DieSample<5, 2>, DieSample<5, 2>, DieSample<5, 4>, DieSample<5, 2>, DieSample<5, 5>, DieSample<5, 4>]; readonly successorState: GeneratorState<readonly ["c22deee4", "3c929a21", "36861b80", "ea3ff13a"]> }>;
-export type post_consumption_dynamic_steps = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"d7", GeneratorState<readonly ["b0e8eac3", "f2d79146", "a51937ed", "21243868"]>, 2>;
+type Expected = Success<{ readonly total: 5; readonly rollTrace: [DieSample<7, 5>]; readonly successorState: GeneratorState<readonly ["631b43ed", "e7264c68", "bad3512e", "9d49769f"]> }>;
+export type forced_rejection_then_acceptance = Assert<Equal<Input, Expected>>;

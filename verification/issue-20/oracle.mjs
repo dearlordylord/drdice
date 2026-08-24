@@ -516,7 +516,7 @@ const stateFailureWithContext = (state) => {
 };
 
 /**
- * Evaluate the complete bounded v1 grammar.  This is the oracle's public
+ * Evaluate the complete bounded v2 semantics. This is the oracle's public
  * verification seam; package code is intentionally absent from this module.
  */
 export const oracleEvaluate = (source, state, maximumAttempts) => {

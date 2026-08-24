@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"(((((d1)))))", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 4; readonly dimension: "nesting-depth"; readonly limit: 4; readonly actual: 5 }>;
-export type nesting_one_beyond = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"1000", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 0; readonly dimension: "numeric-token-length"; readonly limit: 3; readonly actual: 4 }>;
+export type numeric_token_one_beyond = Assert<Equal<Input, Expected>>;

@@ -10,8 +10,8 @@ type State = GeneratorState<readonly [
   "00000004",
 ]>;
 
-type SampleResult = Sample<State, 100, 4>;
-type DiceResult = Evaluate<"2d100+2d20", State, 4>;
+type SampleResult = Sample<State, 100, 5>;
+type DiceResult = Evaluate<"2d100+2d20", State, 5>;
 
 type SampleShape = PrngSuccess<{
   readonly value: number;

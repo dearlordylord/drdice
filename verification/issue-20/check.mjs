@@ -25,9 +25,9 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const defaultGoldenFile = path.join(directory, "golden-vectors.json");
 const goldenFile = process.env.DRDICE_DICE_GOLDEN_FILE ?? process.argv[2] ?? defaultGoldenFile;
 
-const PINNED_SEMANTIC_PROFILE = "dice-v1/utf16-bounded-left-to-right-1";
-const PINNED_SEMANTIC_VERSION = 1;
-const PINNED_PRNG_SEQUENCE_PROFILE = "xoshiro128ss-1.1/direct128-msb-rejection-1";
+const PINNED_SEMANTIC_PROFILE = "dice-v2/utf16-bounded-left-to-right-2";
+const PINNED_SEMANTIC_VERSION = 2;
+const PINNED_PRNG_SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 const PINNED_LIMITS = {
   sourceLength: 64,
   numericTokenLength: 3,
@@ -38,7 +38,7 @@ const PINNED_LIMITS = {
   supportedSideCount: 100,
   arithmeticMagnitude: 100,
   evaluationSteps: 24,
-  rejectionSamplingAttempts: 4,
+  rejectionSamplingAttempts: 5,
 };
 const PINNED_TIE_ORDER = [
   "ast-node-count",
@@ -237,6 +237,7 @@ const checkRequiredCases = (byId) => {
     "sample-attempt-fuel-two",
     "sample-attempt-fuel-three",
     "sample-attempt-fuel-four",
+    "sample-attempt-fuel-five",
     "invalid-state-shape",
     "invalid-state-word",
     "invalid-state-zero",
@@ -257,8 +258,8 @@ const checkRequiredCases = (byId) => {
     "arithmetic-evaluation-tie",
   ];
   for (const id of required) assert(byId.has(id), `required golden case ${id} is missing`);
-  for (let fuel = 0; fuel <= 4; fuel += 1) {
-    const vector = byId.get(`sample-attempt-fuel-${["zero", "one", "two", "three", "four"][fuel]}`)
+  for (let fuel = 0; fuel <= 5; fuel += 1) {
+    const vector = byId.get(`sample-attempt-fuel-${["zero", "one", "two", "three", "four", "five"][fuel]}`)
       ?? (fuel === 1 ? byId.get("single-die-one") : undefined);
     assert(vector && vector.maximumAttempts === fuel, `literal sample-fuel coverage is missing maximumAttempts=${fuel}`);
   }
@@ -292,7 +293,7 @@ const checkBoundaries = (byId) => {
     ["supported-sides-one-beyond", "supported-side-count", 100, 101],
     ["arithmetic-one-beyond", "arithmetic-magnitude", 100, 101],
     ["evaluation-steps-one-beyond", "evaluation-steps", 24, 25],
-    ["rejection-fuel-one-beyond", "rejection-sampling-attempts", 4, 5],
+    ["rejection-fuel-one-beyond", "rejection-sampling-attempts", 5, 6],
   ];
   for (const [id, dimension, limit, actual] of expectations) {
     const vector = byId.get(id);

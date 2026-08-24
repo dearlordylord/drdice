@@ -10,7 +10,7 @@ type State = GeneratorState<readonly [
   "00000004",
 ]>;
 
-type Result = Evaluate<"4d100+2d20-3", State, 4>;
+type Result = Evaluate<"4d100+2d20-3", State, 5>;
 type Expected = Success<{
   readonly total: number;
   readonly rollTrace: [

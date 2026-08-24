@@ -6,12 +6,12 @@ publishable packages and is not a runtime API.
 The immutable Dice semantic identity is:
 
 ```text
-dice-v1/utf16-bounded-left-to-right-1
+dice-v2/utf16-bounded-left-to-right-2
 ```
 
 It is deliberately distinct from the package version, the PRNG schema version,
 and the PRNG Sequence Profile
-`xoshiro128ss-1.1/direct128-msb-rejection-1`. A change to grammar, UTF-16
+`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. A change to grammar, UTF-16
 offsets, parsing, evaluation order, arithmetic, state consumption, failure
 selection, or any result value requires a new Dice identity and reviewed old
 and new vectors.

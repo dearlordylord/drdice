@@ -126,11 +126,11 @@ const bySpecialQuery = (bound, maximumAttempts) => specialVectors.find(
 const immediate = bySpecialQuery(1, 1);
 assert(immediate?.result.ok && immediate.result.value.value === 0 && immediate.result.value.attempts === 1, "bound one must consume one attempt and return zero");
 const rejection = specialVectors.find((vector) => vector.bound === 7 && vector.maximumAttempts === 2);
-assert(rejection?.result.ok && rejection.result.value.value === 6 && rejection.result.value.attempts === 2, "forced rejection must reject then accept with exact advancement");
+assert(rejection?.result.ok && rejection.result.value.value === 4 && rejection.result.value.attempts === 1, "forced rejection must reuse the same output word and advance once");
 const exhaustedZero = bySpecialQuery(6, 0);
 assert(exhaustedZero && !exhaustedZero.result.ok && exhaustedZero.result.code === "sampling-attempts-exhausted" && exhaustedZero.result.details.attempts === 0, "zero fuel must exhaust without advancement");
-const exhaustedFour = bySpecialQuery(6, 4);
-assert(exhaustedFour && !exhaustedFour.result.ok && exhaustedFour.result.code === "sampling-attempts-exhausted" && exhaustedFour.result.details.attempts === 4, "four rejected attempts must report exact exhaustion advancement");
+const exhaustedFive = bySpecialQuery(65, 5);
+assert(exhaustedFive && !exhaustedFive.result.ok && exhaustedFive.result.code === "sampling-attempts-exhausted" && exhaustedFive.result.details.attempts === 5, "five rejected output words must report exact exhaustion advancement");
 assert(specialVectors.some((vector) => vector.result.code === "invalid-state-shape"), "invalid state shape precedence fixture is missing");
 assert(specialVectors.some((vector) => vector.result.code === "invalid-state-word"), "invalid state word precedence fixture is missing");
 assert(specialVectors.some((vector) => vector.result.code === "invalid-state-zero"), "invalid state zero precedence fixture is missing");

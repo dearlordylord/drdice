@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"01", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"leading-zero", { readonly kind: "syntax"; readonly code: "leading-zero"; readonly offset: 0; readonly found: "1"; readonly expected: readonly ["canonical-integer"] }>;
-export type leading_zero_integer = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"(d6", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Failure<"expected-closing-parenthesis", { readonly kind: "syntax"; readonly code: "expected-closing-parenthesis"; readonly offset: 3; readonly found: "eof"; readonly expected: readonly [")"] }>;
+export type expected_closing_parenthesis = Assert<Equal<Input, Expected>>;

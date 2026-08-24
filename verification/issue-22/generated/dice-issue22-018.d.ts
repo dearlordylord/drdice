@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"d7", GeneratorState<readonly ["b0e8eac3", "f2d79146", "a51937ed", "21243868"]>, 2>;
-type Expected = Success<{ readonly total: 7; readonly rollTrace: [DieSample<7, 7>]; readonly successorState: GeneratorState<readonly ["1974791a", "3eee5eab", "9550c2c3", "79d7bbd3"]> }>;
-export type forced_rejection_then_acceptance = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"d1", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 5>;
+type Expected = Success<{ readonly total: 1; readonly rollTrace: [DieSample<1, 1>]; readonly successorState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
+export type sample_attempt_fuel_five = Assert<Equal<Input, Expected>>;

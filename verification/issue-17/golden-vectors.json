@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "corpus": "issue-17-prng-v1",
-  "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+  "corpus": "prng-v2",
+  "sequenceProfile": "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2",
   "canonicalSeed": [
     "00000001",
     "00000002",
@@ -22,196 +22,196 @@
       "00000004"
     ],
     "words": [
-      "00002d00",
-      "00000000",
-      "005a7080",
-      "04389d80",
-      "79199d9b",
-      "61963b24",
-      "4cb9b57a",
-      "de9d7431",
-      "de458f35",
-      "fdce1a54"
+      "e2c8791a",
+      "891246f3",
+      "d4df5524",
+      "b08ff665",
+      "925a6b9c",
+      "836c24aa",
+      "cfe4f018",
+      "ff234fba",
+      "2027d8ca",
+      "5ffd9895"
     ],
     "successorStates": [
       [
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
+        "dcd45053",
+        "a4b0c23c",
+        "1026cbfd",
+        "4248c1a7"
       ],
       [
-        "00003007",
-        "00000405",
-        "00000405",
-        "01800000"
+        "3a2c53c8",
+        "68425992",
+        "ad76e3ae",
+        "c01cdf37"
       ],
       [
-        "01803402",
-        "00003007",
-        "00083e02",
-        "0020280c"
+        "9272d56d",
+        "ff18e9f4",
+        "13e99466",
+        "f4352d42"
       ]
     ],
     "transitions": [
       {
         "index": 0,
         "inputState": [
-          "00000001",
-          "00000002",
-          "00000003",
-          "00000004"
+          "e83c194b",
+          "b7818bc1",
+          "fb0d50b6",
+          "8369c2d9"
         ],
-        "word": "00002d00",
+        "word": "e2c8791a",
         "successorState": [
-          "00000007",
-          "00000000",
-          "00000402",
-          "00003000"
+          "dcd45053",
+          "a4b0c23c",
+          "1026cbfd",
+          "4248c1a7"
         ]
       },
       {
         "index": 1,
         "inputState": [
-          "00000007",
-          "00000000",
-          "00000402",
-          "00003000"
+          "dcd45053",
+          "a4b0c23c",
+          "1026cbfd",
+          "4248c1a7"
         ],
-        "word": "00000000",
+        "word": "891246f3",
         "successorState": [
-          "00003007",
-          "00000405",
-          "00000405",
-          "01800000"
+          "3a2c53c8",
+          "68425992",
+          "ad76e3ae",
+          "c01cdf37"
         ]
       },
       {
         "index": 2,
         "inputState": [
-          "00003007",
-          "00000405",
-          "00000405",
-          "01800000"
+          "3a2c53c8",
+          "68425992",
+          "ad76e3ae",
+          "c01cdf37"
         ],
-        "word": "005a7080",
+        "word": "d4df5524",
         "successorState": [
-          "01803402",
-          "00003007",
-          "00083e02",
-          "0020280c"
+          "9272d56d",
+          "ff18e9f4",
+          "13e99466",
+          "f4352d42"
         ]
       },
       {
         "index": 3,
         "inputState": [
-          "01803402",
-          "00003007",
-          "00083e02",
-          "0020280c"
+          "9272d56d",
+          "ff18e9f4",
+          "13e99466",
+          "f4352d42"
         ],
-        "word": "04389d80",
+        "word": "b08ff665",
         "successorState": [
-          "01a02c09",
-          "01883a07",
-          "01e80400",
-          "00c05801"
+          "995f11db",
+          "7e83a8ff",
+          "b048a90b",
+          "6e25b059"
         ]
       },
       {
         "index": 4,
         "inputState": [
-          "01a02c09",
-          "01883a07",
-          "01e80400",
-          "00c05801"
+          "995f11db",
+          "7e83a8ff",
+          "b048a90b",
+          "6e25b059"
         ],
-        "word": "79199d9b",
+        "word": "925a6b9c",
         "successorState": [
-          "00e84e0f",
-          "01c0120e",
-          "103c2609",
-          "4310300a"
+          "89f9097d",
+          "5794102f",
+          "2e4646d0",
+          "30c53085"
         ]
       },
       {
         "index": 5,
         "inputState": [
-          "00e84e0f",
-          "01c0120e",
-          "103c2609",
-          "4310300a"
+          "89f9097d",
+          "5794102f",
+          "2e4646d0",
+          "30c53085"
         ],
-        "word": "61963b24",
+        "word": "836c24aa",
         "successorState": [
-          "42386c0b",
-          "11147a08",
-          "90f07406",
-          "81102216"
+          "eea829d7",
+          "f02b5f82",
+          "8f9f11ad",
+          "8905533a"
         ]
       },
       {
         "index": 6,
         "inputState": [
-          "42386c0b",
-          "11147a08",
-          "90f07406",
-          "81102216"
+          "eea829d7",
+          "f02b5f82",
+          "8f9f11ad",
+          "8905533a"
         ],
-        "word": "4cb9b57a",
+        "word": "cfe4f018",
         "successorState": [
-          "d23c3415",
-          "c3dc6205",
-          "fa3c080d",
-          "22c0f480"
+          "9786256f",
+          "911c67f8",
+          "37883c7a",
+          "7065c3c9"
         ]
       },
       {
         "index": 7,
         "inputState": [
-          "d23c3415",
-          "c3dc6205",
-          "fa3c080d",
-          "22c0f480"
+          "9786256f",
+          "911c67f8",
+          "37883c7a",
+          "7065c3c9"
         ],
-        "word": "de9d7431",
+        "word": "ff234fba",
         "successorState": [
-          "3320a290",
-          "ebdc5e1d",
-          "90c43618",
-          "e4b42f08"
+          "76ff815e",
+          "31127eed",
+          "98c1e915",
+          "cd218f0b"
         ]
       },
       {
         "index": 8,
         "inputState": [
-          "3320a290",
-          "ebdc5e1d",
-          "90c43618",
-          "e4b42f08"
+          "76ff815e",
+          "31127eed",
+          "98c1e915",
+          "cd218f0b"
         ],
-        "word": "de458f35",
+        "word": "2027d8ca",
         "successorState": [
-          "3c48d385",
-          "4838ca95",
-          "1b58ae88",
-          "4388a87b"
+          "8acc70b8",
+          "df2c16a6",
+          "cac3b24b",
+          "9f8f37e1"
         ]
       },
       {
         "index": 9,
         "inputState": [
-          "3c48d385",
-          "4838ca95",
-          "1b58ae88",
-          "4388a87b"
+          "8acc70b8",
+          "df2c16a6",
+          "cac3b24b",
+          "9f8f37e1"
         ],
-        "word": "fdce1a54",
+        "word": "5ffd9895",
         "successorState": [
-          "37f8b16b",
-          "6f28b798",
-          "5685570d",
-          "8317705d"
+          "ca6f51ff",
+          "9f23d455",
+          "18228ef3",
+          "190a3a05"
         ]
       }
     ]
@@ -227,14 +227,17 @@
       ],
       "bound": 1,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -245,7 +248,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "bound-two",
@@ -257,14 +265,17 @@
       ],
       "bound": 2,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -275,7 +286,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "bound-three-non-power",
@@ -287,14 +303,17 @@
       ],
       "bound": 3,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -305,7 +324,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "bound-eight-power",
@@ -317,14 +341,17 @@
       ],
       "bound": 8,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -335,7 +362,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "bound-sixteen-power",
@@ -347,14 +379,17 @@
       ],
       "bound": 16,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -365,7 +400,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "bound-six-non-power",
@@ -377,14 +417,17 @@
       ],
       "bound": 6,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -395,7 +438,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "bound-one-hundred",
@@ -407,14 +455,17 @@
       ],
       "bound": 100,
       "maximumAttempts": 1,
-      "attemptWords": ["00002d00"],
-      "candidates": [0],
-      "attemptStates": [[
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
-      ]],
+      "attemptWords": [
+        "00002d00"
+      ],
+      "attemptStates": [
+        [
+          "00000007",
+          "00000000",
+          "00000402",
+          "00003000"
+        ]
+      ],
       "expected": {
         "ok": true,
         "value": 0,
@@ -425,7 +476,12 @@
           "00000402",
           "00003000"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          0
+        ]
+      ]
     },
     {
       "id": "forced-rejection-then-acceptance",
@@ -437,46 +493,47 @@
       ],
       "bound": 7,
       "maximumAttempts": 2,
-      "attemptWords": ["f244aa57", "ddb72649"],
-      "candidates": [7, 6],
+      "attemptWords": [
+        "f244aa57"
+      ],
       "attemptStates": [
         [
           "631b43ed",
           "e7264c68",
           "bad3512e",
           "9d49769f"
-        ],
-        [
-          "1974791a",
-          "3eee5eab",
-          "9550c2c3",
-          "79d7bbd3"
         ]
       ],
       "expected": {
         "ok": true,
-        "value": 6,
-        "attempts": 2,
+        "value": 4,
+        "attempts": 1,
         "state": [
-          "1974791a",
-          "3eee5eab",
-          "9550c2c3",
-          "79d7bbd3"
+          "631b43ed",
+          "e7264c68",
+          "bad3512e",
+          "9d49769f"
         ]
-      }
+      },
+      "candidateChunks": [
+        [
+          7,
+          4
+        ]
+      ]
     },
     {
       "id": "exact-exhaustion-0",
       "inputState": [
-        "b0e8eac3",
-        "f2d79146",
-        "a51937ed",
-        "21243868"
+        "8615d1a1",
+        "16f6c103",
+        "cbc1fbff",
+        "055c3220"
       ],
-      "bound": 6,
+      "bound": 65,
       "maximumAttempts": 0,
       "attemptWords": [],
-      "candidates": [],
+      "candidateChunks": [],
       "attemptStates": [],
       "expected": {
         "ok": false,
@@ -485,10 +542,10 @@
           "maximumAttempts": 0,
           "attempts": 0,
           "state": [
-            "b0e8eac3",
-            "f2d79146",
-            "a51937ed",
-            "21243868"
+            "8615d1a1",
+            "16f6c103",
+            "cbc1fbff",
+            "055c3220"
           ]
         }
       }
@@ -496,21 +553,32 @@
     {
       "id": "exact-exhaustion-1",
       "inputState": [
-        "b0e8eac3",
-        "f2d79146",
-        "a51937ed",
-        "21243868"
+        "8615d1a1",
+        "16f6c103",
+        "cbc1fbff",
+        "055c3220"
       ],
-      "bound": 6,
+      "bound": 65,
       "maximumAttempts": 1,
-      "attemptWords": ["f244aa57"],
-      "candidates": [7],
-      "attemptStates": [[
-        "631b43ed",
-        "e7264c68",
-        "bad3512e",
-        "9d49769f"
-      ]],
+      "attemptWords": [
+        "aff6c581"
+      ],
+      "candidateChunks": [
+        [
+          87,
+          125,
+          88,
+          88
+        ]
+      ],
+      "attemptStates": [
+        [
+          "95bf2282",
+          "5b22eb5d",
+          "a0562c5e",
+          "5799189d"
+        ]
+      ],
       "expected": {
         "ok": false,
         "code": "sampling-attempts-exhausted",
@@ -518,10 +586,10 @@
           "maximumAttempts": 1,
           "attempts": 1,
           "state": [
-            "631b43ed",
-            "e7264c68",
-            "bad3512e",
-            "9d49769f"
+            "95bf2282",
+            "5b22eb5d",
+            "a0562c5e",
+            "5799189d"
           ]
         }
       }
@@ -529,27 +597,43 @@
     {
       "id": "exact-exhaustion-2",
       "inputState": [
-        "b0e8eac3",
-        "f2d79146",
-        "a51937ed",
-        "21243868"
+        "8615d1a1",
+        "16f6c103",
+        "cbc1fbff",
+        "055c3220"
       ],
-      "bound": 6,
+      "bound": 65,
       "maximumAttempts": 2,
-      "attemptWords": ["f244aa57", "ddb72649"],
-      "candidates": [7, 6],
-      "attemptStates": [
+      "attemptWords": [
+        "aff6c581",
+        "91afaffb"
+      ],
+      "candidateChunks": [
         [
-          "631b43ed",
-          "e7264c68",
-          "bad3512e",
-          "9d49769f"
+          87,
+          125,
+          88,
+          88
         ],
         [
-          "1974791a",
-          "3eee5eab",
-          "9550c2c3",
-          "79d7bbd3"
+          72,
+          107,
+          117,
+          127
+        ]
+      ],
+      "attemptStates": [
+        [
+          "95bf2282",
+          "5b22eb5d",
+          "a0562c5e",
+          "5799189d"
+        ],
+        [
+          "9904d142",
+          "6ecbe581",
+          "703fb4dc",
+          "df9e0065"
         ]
       ],
       "expected": {
@@ -559,10 +643,10 @@
           "maximumAttempts": 2,
           "attempts": 2,
           "state": [
-            "1974791a",
-            "3eee5eab",
-            "9550c2c3",
-            "79d7bbd3"
+            "9904d142",
+            "6ecbe581",
+            "703fb4dc",
+            "df9e0065"
           ]
         }
       }
@@ -570,33 +654,56 @@
     {
       "id": "exact-exhaustion-3",
       "inputState": [
-        "b0e8eac3",
-        "f2d79146",
-        "a51937ed",
-        "21243868"
+        "8615d1a1",
+        "16f6c103",
+        "cbc1fbff",
+        "055c3220"
       ],
-      "bound": 6,
+      "bound": 65,
       "maximumAttempts": 3,
-      "attemptWords": ["f244aa57", "ddb72649", "f3520885"],
-      "candidates": [7, 6, 7],
+      "attemptWords": [
+        "aff6c581",
+        "91afaffb",
+        "ebabd734"
+      ],
+      "candidateChunks": [
+        [
+          87,
+          125,
+          88,
+          88
+        ],
+        [
+          72,
+          107,
+          117,
+          127
+        ],
+        [
+          117,
+          106,
+          122,
+          115
+        ]
+      ],
       "attemptStates": [
         [
-          "631b43ed",
-          "e7264c68",
-          "bad3512e",
-          "9d49769f"
+          "95bf2282",
+          "5b22eb5d",
+          "a0562c5e",
+          "5799189d"
         ],
         [
-          "1974791a",
-          "3eee5eab",
-          "9550c2c3",
-          "79d7bbd3"
+          "9904d142",
+          "6ecbe581",
+          "703fb4dc",
+          "df9e0065"
         ],
         [
-          "5e4d9c62",
-          "b2cae572",
-          "5099edd9",
-          "cf2bc239"
+          "285134a6",
+          "87f0801f",
+          "7ef0679e",
+          "af2f258a"
         ]
       ],
       "expected": {
@@ -606,10 +713,10 @@
           "maximumAttempts": 3,
           "attempts": 3,
           "state": [
-            "5e4d9c62",
-            "b2cae572",
-            "5099edd9",
-            "cf2bc239"
+            "285134a6",
+            "87f0801f",
+            "7ef0679e",
+            "af2f258a"
           ]
         }
       }
@@ -617,39 +724,69 @@
     {
       "id": "exact-exhaustion-4",
       "inputState": [
-        "b0e8eac3",
-        "f2d79146",
-        "a51937ed",
-        "21243868"
+        "8615d1a1",
+        "16f6c103",
+        "cbc1fbff",
+        "055c3220"
       ],
-      "bound": 6,
+      "bound": 65,
       "maximumAttempts": 4,
-      "attemptWords": ["f244aa57", "ddb72649", "f3520885", "d52a872e"],
-      "candidates": [7, 6, 7, 6],
+      "attemptWords": [
+        "aff6c581",
+        "91afaffb",
+        "ebabd734",
+        "a342bc6b"
+      ],
+      "candidateChunks": [
+        [
+          87,
+          125,
+          88,
+          88
+        ],
+        [
+          72,
+          107,
+          117,
+          127
+        ],
+        [
+          117,
+          106,
+          122,
+          115
+        ],
+        [
+          81,
+          80,
+          87,
+          70
+        ]
+      ],
       "attemptStates": [
         [
-          "631b43ed",
-          "e7264c68",
-          "bad3512e",
-          "9d49769f"
+          "95bf2282",
+          "5b22eb5d",
+          "a0562c5e",
+          "5799189d"
         ],
         [
-          "1974791a",
-          "3eee5eab",
-          "9550c2c3",
-          "79d7bbd3"
+          "9904d142",
+          "6ecbe581",
+          "703fb4dc",
+          "df9e0065"
         ],
         [
-          "5e4d9c62",
-          "b2cae572",
-          "5099edd9",
-          "cf2bc239"
+          "285134a6",
+          "87f0801f",
+          "7ef0679e",
+          "af2f258a"
         ],
         [
-          "23acbb29",
-          "bc1e94c9",
-          "9b1e95bb",
-          "093a5bef"
+          "008e9133",
+          "d151d327",
+          "b7a16d38",
+          "fd2ca946"
         ]
       ],
       "expected": {
@@ -659,10 +796,106 @@
           "maximumAttempts": 4,
           "attempts": 4,
           "state": [
-            "23acbb29",
-            "bc1e94c9",
-            "9b1e95bb",
-            "093a5bef"
+            "008e9133",
+            "d151d327",
+            "b7a16d38",
+            "fd2ca946"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exact-exhaustion-5",
+      "inputState": [
+        "8615d1a1",
+        "16f6c103",
+        "cbc1fbff",
+        "055c3220"
+      ],
+      "bound": 65,
+      "maximumAttempts": 5,
+      "attemptWords": [
+        "aff6c581",
+        "91afaffb",
+        "ebabd734",
+        "a342bc6b",
+        "b10eede3"
+      ],
+      "candidateChunks": [
+        [
+          87,
+          125,
+          88,
+          88
+        ],
+        [
+          72,
+          107,
+          117,
+          127
+        ],
+        [
+          117,
+          106,
+          122,
+          115
+        ],
+        [
+          81,
+          80,
+          87,
+          70
+        ],
+        [
+          88,
+          67,
+          93,
+          94
+        ]
+      ],
+      "attemptStates": [
+        [
+          "95bf2282",
+          "5b22eb5d",
+          "a0562c5e",
+          "5799189d"
+        ],
+        [
+          "9904d142",
+          "6ecbe581",
+          "703fb4dc",
+          "df9e0065"
+        ],
+        [
+          "285134a6",
+          "87f0801f",
+          "7ef0679e",
+          "af2f258a"
+        ],
+        [
+          "008e9133",
+          "d151d327",
+          "b7a16d38",
+          "fd2ca946"
+        ],
+        [
+          "2cf3eb52",
+          "667e2f2c",
+          "1489b20b",
+          "ebd30963"
+        ]
+      ],
+      "expected": {
+        "ok": false,
+        "code": "sampling-attempts-exhausted",
+        "details": {
+          "maximumAttempts": 5,
+          "attempts": 5,
+          "state": [
+            "2cf3eb52",
+            "667e2f2c",
+            "1489b20b",
+            "ebd30963"
           ]
         }
       }
@@ -671,7 +904,7 @@
   "replay": {
     "token": {
       "schemaVersion": 1,
-      "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+      "sequenceProfile": "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2",
       "seed": [
         "00000001",
         "00000002",
@@ -680,34 +913,40 @@
       ]
     },
     "restartState": [
-      "00000001",
-      "00000002",
-      "00000003",
-      "00000004"
+      "e83c194b",
+      "b7818bc1",
+      "fb0d50b6",
+      "8369c2d9"
     ],
-    "firstWord": "00002d00",
+    "firstWord": "e2c8791a",
     "firstSuccessorState": [
-      "00000007",
-      "00000000",
-      "00000402",
-      "00003000"
+      "dcd45053",
+      "a4b0c23c",
+      "1026cbfd",
+      "4248c1a7"
     ],
     "serializedState": {
       "schemaVersion": 1,
-      "sequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+      "sequenceProfile": "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2",
       "state": [
-        "00000007",
-        "00000000",
-        "00000402",
-        "00003000"
+        "dcd45053",
+        "a4b0c23c",
+        "1026cbfd",
+        "4248c1a7"
       ]
     },
-    "resumedWord": "00000000",
+    "resumedWord": "891246f3",
     "resumedSuccessorState": [
-      "00003007",
-      "00000405",
-      "00000405",
-      "01800000"
+      "3a2c53c8",
+      "68425992",
+      "ad76e3ae",
+      "c01cdf37"
     ]
-  }
+  },
+  "craftedExhaustionState": [
+    "8615d1a1",
+    "16f6c103",
+    "cbc1fbff",
+    "055c3220"
+  ]
 }

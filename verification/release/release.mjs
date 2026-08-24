@@ -130,12 +130,12 @@ if (budgetVerdict.failures.length > 0) fail(`blocking compiler budgets failed:\n
 
 const report = {
   schemaVersion: 2,
-  qualification: "v1-release",
+  qualification: "release",
   verdict: {
     status: "ready",
     blockingFailures: budgetVerdict.failures,
     advisories: budgetVerdict.advisories,
-    statement: "Release candidate meets the declared TypeScript 7.0.2 semantic, package, packed-boundary, and compiler-budget gates.",
+    statement: "Release candidate meets the declared TypeScript 7.0.2 semantic, usability, package, packed-boundary, and compiler-budget gates.",
   },
   source: {
     qualifiedCommit: measuredCommit,

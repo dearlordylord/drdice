@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<" d6", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"unexpected-token", { readonly kind: "syntax"; readonly code: "unexpected-token"; readonly offset: 0; readonly found: " "; readonly expected: readonly ["dice", "integer", "("] }>;
-export type rejected_em_space = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"d6 +1", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Failure<"unexpected-token", { readonly kind: "syntax"; readonly code: "unexpected-token"; readonly offset: 2; readonly found: " "; readonly expected: readonly ["+", "-", "EOF"] }>;
+export type rejected_nbsp = Assert<Equal<Input, Expected>>;

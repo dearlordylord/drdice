@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"d1", null, 1>;
-type Expected = Failure<"invalid-state-shape", { readonly state: null; readonly partialTrace: []; readonly successorState: null }>;
-export type invalid_state_shape = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"d1", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 6>;
+type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 0; readonly dimension: "rejection-sampling-attempts"; readonly limit: 5; readonly actual: 6 }>;
+export type rejection_fuel_one_beyond = Assert<Equal<Input, Expected>>;

@@ -12,7 +12,7 @@ const fail = (message) => {
   throw new Error(`[release qualification] ${message}`);
 };
 const report = JSON.parse(await readFileAsync(REPORT, "utf8"));
-if (report.schemaVersion !== 2 || report.qualification !== "v1-release") {
+if (report.schemaVersion !== 2 || report.qualification !== "release") {
   fail("report schema or qualification identity is incorrect");
 }
 if (report.verdict?.status !== "ready") fail(`report verdict is ${report.verdict?.status ?? "missing"}`);

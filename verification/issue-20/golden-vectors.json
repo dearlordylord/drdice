@@ -1,7 +1,7 @@
 {
-  "semanticProfile": "dice-v1/utf16-bounded-left-to-right-1",
-  "semanticVersion": 1,
-  "prngSequenceProfile": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+  "semanticProfile": "dice-v2/utf16-bounded-left-to-right-2",
+  "semanticVersion": 2,
+  "prngSequenceProfile": "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2",
   "limits": {
     "sourceLength": 64,
     "numericTokenLength": 3,
@@ -12,7 +12,7 @@
     "supportedSideCount": 100,
     "arithmeticMagnitude": 100,
     "evaluationSteps": 24,
-    "rejectionSamplingAttempts": 4
+    "rejectionSamplingAttempts": 5
   },
   "staticResourceTieOrder": [
     "ast-node-count",
@@ -682,6 +682,38 @@
       ]
     },
     {
+      "id": "sample-attempt-fuel-five",
+      "source": "d1",
+      "maximumAttempts": 5,
+      "stateWords": [
+        "00000001",
+        "00000002",
+        "00000003",
+        "00000004"
+      ],
+      "expected": {
+        "ok": true,
+        "value": {
+          "total": 1,
+          "rollTrace": [
+            {
+              "sideCount": 1,
+              "face": 1
+            }
+          ],
+          "successorState": [
+            "00000007",
+            "00000000",
+            "00000402",
+            "00003000"
+          ]
+        }
+      },
+      "sampleAttempts": [
+        1
+      ]
+    },
+    {
       "id": "forced-rejection-then-acceptance",
       "source": "d7",
       "maximumAttempts": 2,
@@ -694,23 +726,23 @@
       "expected": {
         "ok": true,
         "value": {
-          "total": 7,
+          "total": 5,
           "rollTrace": [
             {
               "sideCount": 7,
-              "face": 7
+              "face": 5
             }
           ],
           "successorState": [
-            "1974791a",
-            "3eee5eab",
-            "9550c2c3",
-            "79d7bbd3"
+            "631b43ed",
+            "e7264c68",
+            "bad3512e",
+            "9d49769f"
           ]
         }
       },
       "sampleAttempts": [
-        2
+        1
       ]
     },
     {
@@ -724,16 +756,10 @@
         "dc482244"
       ],
       "expected": {
-        "ok": false,
-        "code": "resource-limit-exceeded",
-        "details": {
-          "kind": "resource",
-          "code": "resource-limit-exceeded",
-          "offset": 0,
-          "dimension": "evaluation-steps",
-          "limit": 24,
-          "actual": 25,
-          "partialTrace": [
+        "ok": true,
+        "value": {
+          "total": 24,
+          "rollTrace": [
             {
               "sideCount": 5,
               "face": 4
@@ -748,6 +774,10 @@
             },
             {
               "sideCount": 5,
+              "face": 1
+            },
+            {
+              "sideCount": 5,
               "face": 2
             },
             {
@@ -756,22 +786,18 @@
             },
             {
               "sideCount": 5,
-              "face": 2
+              "face": 1
             },
             {
               "sideCount": 5,
               "face": 5
-            },
-            {
-              "sideCount": 5,
-              "face": 4
             }
           ],
           "successorState": [
-            "c22deee4",
-            "3c929a21",
-            "36861b80",
-            "ea3ff13a"
+            "5032e3d1",
+            "0b10a7db",
+            "3a2a5e28",
+            "c19115ca"
           ]
         }
       },
@@ -779,11 +805,11 @@
         1,
         1,
         1,
-        2,
         1,
-        4,
-        2,
-        4
+        1,
+        1,
+        1,
+        1
       ]
     },
     {
@@ -1860,7 +1886,7 @@
     {
       "id": "rejection-fuel-one-beyond",
       "source": "d1",
-      "maximumAttempts": 5,
+      "maximumAttempts": 6,
       "stateWords": [
         "00000001",
         "00000002",
@@ -1875,8 +1901,8 @@
           "code": "resource-limit-exceeded",
           "offset": 0,
           "dimension": "rejection-sampling-attempts",
-          "limit": 4,
-          "actual": 5
+          "limit": 5,
+          "actual": 6
         }
       }
     },
@@ -2012,18 +2038,17 @@
         "00000000"
       ],
       "expected": {
-        "ok": false,
-        "code": "sampling-attempts-exhausted",
-        "details": {
-          "kind": "evaluation",
-          "code": "sampling-attempts-exhausted",
-          "offset": 5,
-          "maximumAttempts": 1,
-          "attempts": 1,
-          "partialTrace": [
+        "ok": true,
+        "value": {
+          "total": 7,
+          "rollTrace": [
             {
               "sideCount": 6,
               "face": 1
+            },
+            {
+              "sideCount": 6,
+              "face": 6
             }
           ],
           "successorState": [
@@ -2035,6 +2060,7 @@
         }
       },
       "sampleAttempts": [
+        1,
         1
       ],
       "incompleteAttempts": 1

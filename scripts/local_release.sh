@@ -2,7 +2,6 @@
 set -euo pipefail
 
 RELEASE_BRANCH="master"
-RELEASE_TAG="v0.1.0"
 PRNG_PACKAGE_NAME="@drdice/prng"
 DICE_PACKAGE_NAME="@drdice/dice"
 EXPECTED_GITHUB_LOGIN="dearlordylord"
@@ -105,6 +104,9 @@ pnpm --dir packages/dice pack --pack-destination "$release_directory"
 
 prng_version="$(node -p "require('./packages/prng/package.json').version")"
 dice_version="$(node -p "require('./packages/dice/package.json').version")"
+[[ "$prng_version" == "$dice_version" ]] ||
+  fail "package versions differ: PRNG $prng_version, Dice $dice_version"
+RELEASE_TAG="v$prng_version"
 prng_archive="$release_directory/drdice-prng-$prng_version.tgz"
 dice_archive="$release_directory/drdice-dice-$dice_version.tgz"
 

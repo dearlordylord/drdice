@@ -6,7 +6,8 @@
   "claims": {
     "unbiasedSampling": {
       "basis": "msb-rejection-rationale-and-deterministic-tests",
-      "statisticalTests": "optional-non-blocking"
+      "statisticalTests": "deterministic-fixed-corpus-blocking-smoke",
+      "maximumPerDieExhaustionProbability": 0.000001
     },
     "stableReproducibility": {
       "scope": "exact-versioned-cross-implementation",
@@ -29,7 +30,7 @@
     }
   },
   "profiles": {
-    "prng": "xoshiro128ss-1.1/direct128-msb-rejection-1",
+    "prng": "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2",
     "diceSemanticsMustBeVersioned": true,
     "newIdentityRequiredFor": [
       "prng-stepping",
@@ -71,7 +72,7 @@
     },
     "maximumAttempts": {
       "minimum": 0,
-      "maximum": 4
+      "maximum": 5
     },
     "resourceLimits": "each-at-bound-and-one-beyond",
     "grammarProductions": "each-valid-and-invalid-position",
@@ -111,7 +112,7 @@
     },
     {
       "id": "statistical-smoke",
-      "blocking": "never",
+      "blocking": "change-and-release",
       "generated": true
     }
   ],

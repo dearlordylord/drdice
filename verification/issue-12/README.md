@@ -14,13 +14,16 @@ The machine-readable summary is [`gates.json`](./gates.json).
 DRDice may describe bounded sampling as unbiased when the implementation uses
 the accepted high-bit rejection algorithm and passes the deterministic gates
 below. The claim rests on the simple construction: choose the smallest `k`
-such that `2^k >= bound`, take a uniformly distributed `k`-bit candidate, and
-reject candidates outside `[0, bound)`. Every accepted face is therefore
-represented by exactly one candidate. Rejected words advance Generator State.
+such that `2^k >= bound`, scan complete uniformly distributed `k`-bit chunks
+from each output word, and reject candidates outside `[0, bound)`. Every
+accepted face is therefore represented by exactly one candidate. Only an
+output whose complete chunks reject advances sampling to another state.
 
-This rationale, implementation review, and deterministic boundary/property
-tests are sufficient for v1. A statistical suite is optional, non-blocking
-smoke evidence; it is neither a proof of unbiasedness nor release evidence.
+This rationale and exact rejection construction prove unbiased acceptance.
+Deterministic fixed-corpus distribution checks are additional blocking smoke
+evidence: they catch seed-mapping regressions but are not themselves the proof.
+Every supported bound must also keep per-die exhaustion at or below `1e-6`
+when using the documented gameplay fuel.
 
 Stable reproducibility means exact agreement when the algorithm profile,
 initial Seed or Generator State, Dice Expression, and operation options match.
@@ -33,11 +36,10 @@ state consumption, parsing, evaluation order, arithmetic semantics, or failure
 selection requires a new profile identity. Refactoring and checker-performance
 work may retain an identity only when every exact gate remains unchanged.
 
-The accepted PRNG profile remains
-`xoshiro128ss-1.1/direct128-msb-rejection-1`. A future production design must
-also version the Dice grammar and evaluation semantics; issue #13 may choose
-the final token shape, but it must make the complete identity available to
-replay callers.
+The accepted PRNG profile is
+`xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2`. The accepted Dice semantic
+identity is `dice-v2/utf16-bounded-left-to-right-2`. Replay and serialized-state
+values carry the complete PRNG identity.
 
 ## Independent oracle and parity bridge
 
@@ -75,16 +77,17 @@ silently blessing new behavior.
 
 The committed corpus must include:
 
-- the authors' xoshiro128** 1.1 transition and the established direct-Seed
-  vector for words `1, 2, 3, 4`, encoded by DRDice as
+- the authors' xoshiro128** 1.1 transition and the established warmup-16
+  human-Seed vector for words `1, 2, 3, 4`, encoded by DRDice as
   `00000001/00000002/00000003/00000004`;
-- at least the first ten output words from that Seed—`11520`, `0`, `5927040`,
-  `70819200`, `2031721883`, `1637235492`, `1287239034`, `3734860849`,
-  `3729100597`, and `4258142804`—plus the exact first three successor states;
+- at least the first ten output words from that Seed—`3804789018`,
+  `2299676403`, `3571406116`, `2962224741`, `2455399324`, `2204902570`,
+  `3487887384`, `4280504250`, `539482314`, and `1610455189`—plus the exact
+  first three successor states;
 - bound 1 consumption, bounds 2 and 100, a power-of-two bound, and bounds on
   both sides of a power of two;
 - immediate acceptance, forced rejection followed by acceptance, and exact
-  exhaustion after zero through four attempts;
+  exhaustion after zero through five output words;
 - Replay Token restart and Serialized Generator State resume behavior;
 - representative successful expressions with exact totals, ordered traces,
   attempt counts, and successor states; and
@@ -100,7 +103,7 @@ Exhaustive means the finite public dimensions, not all 128-bit states or all
 Dice Expressions:
 
 - every sampling bound and Die side count from 1 through 100;
-- every `maximumAttempts` value from 0 through 4;
+- every `maximumAttempts` value from 0 through 5;
 - each resource dimension at its accepted limit and one beyond it;
 - every grammar production in valid and invalid positions;
 - every supported whitespace code point and representative rejected Unicode
@@ -119,7 +122,8 @@ Runtime property tests use fixed seeds and a recorded corpus version. They
 must check:
 
 - `0 <= sample < bound` and `1 <= face <= sideCount`;
-- accepted and rejected draws advance the state exactly once per attempt;
+- accepted and rejected candidates advance state exactly once per consumed
+  output word;
 - invalid preflight input consumes no state;
 - exhaustion reports the exact consumed attempt count and advanced state;
 - replay restarts and serialized state resumes at the next word;
@@ -178,7 +182,7 @@ golden-vector or profile change requires separately reviewed old/new evidence.
   four-word initialization; that remains an explicit part of the profile.
 - The Rust Random project's independent
   [xoshiro128** tests](https://github.com/rust-random/rngs/blob/master/rand_xoshiro/src/xoshiro128starstar.rs#L1083-L1105)
-  publish the ten-word direct-Seed vector used above.
+  publish the underlying direct-state transition used after initialization.
 - TypeScript documents [`--noEmit` project checking](https://www.typescriptlang.org/docs/handbook/compiler-options.html),
   [`as const` literal preservation](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html),
   [`@ts-expect-error`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html),

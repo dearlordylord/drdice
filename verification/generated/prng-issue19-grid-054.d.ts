@@ -10,5 +10,5 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Left ? 1 : 2) extends
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
-type Grid54_0 = Sample<GeneratorState<readonly ["b0e8eac3", "f2d79146", "a51937ed", "21243868"]>, 11, 4>;
-type _Grid54_0 = Assert<Equal<Grid54_0, Failure<"sampling-attempts-exhausted", { readonly maximumAttempts: 4; readonly attempts: 4; readonly state: GeneratorState<readonly ["23acbb29", "bc1e94c9", "9b1e95bb", "093a5bef"]> }>>>;
+type Grid54_0 = Sample<GeneratorState<readonly ["9786256f", "911c67f8", "37883c7a", "7065c3c9"]>, 10, 0>;
+type _Grid54_0 = Assert<Equal<Grid54_0, Failure<"sampling-attempts-exhausted", { readonly maximumAttempts: 0; readonly attempts: 0; readonly state: GeneratorState<readonly ["9786256f", "911c67f8", "37883c7a", "7065c3c9"]> }>>>;

@@ -51,7 +51,7 @@ try {
 
     const manifestText = run("tar", ["-xOf", archive, "package/package.json"], root);
     const manifest = JSON.parse(manifestText);
-    if (manifest.name !== packageInfo.name || manifest.version !== "0.1.0") {
+    if (manifest.name !== packageInfo.name || manifest.version !== "0.2.0") {
       throw new Error(`${packageInfo.name} packed identity is incorrect`);
     }
     if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {
@@ -63,8 +63,8 @@ try {
     if (manifest.dependencies?.["@drdice/prng"]?.startsWith("workspace:")) {
       throw new Error("packed Dice dependency still contains the workspace protocol");
     }
-    if (packageInfo.dependency && manifest.dependencies?.["@drdice/prng"] !== "^0.1.0") {
-      throw new Error(`packed Dice dependency is not ^0.1.0: ${manifest.dependencies?.["@drdice/prng"]}`);
+    if (packageInfo.dependency && manifest.dependencies?.["@drdice/prng"] !== "^0.2.0") {
+      throw new Error(`packed Dice dependency is not ^0.2.0: ${manifest.dependencies?.["@drdice/prng"]}`);
     }
     if (manifest.exports["."].default !== undefined || manifest.main !== undefined) {
       throw new Error(`${packageInfo.name} exposes an unsupported runtime entry point`);

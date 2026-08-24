@@ -34,28 +34,29 @@ const goldenFile = process.env.DRDICE_GOLDEN_FILE ?? process.argv[2] ?? defaultG
  * corpus.  A coordinated change to both files must fail until the profile is
  * deliberately re-reviewed. */
 const PINNED_SCHEMA_VERSION = 1;
-const PINNED_SEQUENCE_PROFILE = "xoshiro128ss-1.1/direct128-msb-rejection-1";
+const PINNED_SEQUENCE_PROFILE = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 const PINNED_MAX_BOUND = 100;
-const PINNED_MAX_ATTEMPTS = 4;
+const PINNED_MAX_ATTEMPTS = 5;
 const PINNED_CANONICAL_SEED = ["00000001", "00000002", "00000003", "00000004"];
 const PINNED_CANONICAL_RAW_WORDS = [
-  "00002d00",
-  "00000000",
-  "005a7080",
-  "04389d80",
-  "79199d9b",
-  "61963b24",
-  "4cb9b57a",
-  "de9d7431",
-  "de458f35",
-  "fdce1a54",
+  "e2c8791a",
+  "891246f3",
+  "d4df5524",
+  "b08ff665",
+  "925a6b9c",
+  "836c24aa",
+  "cfe4f018",
+  "ff234fba",
+  "2027d8ca",
+  "5ffd9895",
 ];
 const PINNED_CANONICAL_SUCCESSOR_STATES = [
-  ["00000007", "00000000", "00000402", "00003000"],
-  ["00003007", "00000405", "00000405", "01800000"],
-  ["01803402", "00003007", "00083e02", "0020280c"],
+  ["dcd45053", "a4b0c23c", "1026cbfd", "4248c1a7"],
+  ["3a2c53c8", "68425992", "ad76e3ae", "c01cdf37"],
+  ["9272d56d", "ff18e9f4", "13e99466", "f4352d42"],
 ];
 const PINNED_CRAFTED_REJECTION_STATE = ["b0e8eac3", "f2d79146", "a51937ed", "21243868"];
+const PINNED_CRAFTED_EXHAUSTION_STATE = ["8615d1a1", "16f6c103", "cbc1fbff", "055c3220"];
 
 const fail = (message) => {
   throw new Error(`[issue-17] ${message}`);
@@ -129,7 +130,7 @@ const checkTransitionCorpus = (golden) => {
   assert(vector && typeof vector === "object", "raw-word vector is missing");
   words(golden.canonicalSeed, "canonicalSeed");
   equal(golden.canonicalSeed, PINNED_CANONICAL_SEED, "canonical Seed changed without a reviewed profile change");
-  equal(vector.seed, PINNED_CANONICAL_SEED, "raw-word seed must use the established direct-Seed vector");
+  equal(vector.seed, PINNED_CANONICAL_SEED, "raw-word seed must use the established human-seed vector");
   assert(Array.isArray(vector.words) && vector.words.length >= 10, "at least ten literal raw words are required");
   assert(Array.isArray(vector.successorStates) && vector.successorStates.length >= 3, "at least three literal successor states are required");
   assert(Array.isArray(vector.transitions) && vector.transitions.length >= 10, "at least ten literal transition records are required");
@@ -175,9 +176,9 @@ const checkAttemptPath = (vector) => {
   assert(Number.isInteger(vector.bound) && vector.bound >= 1 && vector.bound <= MAX_BOUND, `${vector.id} has an unsupported bound`);
   assert(Number.isInteger(vector.maximumAttempts) && vector.maximumAttempts >= 0 && vector.maximumAttempts <= MAX_ATTEMPTS, `${vector.id} has unsupported attempt fuel`);
   assert(Array.isArray(vector.attemptWords), `${vector.id}.attemptWords is missing`);
-  assert(Array.isArray(vector.candidates), `${vector.id}.candidates is missing`);
+  assert(Array.isArray(vector.candidateChunks), `${vector.id}.candidateChunks is missing`);
   assert(Array.isArray(vector.attemptStates), `${vector.id}.attemptStates is missing`);
-  equal(vector.attemptWords.length, vector.candidates.length, `${vector.id} candidate count does not match attempt words`);
+  equal(vector.attemptWords.length, vector.candidateChunks.length, `${vector.id} candidate-chunk count does not match attempt words`);
   equal(vector.attemptWords.length, vector.attemptStates.length, `${vector.id} attempt-state count does not match attempt words`);
   assert(vector.attemptWords.length <= vector.maximumAttempts, `${vector.id} consumes more attempts than its fuel`);
   const width = widthForBound(vector.bound);
@@ -186,12 +187,19 @@ const checkAttemptPath = (vector) => {
   for (let attempt = 0; attempt < vector.attemptWords.length; attempt += 1) {
     const step = oracleNext(current);
     assert(step.ok, `${vector.id} attempt ${attempt} unexpectedly failed`);
-    const candidate = width === 0 ? 0 : Number.parseInt(step.value.word, 16) >>> (32 - width);
+    const value = Number.parseInt(step.value.word, 16) >>> 0;
+    const candidates = [];
+    if (width === 0) candidates.push(0);
+    for (let offset = 0; width > 0 && offset + width <= 32; offset += width) {
+      candidates.push((value >>> (32 - offset - width)) & ((2 ** width) - 1));
+    }
+    const acceptedAt = candidates.findIndex((candidate) => candidate < vector.bound);
+    const inspected = acceptedAt < 0 ? candidates : candidates.slice(0, acceptedAt + 1);
     equal(step.value.word, vector.attemptWords[attempt], `${vector.id} attempt ${attempt} word disagrees with oracle`);
-    equal(candidate, vector.candidates[attempt], `${vector.id} attempt ${attempt} candidate disagrees with oracle`);
+    equal(inspected, vector.candidateChunks[attempt], `${vector.id} attempt ${attempt} candidate chunks disagree with oracle`);
     equal(step.value.state.words, vector.attemptStates[attempt], `${vector.id} attempt ${attempt} successor disagrees with oracle`);
     current = step.value.state;
-    if (candidate < vector.bound) {
+    if (acceptedAt >= 0) {
       stopped = true;
       assert(attempt + 1 === vector.attemptWords.length, `${vector.id} records work after acceptance`);
       break;
@@ -236,18 +244,21 @@ const checkSamplingCorpus = (golden) => {
     "exact-exhaustion-2",
     "exact-exhaustion-3",
     "exact-exhaustion-4",
+    "exact-exhaustion-5",
   ]) assert(byId.has(id), `required sampling vector ${id} is missing`);
 
   const forced = byId.get("forced-rejection-then-acceptance");
   equal(golden.craftedRejectionState, PINNED_CRAFTED_REJECTION_STATE, "crafted rejection state changed without a reviewed profile change");
   equal(forced.inputState, golden.craftedRejectionState, "forced-rejection vector must use craftedRejectionState exactly");
-  assert(forced.bound === 7 && forced.maximumAttempts === 2, "forced-rejection vector must retain its two-attempt bound-seven role");
-  equal(forced.attemptWords, ["f244aa57", "ddb72649"], "forced-rejection words changed without reviewed evidence");
-  equal(forced.candidates, [7, 6], "forced-rejection candidates must reject seven then accept six");
-  assert(forced.candidates[0] >= forced.bound, "forced-rejection vector does not reject its first candidate");
-  assert(forced.candidates[forced.candidates.length - 1] < forced.bound, "forced-rejection vector does not eventually accept");
-  for (let fuel = 0; fuel <= 4; fuel += 1) {
+  assert(forced.bound === 7 && forced.maximumAttempts === 2, "forced-rejection vector must retain its bound-seven role");
+  equal(forced.attemptWords, ["f244aa57"], "forced-rejection word changed without reviewed evidence");
+  equal(forced.candidateChunks, [[7, 4]], "forced-rejection candidates must reject seven then accept four from one output");
+  assert(forced.candidateChunks[0][0] >= forced.bound, "forced-rejection vector does not reject its first candidate");
+  assert(forced.candidateChunks[0].at(-1) < forced.bound, "forced-rejection vector does not eventually accept");
+  equal(golden.craftedExhaustionState, PINNED_CRAFTED_EXHAUSTION_STATE, "crafted exhaustion state changed without reviewed profile evidence");
+  for (let fuel = 0; fuel <= PINNED_MAX_ATTEMPTS; fuel += 1) {
     const exhaustion = byId.get(`exact-exhaustion-${fuel}`);
+    equal(exhaustion.inputState, golden.craftedExhaustionState, `exact-exhaustion-${fuel} must use craftedExhaustionState`);
     assert(exhaustion.expected.ok === false, `exact-exhaustion-${fuel} must fail`);
     assert(exhaustion.expected.code === "sampling-attempts-exhausted", `exact-exhaustion-${fuel} must report exhaustion`);
     assert(exhaustion.expected.details.maximumAttempts === fuel, `exact-exhaustion-${fuel} maximum is not literal fuel`);
@@ -304,9 +315,9 @@ const checkPinnedProfileAndInvalidPreflight = () => {
   equal(state.words, before, "invalid bound 101 consumed Generator State");
 
   const invalidFuel = oracleSample(state, 1, PINNED_MAX_ATTEMPTS + 1);
-  assert(!invalidFuel.ok && invalidFuel.code === "invalid-attempt-fuel", "fuel 5 must fail as invalid-attempt-fuel");
-  equal(invalidFuel.details.maximumAttempts, PINNED_MAX_ATTEMPTS + 1, "invalid fuel diagnostic must retain 5");
-  equal(state.words, before, "invalid fuel 5 consumed Generator State");
+  assert(!invalidFuel.ok && invalidFuel.code === "invalid-attempt-fuel", "fuel above the supported maximum must fail as invalid-attempt-fuel");
+  equal(invalidFuel.details.maximumAttempts, PINNED_MAX_ATTEMPTS + 1, "invalid fuel diagnostic must retain its input");
+  equal(state.words, before, "invalid fuel consumed Generator State");
 };
 
 const checkPrivateBoundary = () => {
@@ -377,6 +388,7 @@ const main = () => {
   assert(golden.sequenceProfile === PINNED_SEQUENCE_PROFILE, "golden Sequence Profile changed without a reviewed profile change");
   words(golden.canonicalSeed, "canonicalSeed");
   words(golden.craftedRejectionState, "craftedRejectionState");
+  words(golden.craftedExhaustionState, "craftedExhaustionState");
   checkTransitionCorpus(golden);
   checkSamplingCorpus(golden);
   checkReplayCorpus(golden);

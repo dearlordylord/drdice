@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"d1+d1+d1+d1+d101", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 12; readonly dimension: "dice-term-count"; readonly limit: 4; readonly actual: 5 }>;
-export type static_term_before_side = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"8d1+((1+1+1))", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 10; readonly dimension: "evaluation-steps"; readonly limit: 24; readonly actual: 25 }>;
+export type evaluation_steps_one_beyond = Assert<Equal<Input, Expected>>;

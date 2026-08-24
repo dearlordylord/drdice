@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"🙂", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"unexpected-token", { readonly kind: "syntax"; readonly code: "unexpected-token"; readonly offset: 0; readonly found: "\ud83d"; readonly expected: readonly ["dice", "integer", "("] }>;
-export type astral_utf16_token = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"?", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
+type Expected = Failure<"unexpected-token", { readonly kind: "syntax"; readonly code: "unexpected-token"; readonly offset: 0; readonly found: "?"; readonly expected: readonly ["dice", "integer", "("] }>;
+export type unknown_token = Assert<Equal<Input, Expected>>;

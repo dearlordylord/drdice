@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"d100 + 100", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"resource-limit-exceeded", { readonly kind: "resource"; readonly code: "resource-limit-exceeded"; readonly offset: 5; readonly dimension: "arithmetic-magnitude"; readonly limit: 100; readonly actual: 101; readonly partialTrace: [DieSample<100, 1>]; readonly successorState: GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]> }>;
-export type post_consumption_arithmetic_failure = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"d6 + d6", GeneratorState<readonly ["00000000", "00000000", "ffffffff", "00000000"]>, 1>;
+type Expected = Success<{ readonly total: 7; readonly rollTrace: [DieSample<6, 1>, DieSample<6, 6>]; readonly successorState: GeneratorState<readonly ["ffffffff", "00000000", "000001ff", "ffffffff"]> }>;
+export type post_consumption_sampling_exhaustion = Assert<Equal<Input, Expected>>;

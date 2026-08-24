@@ -65,7 +65,7 @@ const transitionAssertions = (transitions, includeInitialization) => [
   ...(includeInitialization ? [
     `type CanonicalSeed = ${tuple(golden.canonicalSeed)};`,
     `type Initialized = Initialize<CanonicalSeed>;`,
-    `type _Initialize = Assert<Equal<Initialized, Success<${state(golden.canonicalSeed)}>>>;`,
+    `type _Initialize = Assert<Equal<Initialized, Success<${state(golden.replay.restartState)}>>>;`,
     ``,
   ] : []),
   ...transitions.flatMap((transition) => [
@@ -89,7 +89,7 @@ const replayAssertions = [
   `  readonly seed: CanonicalSeed;`,
   `};`,
   `type _Replay = Assert<Equal<Replay, ExpectedReplay>>;`,
-  `type _TaggedInitialize = Assert<Equal<Initialize<TaggedCanonicalSeed>, Success<${state(golden.canonicalSeed)}>>>;`,
+  `type _TaggedInitialize = Assert<Equal<Initialize<TaggedCanonicalSeed>, Success<${state(golden.replay.restartState)}>>>;`,
   `type Restarted = RestoreReplay<Replay>;`,
   `type _Restarted = Assert<Equal<Restarted, Success<${state(golden.replay.restartState)}>>>;`,
   `type RestartedStep = Next<${state(golden.replay.restartState)}>;`,
@@ -232,13 +232,14 @@ const stateWordsPool = [
   golden.canonicalSeed,
   ...golden.rawWordVector.transitions.slice(0, 10).map(({ inputState }) => inputState),
   golden.craftedRejectionState,
+  golden.craftedExhaustionState,
 ];
 
 const makeState = (words) => oracleStateFromWords(words);
 const gridVectors = [];
 for (let bound = 1; bound <= 100; bound += 1) {
-  for (let maximumAttempts = 0; maximumAttempts <= 4; maximumAttempts += 1) {
-    const words = stateWordsPool[(bound * 5 + maximumAttempts) % stateWordsPool.length];
+  for (let maximumAttempts = 0; maximumAttempts <= 5; maximumAttempts += 1) {
+    const words = stateWordsPool[(bound * 6 + maximumAttempts) % stateWordsPool.length];
     const inputState = makeState(words);
     gridVectors.push({
       id: `grid-bound-${bound}-fuel-${maximumAttempts}`,
@@ -270,40 +271,40 @@ const specialInputs = [
     maximumAttempts: 0,
   },
   {
-    id: "forced-rejection-exhaustion-four",
-    state: makeState(golden.craftedRejectionState),
-    bound: 6,
-    maximumAttempts: 4,
+    id: "forced-rejection-exhaustion-five",
+    state: makeState(golden.craftedExhaustionState),
+    bound: 65,
+    maximumAttempts: 5,
   },
   {
     id: "invalid-state-precedes-bound-and-fuel",
     state: null,
     bound: 101,
-    maximumAttempts: 5,
+    maximumAttempts: 6,
   },
   {
     id: "invalid-bound-precedes-fuel",
     state: makeState(golden.canonicalSeed),
     bound: 101,
-    maximumAttempts: 5,
+    maximumAttempts: 6,
   },
   {
     id: "invalid-fuel-after-valid-bound",
     state: makeState(golden.canonicalSeed),
     bound: 1,
-    maximumAttempts: 5,
+    maximumAttempts: 6,
   },
   {
     id: "invalid-state-word-precedes-preflight",
     state: { kind: "GeneratorState", words: ["0000000A", "00000000", "00000000", "00000001"] },
     bound: 101,
-    maximumAttempts: 5,
+    maximumAttempts: 6,
   },
   {
     id: "invalid-state-zero-precedes-preflight",
     state: { kind: "GeneratorState", words: ["00000000", "00000000", "00000000", "00000000"] },
     bound: 101,
-    maximumAttempts: 5,
+    maximumAttempts: 6,
   },
 ];
 
@@ -314,7 +315,7 @@ const specialVectors = specialInputs.map((input) => ({
 
 /* Keep every bound/fuel query in its own real artifact.  The checker discovers
  * these exact names and rejects missing, extra, or dirty shards; the budget
- * lane therefore measures the complete 500-query grid rather than a bundled
+ * lane therefore measures the complete 600-query grid rather than a bundled
  * representative subset. */
 const samplingShardSize = 1;
 const chunk = (values, size) => Array.from(

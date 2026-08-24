@@ -17,7 +17,7 @@ export const SCHEMA_VERSION: 1;
 export type SchemaVersion = typeof SCHEMA_VERSION;
 
 /** The package release identity is deliberately separate from schema/profile identity. */
-export type PackageVersion = "0.1.0";
+export type PackageVersion = "0.2.0";
 
 type HexDigit =
   | "0"

@@ -7,6 +7,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type Input = Evaluate<"", GeneratorState<readonly ["00000001", "00000002", "00000003", "00000004"]>, 1>;
-type Expected = Failure<"expected-expression", { readonly kind: "syntax"; readonly code: "expected-expression"; readonly offset: 0; readonly found: "eof"; readonly expected: readonly ["dice", "integer", "("] }>;
-export type empty_input = Assert<Equal<Input, Expected>>;
+type Input = Evaluate<"8d5", GeneratorState<readonly ["f6d4d22f", "179359c2", "e89fce39", "dc482244"]>, 4>;
+type Expected = Success<{ readonly total: 24; readonly rollTrace: [DieSample<5, 4>, DieSample<5, 5>, DieSample<5, 2>, DieSample<5, 1>, DieSample<5, 2>, DieSample<5, 4>, DieSample<5, 1>, DieSample<5, 5>]; readonly successorState: GeneratorState<readonly ["5032e3d1", "0b10a7db", "3a2a5e28", "c19115ca"]> }>;
+export type post_consumption_dynamic_steps = Assert<Equal<Input, Expected>>;
