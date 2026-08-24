@@ -320,8 +320,16 @@ const checkPrivateBoundary = () => {
 const checkNegativeBoundaryCases = () => {
   const malformedSeed = oracleInitialize(["0000000A", "00000000", "00000000", "00000001"]);
   assert(!malformedSeed.ok && malformedSeed.code === "invalid-seed-word", "oracle accepted a non-canonical Seed word");
+  const nonStringSeedWords = ["00000001", 2, "00000000", "00000001"];
+  const nonStringSeed = oracleInitialize(nonStringSeedWords);
+  assert(!nonStringSeed.ok && nonStringSeed.code === "invalid-seed-word", "four-item non-string Seed was misclassified as a shape failure");
+  equal(nonStringSeed.details.seed, nonStringSeedWords, "non-string Seed failure did not retain its input tuple");
   const malformedState = oracleNext(oracleStateFromWords(["0000000A", "00000000", "00000000", "00000001"]));
   assert(!malformedState.ok && malformedState.code === "invalid-state-word", "oracle accepted a non-canonical Generator State word");
+  const nonStringStateWords = ["00000001", 2, "00000000", "00000001"];
+  const nonStringState = oracleNext(oracleStateFromWords(nonStringStateWords));
+  assert(!nonStringState.ok && nonStringState.code === "invalid-state-word", "four-item non-string Generator State was misclassified as a shape failure");
+  equal(nonStringState.details.state, oracleStateFromWords(nonStringStateWords), "non-string Generator State failure did not retain its tagged state");
   const zeroSeed = oracleInitialize(["00000000", "00000000", "00000000", "00000000"]);
   assert(!zeroSeed.ok && zeroSeed.code === "invalid-seed-zero", "oracle accepted the all-zero Seed");
   const zeroState = oracleNext(oracleStateFromWords(["00000000", "00000000", "00000000", "00000000"]));
@@ -330,6 +338,34 @@ const checkNegativeBoundaryCases = () => {
   assert(!malformedReplay.ok && malformedReplay.code === "invalid-seed-shape", "Replay Token did not preserve Seed validation");
   const malformedSnapshot = oracleRestoreState({ schemaVersion: 1, sequenceProfile: SEQUENCE_PROFILE, state: ["0000000A", "00000000", "00000000", "00000001"] });
   assert(!malformedSnapshot.ok && malformedSnapshot.code === "invalid-state-word", "serialized state accepted a non-canonical word");
+  equal(
+    malformedSnapshot.details.state,
+    oracleStateFromWords(["0000000A", "00000000", "00000000", "00000001"]),
+    "serialized non-canonical-word failure did not normalize to a tagged Generator State",
+  );
+  const nonStringSnapshotWords = ["00000001", 2, "00000000", "00000001"];
+  const nonStringSnapshot = oracleRestoreState({
+    schemaVersion: 1,
+    sequenceProfile: SEQUENCE_PROFILE,
+    state: nonStringSnapshotWords,
+  });
+  assert(!nonStringSnapshot.ok && nonStringSnapshot.code === "invalid-state-word", "four-item non-string serialized state was misclassified as a shape failure");
+  equal(
+    nonStringSnapshot.details.state,
+    oracleStateFromWords(nonStringSnapshotWords),
+    "non-string serialized-state failure did not normalize to a tagged Generator State",
+  );
+  const zeroSnapshot = oracleRestoreState({
+    schemaVersion: 1,
+    sequenceProfile: SEQUENCE_PROFILE,
+    state: ["00000000", "00000000", "00000000", "00000000"],
+  });
+  assert(!zeroSnapshot.ok && zeroSnapshot.code === "invalid-state-zero", "all-zero serialized state was not rejected");
+  equal(
+    zeroSnapshot.details.state,
+    oracleStateFromWords(["00000000", "00000000", "00000000", "00000000"]),
+    "all-zero serialized-state failure did not normalize to a tagged Generator State",
+  );
   const malformedSnapshotShape = oracleRestoreState({ schemaVersion: 1, sequenceProfile: SEQUENCE_PROFILE, state: ["00000001"] });
   assert(!malformedSnapshotShape.ok && malformedSnapshotShape.code === "invalid-state-shape", "serialized state did not reject a short state structurally");
 };

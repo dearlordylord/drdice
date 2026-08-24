@@ -10,6 +10,12 @@ const generatedNames = [
   "prng-issue18-transitions-1.d.ts",
   "prng-issue18-transitions-2.d.ts",
   "prng-issue18-transitions-3.d.ts",
+  "prng-issue18-transitions-4.d.ts",
+  "prng-issue18-transitions-5.d.ts",
+  "prng-issue18-transitions-6.d.ts",
+  "prng-issue18-transitions-7.d.ts",
+  "prng-issue18-transitions-8.d.ts",
+  "prng-issue18-transitions-9.d.ts",
   "prng-issue18-replay.d.ts",
 ];
 const generated = (await Promise.all(generatedNames.map((name) =>
@@ -24,25 +30,44 @@ const assert = (condition, message) => {
   if (!condition) fail(message);
 };
 
-for (const exportName of [
+const expectedExports = [
   "SEQUENCE_PROFILE",
   "SCHEMA_VERSION",
   "SequenceProfile",
   "SchemaVersion",
+  "PackageVersion",
+  "Word32Text",
+  "SeedWords",
+  "StateWords",
   "Seed",
   "GeneratorState",
-  "Success",
+  "FailureCode",
   "Failure",
+  "Success",
+  "InvalidSeedFailure",
+  "InvalidStateFailure",
+  "InvalidReplayFailure",
+  "StepSuccess",
+  "StepResult",
   "Initialize",
+  "InitializeResult",
   "Next",
   "ReplayToken",
   "SerializedGeneratorState",
   "RestoreReplay",
+  "RestoreReplayResult",
   "RestoreState",
+  "RestoreStateResult",
   "SerializeState",
-]) {
-  assert(new RegExp(`\\bexport (?:const|type) ${exportName}\\b`).test(declaration), `curated root is missing ${exportName}`);
-}
+  "SerializeStateResult",
+  "PackageMetadata",
+];
+const actualExports = [...declaration.matchAll(/^export (?:const|type) (\w+)/gm)]
+  .map(([, name]) => name);
+assert(
+  JSON.stringify([...actualExports].sort()) === JSON.stringify([...expectedExports].sort()),
+  `curated root exports differ; expected ${expectedExports.join(", ")}, got ${actualExports.join(", ")}`,
+);
 assert(!/export\s+(?:function|class|const\s+\w+\s*=)/.test(declaration), "PRNG root contains a runtime implementation");
 assert(!/\bDebug(?:Step|Text|Bits|Shift|Mul|Rotate)|\bOracle/.test(declaration), "debug or oracle surface leaked into the PRNG root");
 assert(generated.includes("type _Step9"), "exact golden fixture shards do not assert all ten raw words");

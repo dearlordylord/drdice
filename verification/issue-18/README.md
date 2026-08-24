@@ -14,21 +14,27 @@ lowercase Word32 text, and all-zero checks return structured failures before a
 transition is evaluated.
 
 `pnpm generate:fixtures` produces exact assertions from the independent
-Issue #17 golden corpus. The ten raw transitions are split into four generated
-shards so each checker artifact stays within the accepted Issue #11 PRNG
-instantiation ceiling; the replay and serialized-state assertions are kept in a
-separate shard. `pnpm check:fixtures` checks that this generated set is clean
-and typechecks every shard under TypeScript 7.
+Issue #17 golden corpus. Each of the ten raw transitions is a separate
+generated artifact, and replay/serialized-state assertions are kept in an
+additional artifact. This keeps every checker artifact within the accepted
+Issue #11 PRNG instantiation ceiling; the corpus is not treated as one budget
+artifact. `pnpm check:fixtures` checks that this generated set is clean and
+typechecks every shard under TypeScript 7.
 
-The focused budget query is `budget.ts`. `pnpm check:prng:budget` requires
-TypeScript 7.0.2 and enforces the accepted Issue #11 ceilings of 500 ms check
-time, 320 MiB compiler memory, and 90,000 instantiations for both checker
-policies. The recorded run is [`results.json`](./results.json):
+`pnpm check:prng:budget` requires TypeScript 7.0.2 and enumerates the focused
+query plus all eleven generated #18 artifacts under both checker policies. It always enforces the
+deterministic 320 MiB compiler-memory and 90,000-instantiation ceilings. The
+portable command uses one scored process per artifact; set
+`DRDICE_PRNG_BUDGET_RUNS=5` for the Issue #11-style repeated evidence. On a
+reference runner, add `--reference-runner` to enforce the 500 ms median check
+ceiling and 1,500 ms single-run ceiling. `budget.ts` remains a small focused
+probe, while the blocking artifact list is the generated corpus. The recorded
+per-artifact run is [`results.json`](./results.json):
 
-| checker policy | check time | memory | instantiations |
+| checker policy | maximum check | maximum memory | maximum instantiations |
 | --- | ---: | ---: | ---: |
-| `--checkers 1` | 249 ms | 80,979 KiB | 84,075 |
-| `--checkers 4` | 251 ms | 83,352 KiB | 87,392 |
+| `--checkers 1` | 408 ms | 73,379 KiB | 66,850 |
+| `--checkers 4` | 452 ms | 77,340 KiB | 70,427 |
 
 TypeScript 6 remains advisory migration evidence under the workspace policy;
 the Issue #18 blocking lane is pinned to TypeScript 7.0.2.

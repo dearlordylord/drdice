@@ -19,6 +19,6 @@ type Equal<Left, Right> =
   (<Value>() => Value extends Right ? 1 : 2) ? true : false;
 type Assert<Value extends true> = Value;
 
-type InputState1 = GeneratorState<readonly ["00000007", "00000000", "00000402", "00003000"]>;
-type Step1 = Next<InputState1>;
-type _Step1 = Assert<Equal<Step1, Success<{ readonly word: "00000000"; readonly state: GeneratorState<readonly ["00003007", "00000405", "00000405", "01800000"]> }>>>;
+type InputState9 = GeneratorState<readonly ["3c48d385", "4838ca95", "1b58ae88", "4388a87b"]>;
+type Step9 = Next<InputState9>;
+type _Step9 = Assert<Equal<Step9, Success<{ readonly word: "fdce1a54"; readonly state: GeneratorState<readonly ["37f8b16b", "6f28b798", "5685570d", "8317705d"]> }>>>;

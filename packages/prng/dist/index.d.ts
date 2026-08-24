@@ -19,7 +19,7 @@ export type SchemaVersion = typeof SCHEMA_VERSION;
 /** The package release identity is deliberately separate from schema/profile identity. */
 export type PackageVersion = "0.1.0";
 
-export type HexDigit =
+type HexDigit =
   | "0"
   | "1"
   | "2"
@@ -60,10 +60,7 @@ export type FailureCode =
   | "invalid-state-shape"
   | "invalid-state-word"
   | "invalid-state-zero"
-  | "invalid-replay-token"
-  | "invalid-bound"
-  | "invalid-attempt-fuel"
-  | "sampling-attempts-exhausted";
+  | "invalid-replay-token";
 
 export type Failure<Code extends FailureCode, Details extends object = object> = {
   readonly ok: false;
@@ -87,8 +84,6 @@ export type InvalidStateFailure =
   | Failure<"invalid-state-zero", { readonly state: unknown }>;
 
 export type InvalidReplayFailure = Failure<"invalid-replay-token", { readonly token: unknown }>;
-export type InvalidBoundFailure = Failure<"invalid-bound", { readonly bound: number }>;
-export type InvalidAttemptFuelFailure = Failure<"invalid-attempt-fuel", { readonly maximumAttempts: number }>;
 
 /** Exact successful raw transition: one word and its explicit successor state. */
 export type StepSuccess<
@@ -100,33 +95,6 @@ export type StepSuccess<
 }>;
 
 export type StepResult = StepSuccess | InvalidStateFailure;
-
-/** Public result shape reserved for the bounded-sampling slice. */
-export type BoundedSuccess<
-  Value extends number = number,
-  State extends GeneratorState = GeneratorState,
-  Attempts extends number = number,
-> = Success<{
-  readonly value: Value;
-  readonly state: State;
-  readonly attempts: Attempts;
-}>;
-
-export type SamplingExhausted<State extends GeneratorState = GeneratorState> = Failure<
-  "sampling-attempts-exhausted",
-  {
-    readonly maximumAttempts: number;
-    readonly attempts: number;
-    readonly state: State;
-  }
->;
-
-export type BoundedResult =
-  | BoundedSuccess
-  | InvalidStateFailure
-  | InvalidBoundFailure
-  | InvalidAttemptFuelFailure
-  | SamplingExhausted;
 
 /* -------------------------------------------------------------------------- */
 /* Private fixed-width arithmetic                                              */
@@ -300,6 +268,7 @@ type IsZeroState<W extends StateWords> =
       : false
     : false;
 
+type FourItems<W> = W extends readonly [unknown, unknown, unknown, unknown] ? true : false;
 type FourStringWords<W> = W extends readonly [string, string, string, string] ? true : false;
 type ValidWords<W> = W extends readonly [
   infer A extends string,
@@ -321,24 +290,28 @@ type ValidWords<W> = W extends readonly [
 /* -------------------------------------------------------------------------- */
 
 type InitializeWords<Words, Original> =
-  FourStringWords<Words> extends true
-    ? ValidWords<Words> extends true
-      ? Words extends StateWords
-        ? IsZeroState<Words> extends true
-          ? Failure<"invalid-seed-zero", { readonly seed: Original }>
-          : Success<GeneratorState<Words>>
-        : Failure<"invalid-seed-shape", { readonly seed: Original }>
+  FourItems<Words> extends true
+    ? FourStringWords<Words> extends true
+      ? ValidWords<Words> extends true
+        ? Words extends StateWords
+          ? IsZeroState<Words> extends true
+            ? Failure<"invalid-seed-zero", { readonly seed: Original }>
+            : Success<GeneratorState<Words>>
+          : Failure<"invalid-seed-shape", { readonly seed: Original }>
+        : Failure<"invalid-seed-word", { readonly seed: Original }>
       : Failure<"invalid-seed-word", { readonly seed: Original }>
     : Failure<"invalid-seed-shape", { readonly seed: Original }>;
 
 type StateWordsResult<Words, Original> =
-  FourStringWords<Words> extends true
-    ? ValidWords<Words> extends true
-      ? Words extends StateWords
-        ? IsZeroState<Words> extends true
-          ? Failure<"invalid-state-zero", { readonly state: Original }>
-          : Success<GeneratorState<Words>>
-        : Failure<"invalid-state-shape", { readonly state: Original }>
+  FourItems<Words> extends true
+    ? FourStringWords<Words> extends true
+      ? ValidWords<Words> extends true
+        ? Words extends StateWords
+          ? IsZeroState<Words> extends true
+            ? Failure<"invalid-state-zero", { readonly state: Original }>
+            : Success<GeneratorState<Words>>
+          : Failure<"invalid-state-shape", { readonly state: Original }>
+        : Failure<"invalid-state-word", { readonly state: Original }>
       : Failure<"invalid-state-word", { readonly state: Original }>
     : Failure<"invalid-state-shape", { readonly state: Original }>;
 
@@ -357,13 +330,6 @@ export type Initialize<Input> = Input extends {
 export type InitializeResult = Success<GeneratorState> | InvalidSeedFailure;
 
 /** Validate and tag current state words without consuming a transition. */
-export type CreateState<Input> = Input extends {
-  readonly kind: "GeneratorState";
-  readonly words: infer Words;
-}
-  ? StateWordsResult<Words, Input>
-  : StateWordsResult<Input, Input>;
-
 type StateBits<State extends GeneratorState> = State["words"] extends readonly [
   infer A extends string,
   infer B extends string,
@@ -382,28 +348,30 @@ type StateBits<State extends GeneratorState> = State["words"] extends readonly [
   : never;
 
 type NextWords<Words, Original> =
-  FourStringWords<Words> extends true
-    ? ValidWords<Words> extends true
-      ? Words extends StateWords
-        ? IsZeroState<Words> extends true
-          ? Failure<"invalid-state-zero", { readonly state: Original }>
-          : StateBits<GeneratorState<Words>> extends infer Result
-            ? Result extends {
-                readonly word: infer Word extends string;
-                readonly state: infer NextWordsValue extends StateWords;
-              }
-              ? Success<{
-                  readonly word: Word;
-                  readonly state: GeneratorState<readonly [
-                    NextWordsValue[0],
-                    NextWordsValue[1],
-                    NextWordsValue[2],
-                    NextWordsValue[3],
-                  ]>;
-                }>
+  FourItems<Words> extends true
+    ? FourStringWords<Words> extends true
+      ? ValidWords<Words> extends true
+        ? Words extends StateWords
+          ? IsZeroState<Words> extends true
+            ? Failure<"invalid-state-zero", { readonly state: Original }>
+            : StateBits<GeneratorState<Words>> extends infer Result
+              ? Result extends {
+                  readonly word: infer Word extends string;
+                  readonly state: infer NextWordsValue extends StateWords;
+                }
+                ? Success<{
+                    readonly word: Word;
+                    readonly state: GeneratorState<readonly [
+                      NextWordsValue[0],
+                      NextWordsValue[1],
+                      NextWordsValue[2],
+                      NextWordsValue[3],
+                    ]>;
+                  }>
+                : Failure<"invalid-state-word", { readonly state: Original }>
               : Failure<"invalid-state-word", { readonly state: Original }>
-            : Failure<"invalid-state-word", { readonly state: Original }>
-        : Failure<"invalid-state-shape", { readonly state: Original }>
+          : Failure<"invalid-state-shape", { readonly state: Original }>
+        : Failure<"invalid-state-word", { readonly state: Original }>
       : Failure<"invalid-state-word", { readonly state: Original }>
     : Failure<"invalid-state-shape", { readonly state: Original }>;
 
@@ -468,13 +436,13 @@ type SnapshotState<Input> = Input extends {
   readonly sequenceProfile: SequenceProfile;
   readonly state: infer Words;
 }
-  ? StateWordsResult<Words, Words> extends infer Validated
-    ? Validated extends Success<GeneratorState<infer ValidWordsValue extends StateWords>>
-      ? Success<GeneratorState<ValidWordsValue>>
-      : Validated extends Failure<infer Code extends FailureCode, object>
-        ? Failure<Code, { readonly state: Input }>
-        : never
-    : never
+  ? FourItems<Words> extends true
+    ? StateWordsResult<Words, { readonly kind: "GeneratorState"; readonly words: Words }> extends infer Validated
+      ? Validated extends Success<GeneratorState<infer ValidWordsValue extends StateWords>>
+        ? Success<GeneratorState<ValidWordsValue>>
+        : Validated
+      : never
+    : Failure<"invalid-state-shape", { readonly state: Input }>
   : Failure<"invalid-state-shape", { readonly state: Input }>;
 
 /** Restore a serialized current state without advancing it. */

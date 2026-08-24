@@ -1,32 +1,62 @@
 {
   "schemaVersion": 1,
   "issue": 18,
-  "query": "verification/issue-18/budget.ts",
+  "focusedQuery": "verification/issue-18/budget.ts",
   "blockingCompiler": {
     "package": "typescript@7.0.2",
     "reportedVersion": "Version 7.0.2"
   },
   "limits": {
     "maximumCheckMilliseconds": 500,
+    "maximumSingleCheckMilliseconds": 1500,
     "maximumCompilerMemoryKiB": 327680,
     "maximumInstantiations": 90000
   },
   "measurement": {
     "recordedAt": "2026-08-24",
     "runner": "Linux container, Node 20.20.1",
-    "policies": {
-      "oneChecker": {
-        "checkers": 1,
-        "checkMilliseconds": 249,
-        "compilerMemoryKiB": 80979,
-        "instantiations": 84075
-      },
-      "fourChecker": {
-        "checkers": 4,
-        "checkMilliseconds": 251,
-        "compilerMemoryKiB": 83352,
-        "instantiations": 87392
-      }
-    }
+    "runs": 1,
+    "artifacts": [
+      "verification/issue-18/budget.ts",
+      "verification/generated/prng-issue18-transitions-0.d.ts",
+      "verification/generated/prng-issue18-transitions-1.d.ts",
+      "verification/generated/prng-issue18-transitions-2.d.ts",
+      "verification/generated/prng-issue18-transitions-3.d.ts",
+      "verification/generated/prng-issue18-transitions-4.d.ts",
+      "verification/generated/prng-issue18-transitions-5.d.ts",
+      "verification/generated/prng-issue18-transitions-6.d.ts",
+      "verification/generated/prng-issue18-transitions-7.d.ts",
+      "verification/generated/prng-issue18-transitions-8.d.ts",
+      "verification/generated/prng-issue18-transitions-9.d.ts",
+      "verification/generated/prng-issue18-replay.d.ts"
+    ],
+    "oneChecker": [
+      { "artifact": "verification/issue-18/budget.ts", "checkMilliseconds": 294, "compilerMemoryKiB": 70690, "instantiations": 56037 },
+      { "artifact": "prng-issue18-transitions-0.d.ts", "checkMilliseconds": 408, "compilerMemoryKiB": 70822, "instantiations": 56182 },
+      { "artifact": "prng-issue18-transitions-1.d.ts", "checkMilliseconds": 246, "compilerMemoryKiB": 65294, "instantiations": 45204 },
+      { "artifact": "prng-issue18-transitions-2.d.ts", "checkMilliseconds": 366, "compilerMemoryKiB": 71293, "instantiations": 56545 },
+      { "artifact": "prng-issue18-transitions-3.d.ts", "checkMilliseconds": 394, "compilerMemoryKiB": 72444, "instantiations": 58246 },
+      { "artifact": "prng-issue18-transitions-4.d.ts", "checkMilliseconds": 394, "compilerMemoryKiB": 73305, "instantiations": 58980 },
+      { "artifact": "prng-issue18-transitions-5.d.ts", "checkMilliseconds": 288, "compilerMemoryKiB": 73094, "instantiations": 58868 },
+      { "artifact": "prng-issue18-transitions-6.d.ts", "checkMilliseconds": 335, "compilerMemoryKiB": 73196, "instantiations": 58916 },
+      { "artifact": "prng-issue18-transitions-7.d.ts", "checkMilliseconds": 278, "compilerMemoryKiB": 73307, "instantiations": 59073 },
+      { "artifact": "prng-issue18-transitions-8.d.ts", "checkMilliseconds": 350, "compilerMemoryKiB": 73259, "instantiations": 59043 },
+      { "artifact": "prng-issue18-transitions-9.d.ts", "checkMilliseconds": 264, "compilerMemoryKiB": 73379, "instantiations": 59013 },
+      { "artifact": "prng-issue18-replay.d.ts", "checkMilliseconds": 272, "compilerMemoryKiB": 72441, "instantiations": 66850 }
+    ],
+    "fourChecker": [
+      { "artifact": "verification/issue-18/budget.ts", "checkMilliseconds": 206, "compilerMemoryKiB": 74753, "instantiations": 59357 },
+      { "artifact": "prng-issue18-transitions-0.d.ts", "checkMilliseconds": 392, "compilerMemoryKiB": 74925, "instantiations": 59504 },
+      { "artifact": "prng-issue18-transitions-1.d.ts", "checkMilliseconds": 452, "compilerMemoryKiB": 68162, "instantiations": 48461 },
+      { "artifact": "prng-issue18-transitions-2.d.ts", "checkMilliseconds": 440, "compilerMemoryKiB": 75296, "instantiations": 59755 },
+      { "artifact": "prng-issue18-transitions-3.d.ts", "checkMilliseconds": 381, "compilerMemoryKiB": 76368, "instantiations": 61456 },
+      { "artifact": "prng-issue18-transitions-4.d.ts", "checkMilliseconds": 292, "compilerMemoryKiB": 77194, "instantiations": 62182 },
+      { "artifact": "prng-issue18-transitions-5.d.ts", "checkMilliseconds": 284, "compilerMemoryKiB": 77022, "instantiations": 62070 },
+      { "artifact": "prng-issue18-transitions-6.d.ts", "checkMilliseconds": 252, "compilerMemoryKiB": 77165, "instantiations": 62118 },
+      { "artifact": "prng-issue18-transitions-7.d.ts", "checkMilliseconds": 258, "compilerMemoryKiB": 77333, "instantiations": 62275 },
+      { "artifact": "prng-issue18-transitions-8.d.ts", "checkMilliseconds": 217, "compilerMemoryKiB": 77302, "instantiations": 62250 },
+      { "artifact": "prng-issue18-transitions-9.d.ts", "checkMilliseconds": 298, "compilerMemoryKiB": 77340, "instantiations": 62220 },
+      { "artifact": "prng-issue18-replay.d.ts", "checkMilliseconds": 317, "compilerMemoryKiB": 76626, "instantiations": 70427 }
+    ]
   }
 }

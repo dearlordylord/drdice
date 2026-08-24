@@ -77,6 +77,7 @@ const replayAssertions = [
   `type CanonicalSeed = ${tuple(golden.canonicalSeed)};`,
   `type TaggedCanonicalSeed = Seed<CanonicalSeed>;`,
   `type InvalidStateWordInput = { readonly kind: "GeneratorState"; readonly words: readonly ["0000000A", "00000000", "00000000", "00000001"] };`,
+  `type InvalidStateNonStringInput = { readonly kind: "GeneratorState"; readonly words: readonly ["00000001", 2, "00000000", "00000001"] };`,
   `type InvalidStateZeroInput = { readonly kind: "GeneratorState"; readonly words: readonly ["00000000", "00000000", "00000000", "00000000"] };`,
   `type FirstSuccessorState = ${state(golden.replay.firstSuccessorState)};`,
   `type Replay = ReplayToken<CanonicalSeed>;`,
@@ -108,25 +109,33 @@ const replayAssertions = [
   ``,
   `type InvalidSeedShapeInput = readonly ["00000001"];`,
   `type InvalidSeedWordInput = readonly ["0000000A", "00000000", "00000000", "00000001"];`,
+  `type InvalidSeedNonStringInput = readonly ["00000001", 2, "00000000", "00000001"];`,
   `type InvalidSeedZeroInput = readonly ["00000000", "00000000", "00000000", "00000000"];`,
   `type InvalidSnapshotShapeInput = { readonly schemaVersion: 1; readonly sequenceProfile: SequenceProfile; readonly state: readonly ["00000001"] };`,
   `type InvalidSnapshotWordInput = { readonly schemaVersion: 1; readonly sequenceProfile: SequenceProfile; readonly state: readonly ["0000000A", "00000000", "00000000", "00000001"] };`,
+  `type InvalidSnapshotNonStringInput = { readonly schemaVersion: 1; readonly sequenceProfile: SequenceProfile; readonly state: readonly ["00000001", 2, "00000000", "00000001"] };`,
   `type InvalidSnapshotZeroInput = { readonly schemaVersion: 1; readonly sequenceProfile: SequenceProfile; readonly state: readonly ["00000000", "00000000", "00000000", "00000000"] };`,
+  `type InvalidSnapshotWordState = { readonly kind: "GeneratorState"; readonly words: InvalidSnapshotWordInput["state"] };`,
+  `type InvalidSnapshotNonStringState = { readonly kind: "GeneratorState"; readonly words: InvalidSnapshotNonStringInput["state"] };`,
+  `type InvalidSnapshotZeroState = { readonly kind: "GeneratorState"; readonly words: InvalidSnapshotZeroInput["state"] };`,
   `type InvalidReplaySchemaInput = { readonly schemaVersion: 2; readonly sequenceProfile: SequenceProfile; readonly seed: CanonicalSeed };`,
   `type InvalidReplayProfileInput = { readonly schemaVersion: 1; readonly sequenceProfile: "other-profile"; readonly seed: CanonicalSeed };`,
   `type InvalidSnapshotProfileInput = { readonly schemaVersion: 1; readonly sequenceProfile: "other-profile"; readonly state: FirstSuccessorState["words"] };`,
   `type _InvalidSeedShape = Assert<Equal<Initialize<InvalidSeedShapeInput>, Failure<"invalid-seed-shape", { readonly seed: InvalidSeedShapeInput }>>>;`,
   `type _InvalidSeedWord = Assert<Equal<Initialize<InvalidSeedWordInput>, Failure<"invalid-seed-word", { readonly seed: InvalidSeedWordInput }>>>;`,
+  `type _InvalidSeedNonString = Assert<Equal<Initialize<InvalidSeedNonStringInput>, Failure<"invalid-seed-word", { readonly seed: InvalidSeedNonStringInput }>>>;`,
   `type _InvalidSeedZero = Assert<Equal<Initialize<InvalidSeedZeroInput>, Failure<"invalid-seed-zero", { readonly seed: InvalidSeedZeroInput }>>>;`,
   `type _InvalidStateShape = Assert<Equal<Next<null>, Failure<"invalid-state-shape", { readonly state: null }>>>;`,
   `type _InvalidStateWord = Assert<Equal<Next<InvalidStateWordInput>, Failure<"invalid-state-word", { readonly state: InvalidStateWordInput }>>>;`,
+  `type _InvalidStateNonString = Assert<Equal<Next<InvalidStateNonStringInput>, Failure<"invalid-state-word", { readonly state: InvalidStateNonStringInput }>>>;`,
   `type _InvalidStateZero = Assert<Equal<Next<InvalidStateZeroInput>, Failure<"invalid-state-zero", { readonly state: InvalidStateZeroInput }>>>;`,
   `type _SeedStateDistinct = Assert<Equal<Next<TaggedCanonicalSeed>, Failure<"invalid-state-shape", { readonly state: TaggedCanonicalSeed }>>>;`,
   `type _InvalidReplaySchema = Assert<Equal<RestoreReplay<InvalidReplaySchemaInput>, Failure<"invalid-replay-token", { readonly token: InvalidReplaySchemaInput }>>>;`,
   `type _InvalidReplayProfile = Assert<Equal<RestoreReplay<InvalidReplayProfileInput>, Failure<"invalid-replay-token", { readonly token: InvalidReplayProfileInput }>>>;`,
   `type _InvalidSnapshotShape = Assert<Equal<RestoreState<InvalidSnapshotShapeInput>, Failure<"invalid-state-shape", { readonly state: InvalidSnapshotShapeInput }>>>;`,
-  `type _InvalidSnapshotWord = Assert<Equal<RestoreState<InvalidSnapshotWordInput>, Failure<"invalid-state-word", { readonly state: InvalidSnapshotWordInput }>>>;`,
-  `type _InvalidSnapshotZero = Assert<Equal<RestoreState<InvalidSnapshotZeroInput>, Failure<"invalid-state-zero", { readonly state: InvalidSnapshotZeroInput }>>>;`,
+  `type _InvalidSnapshotWord = Assert<Equal<RestoreState<InvalidSnapshotWordInput>, Failure<"invalid-state-word", { readonly state: InvalidSnapshotWordState }>>>;`,
+  `type _InvalidSnapshotNonString = Assert<Equal<RestoreState<InvalidSnapshotNonStringInput>, Failure<"invalid-state-word", { readonly state: InvalidSnapshotNonStringState }>>>;`,
+  `type _InvalidSnapshotZero = Assert<Equal<RestoreState<InvalidSnapshotZeroInput>, Failure<"invalid-state-zero", { readonly state: InvalidSnapshotZeroState }>>>;`,
   `type _InvalidSnapshotProfile = Assert<Equal<RestoreState<InvalidSnapshotProfileInput>, Failure<"invalid-state-shape", { readonly state: InvalidSnapshotProfileInput }>>>;`,
   `type _InvalidSerializeShape = Assert<Equal<SerializeState<null>, Failure<"invalid-state-shape", { readonly state: null }>>>;`,
   `type _InvalidSerializeWord = Assert<Equal<SerializeState<InvalidStateWordInput>, Failure<"invalid-state-word", { readonly state: InvalidStateWordInput }>>>;`,
@@ -137,12 +146,7 @@ const replayAssertions = [
 ];
 
 const transitions = golden.rawWordVector.transitions.map((transition, index) => ({ ...transition, index }));
-const transitionShards = [
-  transitions.slice(0, 3),
-  transitions.slice(3, 6),
-  transitions.slice(6, 9),
-  transitions.slice(9),
-];
+const transitionShards = transitions.map((transition) => [transition]);
 
 const prngAssertions = transitionShards.map((shard, index) => [
   ...prngHeader,
@@ -153,8 +157,8 @@ const replayFixture = [
   ...replayAssertions,
 ].join("\n");
 
-/* Keep the exact type corpus sharded: each transition shard remains within
- * the issue-11 PRNG checker budget while the generated gate checks all shards. */
+/* Keep each exact transition and the replay assertions in separate artifacts.
+ * The budget gate checks every artifact under both TypeScript 7 checker policies. */
 const fixtureFiles = [
   ...prngAssertions.map((contents, index) => [`prng-issue18-transitions-${index}.d.ts`, contents]),
   ["prng-issue18-replay.d.ts", replayFixture],
