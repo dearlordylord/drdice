@@ -22,6 +22,7 @@ const expectedMembers = new Set([
   "package/README.md",
   "package/dist/index.d.ts",
   "package/dist/index.js",
+  "package/dist/types.d.ts",
   "package/package.json",
 ]);
 const isWithin = (candidate, directory) => (
@@ -73,8 +74,9 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} does not expose its declaration root`);
   }
   const declaredMembers = new Set((manifest.files ?? []).map((entry) => `package/${String(entry).replaceAll("\\", "/")}`));
-  if (declaredMembers.size !== 4 || !declaredMembers.has("package/dist/index.d.ts")
+  if (declaredMembers.size !== 5 || !declaredMembers.has("package/dist/index.d.ts")
     || !declaredMembers.has("package/dist/index.js")
+    || !declaredMembers.has("package/dist/types.d.ts")
     || !declaredMembers.has("package/README.md") || !declaredMembers.has("package/LICENSE")) {
     throw new Error(`${record.name} does not declare the curated runtime/declaration/documentation allowlist`);
   }
@@ -204,8 +206,10 @@ export type DiceReferencesPrngState = Assert<Equal<
   }
   await access(resolve(installedPrng, "dist/index.d.ts"));
   await access(resolve(installedPrng, "dist/index.js"));
+  await access(resolve(installedPrng, "dist/types.d.ts"));
   await access(resolve(installedDice, "dist/index.d.ts"));
   await access(resolve(installedDice, "dist/index.js"));
+  await access(resolve(installedDice, "dist/types.d.ts"));
 
   const runtimeProbe = spawnSync(
     process.execPath,

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
-const declaration = await readFile(resolve(root, "packages/prng/src/index.d.ts"), "utf8");
+const declaration = await readFile(resolve(root, "packages/prng/dist/index.d.ts"), "utf8");
 const generatedNames = [
   "prng-type-parity-transitions-0.d.ts",
   "prng-type-parity-transitions-1.d.ts",
@@ -82,10 +82,11 @@ const expectedExports = [
   "stateOf",
   "PackageMetadata",
 ];
-const actualExports = [...new Set(
-  [...declaration.matchAll(/^export (?:const|type|function) (\w+)/gm)]
-    .map(([, name]) => name),
-)];
+const directExports = [...declaration.matchAll(/^export (?:declare )?(?:const|type|function) (\w+)/gm)]
+  .map(([, name]) => name);
+const reexportedTypes = [...declaration.matchAll(/^export type \{([^}]*)\} from/gms)]
+  .flatMap(([, names]) => names.split(",").map((name) => name.trim()).filter(Boolean));
+const actualExports = [...new Set([...directExports, ...reexportedTypes])];
 assert(
   JSON.stringify([...actualExports].sort()) === JSON.stringify([...expectedExports].sort()),
   `curated root exports differ; expected ${expectedExports.join(", ")}, got ${actualExports.join(", ")}`,

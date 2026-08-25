@@ -16,6 +16,7 @@ const expectedMembers = new Set([
   "package/README.md",
   "package/dist/index.d.ts",
   "package/dist/index.js",
+  "package/dist/types.d.ts",
   "package/package.json",
 ]);
 const prngSourceManifest = JSON.parse(
@@ -65,7 +66,7 @@ try {
       throw new Error(`${packageInfo.name} must expose exactly its package root`);
     }
     if (manifest.exports["."]?.types !== "./dist/index.d.ts" || manifest.types !== "./dist/index.d.ts") {
-      throw new Error(`${packageInfo.name} must expose its rolled-up declaration root`);
+      throw new Error(`${packageInfo.name} must expose its generated declaration root`);
     }
     if (manifest.dependencies?.["@drdice/prng"]?.startsWith("workspace:")) {
       throw new Error("packed Dice dependency still contains the workspace protocol");
@@ -80,14 +81,20 @@ try {
       throw new Error(`${packageInfo.name} does not expose its runtime entry point`);
     }
     const declaredFiles = new Set((manifest.files ?? []).map((entry) => String(entry).replaceAll("\\", "/")));
-    const expectedAllowlist = new Set(["dist/index.d.ts", "dist/index.js", "README.md", "LICENSE"]);
+    const expectedAllowlist = new Set(["dist/index.d.ts", "dist/index.js", "dist/types.d.ts", "README.md", "LICENSE"]);
     if (declaredFiles.size !== expectedAllowlist.size || [...expectedAllowlist].some((entry) => !declaredFiles.has(entry))) {
       throw new Error(`${packageInfo.name} does not declare exactly its packed allowlist: ${JSON.stringify(manifest.files)}`);
     }
 
-    const declaration = await readFile(resolve(directory, "dist/index.d.ts"), "utf8");
+    const declaration = [
+      await readFile(resolve(directory, "dist/index.d.ts"), "utf8"),
+      await readFile(resolve(directory, "dist/types.d.ts"), "utf8"),
+    ].join("\n");
     if (packageInfo.name === "@drdice/dice") {
-      const prngDeclaration = await readFile(resolve(root, "packages/prng/dist/index.d.ts"), "utf8");
+      const prngDeclaration = [
+        await readFile(resolve(root, "packages/prng/dist/index.d.ts"), "utf8"),
+        await readFile(resolve(root, "packages/prng/dist/types.d.ts"), "utf8"),
+      ].join("\n");
       const prngExports = new Set([...prngDeclaration.matchAll(/^export\s+(?:const|type)\s+(\w+)/gm)].map(([, name]) => name));
       if (/\bexport\s+\*\s+from\s+["']@drdice\/prng["']/.test(declaration)) {
         throw new Error("@drdice/dice re-exports the PRNG declaration root");
@@ -122,7 +129,7 @@ try {
       }
     }
   }
-  console.log("Packed artifacts contain only the two typed runtime roots and documentation allowlists.");
+  console.log("Packed artifacts contain generated runtime roots, supporting declarations, and documentation allowlists.");
 } finally {
   await rm(temporary, { recursive: true, force: true });
 }

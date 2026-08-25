@@ -89,8 +89,9 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Package source lives in `packages/*/src`. `pnpm build` recreates the ignored
-`packages/*/dist` output, and package packing runs that build automatically.
+Runtime source lives in `packages/*/src/index.ts`, and compile-time computation
+lives in `packages/*/src/types.ts`. `pnpm build` compiles both into the ignored
+`packages/*/dist` output. Package packing runs that build automatically.
 
 Maintainer qualification and publishing steps are documented in the
 [release guide](verification/release/README.md).

@@ -1,6 +1,6 @@
 # PRNG type parity: declaration-only PRNG implementation checks
 
-The production PRNG source in `packages/prng/src/index.d.ts` exposes only the
+The production PRNG type source in `packages/prng/src/types.ts` exposes only the
 literal type API. Its private fixed-width arithmetic and validation aliases are
 not exported, and no runtime implementation is shipped. The public operations
 are `Initialize`, `Next`, `ReplayToken`, `RestoreReplay`,

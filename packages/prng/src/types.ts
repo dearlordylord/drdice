@@ -2,19 +2,17 @@
  * @drdice/prng provides matching runtime and literal-computing implementations of the
  * `xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2` Sequence Profile.
  *
- * The aliases in this file are intentionally the package's complete public
- * root. Arithmetic and validation helpers are private implementation detail;
- * they remain in the rolled-up declaration because the checker evaluates the
- * types, but they are not exported or supported as an API.
+ * The exported aliases in this file are the package's public type API.
+ * Arithmetic and validation helpers are private implementation detail. They
+ * remain in the generated supporting declaration because the checker evaluates
+ * them, but they are not exported or supported as an API.
  */
 
 /** Immutable PRNG identity. Changing a sequence-affecting rule requires a new profile. */
-export const SEQUENCE_PROFILE: "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
-export type SequenceProfile = typeof SEQUENCE_PROFILE;
+export type SequenceProfile = "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2";
 
 /** Version of Replay Token and Serialized Generator State schemas. */
-export const SCHEMA_VERSION: 1;
-export type SchemaVersion = typeof SCHEMA_VERSION;
+export type SchemaVersion = 1;
 
 type HexDigit =
   | "0"
@@ -1333,68 +1331,22 @@ type BroadWords<Words> = Words extends readonly string[]
   ? string extends Words[number] ? true : false
   : true;
 
-type RuntimeInitialize<Input> = Input extends Seed<infer Words>
+export type RuntimeInitialize<Input> = Input extends Seed<infer Words>
   ? BroadWords<Words> extends true ? InitializeResult : Initialize<Input>
   : Input extends SeedWords
     ? BroadWords<Input> extends true ? InitializeResult : Initialize<Input>
     : Initialize<Input>;
 
-type RuntimeNext<Input> = Input extends GeneratorState<infer Words>
+export type RuntimeNext<Input> = Input extends GeneratorState<infer Words>
   ? BroadWords<Words> extends true ? StepResult : Next<Input>
   : Next<Input>;
 
-type RuntimeSample<Input, Bound extends number, MaximumAttempts extends number> =
+export type RuntimeSample<Input, Bound extends number, MaximumAttempts extends number> =
   number extends Bound | MaximumAttempts
     ? BoundedResult
     : Input extends GeneratorState<infer Words>
       ? BroadWords<Words> extends true ? BoundedResult : Sample<Input, Bound, MaximumAttempts>
       : Sample<Input, Bound, MaximumAttempts>;
-
-/** Create a fresh runtime Seed using the host's cryptographic entropy source. */
-export function randomSeed(): SeedWords;
-
-/** Initialize and warm a runtime Generator State using the Sequence Profile. */
-export function initialize<const Input>(seed: Input): RuntimeInitialize<Input>;
-
-/** Generate one raw Word32 and its next state at runtime. */
-export function next<const Input>(state: Input): RuntimeNext<Input>;
-
-/** Generate an unbiased bounded integer at runtime; output-word fuel defaults to 5. */
-export function sample<
-  const Input,
-  const Bound extends number,
-  const MaximumAttempts extends number = 5,
->(state: Input, bound: Bound, maximumAttempts?: MaximumAttempts): RuntimeSample<Input, Bound, MaximumAttempts>;
-
-/** Serialize a current state for later resume. */
-export function serializeState<const Input>(state: Input): SerializeState<Input>;
-
-/** Restore a serialized current state without advancing it. */
-export function restoreState<const Input>(snapshot: Input): RestoreState<Input>;
-
-/** Restore a Replay Token by restarting from its Seed. */
-export function restoreReplay<const Input>(token: Input): RestoreReplay<Input>;
-
-/** Extract the complete payload from a successful runtime result. */
-export function payloadOf<const Payload>(result: Success<Payload>): Payload;
-
-/** Extract the integer from a successful runtime bounded sample. */
-export function valueOf<const Value extends number>(
-  result: Success<{ readonly value: Value }>,
-): Value;
-
-/** Extract the raw word from a successful runtime generator step. */
-export function wordOf<const Word extends Word32Text>(
-  result: Success<{ readonly word: Word }>,
-): Word;
-
-/** Extract the current state from a successful initialization result. */
-export function stateOf<const State extends GeneratorState>(result: Success<State>): State;
-
-/** Extract the current state from a successful step or sample result. */
-export function stateOf<const State extends GeneratorState>(
-  result: Success<{ readonly state: State }>,
-): State;
 
 /* Package boundary metadata is retained for the workspace's generated checks. */
 export type PackageMetadata = {

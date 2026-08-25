@@ -2,7 +2,7 @@
   "name": "drdice-workspace",
   "version": "0.0.0",
   "private": true,
-  "description": "Development workspace for the DRDice declaration-only packages",
+  "description": "Development workspace for the DRDice typed runtime packages",
   "license": "MIT",
   "packageManager": "pnpm@10.29.3",
   "engines": {

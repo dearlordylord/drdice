@@ -4,19 +4,13 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
-    "noEmit": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist",
     "skipLibCheck": false,
     "lib": ["ES2022", "DOM"],
     "types": [],
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "packages/*/src/**/*.ts",
-    "verification/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "verification/generated/**/*.d.ts",
-    "verification/property-parity/generated/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }

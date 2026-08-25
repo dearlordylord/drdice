@@ -1,7 +1,44 @@
 import { sample } from "@drdice/prng";
+import type { GeneratorState as PrngGeneratorState } from "@drdice/prng";
+import type { DiceEvaluation, RuntimeEvaluate, Success } from "./types.js";
 
-export const DICE_SEMANTIC_PROFILE = "dice-v3/utf16-bounded-left-to-right-3";
-export const DICE_SEMANTIC_VERSION = 3;
+export type {
+  Success,
+  FailureCode,
+  Failure,
+  DieSample,
+  RollTrace,
+  DiceEvaluation,
+  PayloadOf,
+  ValueOf,
+  RollsOf,
+  StateOf,
+  SyntaxCode,
+  ResourceDimension,
+  ExpectedExpressionDiagnostic,
+  ExpectedDieSidesDiagnostic,
+  ExpectedClosingParenthesisDiagnostic,
+  LeadingZeroDiagnostic,
+  UnexpectedTokenDiagnostic,
+  SyntaxDiagnostic,
+  DiceCountZeroDiagnostic,
+  SideCountZeroDiagnostic,
+  DomainDiagnostic,
+  ResourceLimitExceededDiagnostic,
+  DynamicResourceLimitExceededDiagnostic,
+  SamplingAttemptsExhaustedDiagnostic,
+  Diagnostic,
+  DiagnosticFailure,
+  EvaluationStateFailure,
+  EvaluationInputFailure,
+  EvaluationFailure,
+  EvaluationResult,
+  Evaluate,
+  PackageMetadata,
+} from "./types.js";
+
+export const DICE_SEMANTIC_PROFILE = "dice-v3/utf16-bounded-left-to-right-3" as const;
+export const DICE_SEMANTIC_VERSION = 3 as const;
 
 const LIMITS = Object.freeze({
   sourceLength: 64,
@@ -23,32 +60,77 @@ const STATIC_TIE_ORDER = [
   "supported-side-count",
   "arithmetic-magnitude",
   "evaluation-steps",
-];
+] as const;
 
-const success = (value) => ({ ok: true, value });
-const failure = (code, details) => ({ ok: false, code, details });
-const whitespace = (char) => char === " " || char === "\t" || char === "\n" || char === "\r";
-const digit = (char) => typeof char === "string" && char >= "0" && char <= "9";
-const foundAt = (source, offset) => offset >= source.length ? "eof" : source[offset];
-const skipWhitespace = (source, offset) => {
+type RuntimeFailure = { ok: false; code: string; details: Record<string, unknown> };
+type RuntimeResult<Value> = { ok: true; value: Value } | RuntimeFailure;
+type IntegerAst = { kind: "integer"; value: number; offset: number };
+type DiceAst = { kind: "dice"; count: number; sides: number; offset: number; sideOffset: number };
+type GroupAst = { kind: "group"; child: Ast; offset: number };
+type BinaryAst = { kind: "binary"; op: "+" | "-"; left: Ast; right: Ast; offset: number };
+type Ast = IntegerAst | DiceAst | GroupAst | BinaryAst;
+type ParseResult = { result: RuntimeResult<Ast>; end: number };
+type ResourceCandidate = { offset: number; dimension: string; limit: number; actual: number };
+type AstCounts = {
+  nodes: number;
+  diceTerms: number;
+  samples: number;
+  steps: number;
+  nodeOffsets: number[];
+  diceOffsets: number[];
+  sampleOffsets: number[];
+  stepOffsets: number[];
+  integers: Array<{ value: number; offset: number }>;
+};
+type RuntimeDieSample = { sideCount: number; face: number };
+type Evaluated = {
+  total: number;
+  rollTrace: RuntimeDieSample[];
+  nextState: unknown;
+  steps: number;
+};
+type PrngSampleResult = {
+  ok: true;
+  value: { value: number; state: unknown; attempts: number };
+} | {
+  ok: false;
+  code: string;
+  details: {
+    attempts: number;
+    state: unknown;
+    maximumAttempts: number;
+  } & Record<string, unknown>;
+};
+
+const sampleRuntime = sample as unknown as (
+  state: unknown,
+  bound: number,
+  maximumAttempts: number,
+) => PrngSampleResult;
+const success = <Value>(value: Value): { ok: true; value: Value } => ({ ok: true, value });
+const failure = (code: string, details: Record<string, unknown>): RuntimeFailure => ({ ok: false, code, details });
+const whitespace = (char: string | undefined) => char === " " || char === "\t" || char === "\n" || char === "\r";
+const digit = (char: string | undefined): char is string => typeof char === "string" && char >= "0" && char <= "9";
+const foundAt = (source: string, offset: number) => offset >= source.length ? "eof" : source[offset];
+const skipWhitespace = (source: string, offset: number) => {
   let cursor = offset;
   while (cursor < source.length && whitespace(source[cursor])) cursor += 1;
   return cursor;
 };
-const scanDigits = (source, offset) => {
+const scanDigits = (source: string, offset: number) => {
   let cursor = offset;
   while (cursor < source.length && digit(source[cursor])) cursor += 1;
   return { raw: source.slice(offset, cursor), end: cursor };
 };
 
-const syntaxFailure = (code, offset, found, expected) => failure(code, {
+const syntaxFailure = (code: string, offset: number, found: string, expected: string[]) => failure(code, {
   kind: "syntax",
   code,
   offset,
   found,
   expected,
 });
-const resourceFailure = (offset, dimension, limit, actual) => failure("resource-limit-exceeded", {
+const resourceFailure = (offset: number, dimension: string, limit: number, actual: number | string) => failure("resource-limit-exceeded", {
   kind: "resource",
   code: "resource-limit-exceeded",
   offset,
@@ -56,7 +138,7 @@ const resourceFailure = (offset, dimension, limit, actual) => failure("resource-
   limit,
   actual,
 });
-const domainFailure = (code, offset, subject) => failure(code, {
+const domainFailure = (code: string, offset: number, subject: string) => failure(code, {
   kind: "domain",
   code,
   offset,
@@ -64,7 +146,7 @@ const domainFailure = (code, offset, subject) => failure(code, {
   value: "0",
 });
 
-const parseNumber = (raw, offset) => {
+const parseNumber = (raw: string, offset: number): number | RuntimeFailure => {
   if (raw.length > LIMITS.numericTokenLength) {
     return resourceFailure(offset, "numeric-token-length", LIMITS.numericTokenLength, raw.length);
   }
@@ -74,7 +156,7 @@ const parseNumber = (raw, offset) => {
   return Number(raw);
 };
 
-const parsePrimary = (source, offset, depth) => {
+const parsePrimary = (source: string, offset: number, depth: number): ParseResult => {
   const start = skipWhitespace(source, offset);
   if (start >= source.length) {
     return {
@@ -107,7 +189,7 @@ const parsePrimary = (source, offset, depth) => {
   }
 
   const expressionStart = start;
-  let count;
+  let count: number;
   let cursor = start;
   if (head === "d" || head === "D") {
     count = 1;
@@ -154,7 +236,7 @@ const parsePrimary = (source, offset, depth) => {
   };
 };
 
-const parseExpression = (source, offset, depth) => {
+const parseExpression = (source: string, offset: number, depth: number): ParseResult => {
   const first = parsePrimary(source, offset, depth);
   if (!first.result.ok) return first;
   let left = first.result.value;
@@ -178,7 +260,7 @@ const parseExpression = (source, offset, depth) => {
   }
 };
 
-const validateDomain = (ast) => {
+const validateDomain = (ast: Ast): RuntimeFailure | null => {
   if (ast.kind === "dice") {
     if (ast.count === 0) return domainFailure("dice-count-zero", ast.offset, "dice-count");
     if (ast.sides === 0) return domainFailure("side-count-zero", ast.sideOffset, "side-count");
@@ -189,7 +271,7 @@ const validateDomain = (ast) => {
   return null;
 };
 
-const unsupportedSides = (ast) => {
+const unsupportedSides = (ast: Ast): ResourceCandidate | null => {
   if (ast.kind === "dice") {
     return ast.sides > LIMITS.supportedSideCount
       ? {
@@ -205,7 +287,7 @@ const unsupportedSides = (ast) => {
   return null;
 };
 
-const countAst = (ast) => {
+const countAst = (ast: Ast): AstCounts => {
   if (ast.kind === "integer") {
     return {
       nodes: 1, diceTerms: 0, samples: 0, steps: 1,
@@ -247,13 +329,13 @@ const countAst = (ast) => {
   };
 };
 
-const firstExcess = (offsets, limit) => {
+const firstExcess = (offsets: number[], limit: number) => {
   if (offsets.length <= limit) return null;
   const ordered = [...offsets].sort((left, right) => left - right);
   return { offset: ordered[limit] ?? ordered.at(-1) ?? 0, actual: limit + 1 };
 };
 
-const constantValue = (ast) => {
+const constantValue = (ast: Ast): number | null => {
   if (ast.kind === "integer") return ast.value;
   if (ast.kind === "group") return constantValue(ast.child);
   if (ast.kind !== "binary") return null;
@@ -263,8 +345,8 @@ const constantValue = (ast) => {
   return ast.op === "+" ? left + right : left - right;
 };
 
-const constantMagnitudeCandidates = (ast) => {
-  const candidates = [];
+const constantMagnitudeCandidates = (ast: Ast): ResourceCandidate[] => {
+  const candidates: ResourceCandidate[] = [];
   const value = constantValue(ast);
   if (value !== null && Math.abs(value) > LIMITS.arithmeticMagnitude) {
     candidates.push({
@@ -282,15 +364,15 @@ const constantMagnitudeCandidates = (ast) => {
   return candidates;
 };
 
-const staticPreflight = (ast) => {
+const staticPreflight = (ast: Ast): RuntimeFailure | null => {
   const counts = countAst(ast);
-  const candidates = [];
+  const candidates: ResourceCandidate[] = [];
   for (const [dimension, limit, offsets] of [
     ["ast-node-count", LIMITS.astNodeCount, counts.nodeOffsets],
     ["dice-term-count", LIMITS.diceTermCount, counts.diceOffsets],
     ["die-sample-count", LIMITS.dieSampleCount, counts.sampleOffsets],
     ["evaluation-steps", LIMITS.evaluationSteps, counts.stepOffsets],
-  ]) {
+  ] as Array<[string, number, number[]]>) {
     const excess = firstExcess(offsets, limit);
     if (excess) candidates.push({ ...excess, dimension, limit });
   }
@@ -308,19 +390,19 @@ const staticPreflight = (ast) => {
   }
   candidates.push(...constantMagnitudeCandidates(ast));
   if (candidates.length === 0) return null;
-  const rank = (dimension) => {
-    const index = STATIC_TIE_ORDER.indexOf(dimension);
+  const rank = (dimension: string) => {
+    const index = (STATIC_TIE_ORDER as readonly string[]).indexOf(dimension);
     return index < 0 ? STATIC_TIE_ORDER.length : index;
   };
-  const chosen = candidates.reduce((best, candidate) => !best
+  const chosen = candidates.reduce<ResourceCandidate | null>((best, candidate) => !best
     || candidate.offset < best.offset
     || (candidate.offset === best.offset && rank(candidate.dimension) < rank(best.dimension))
     ? candidate
     : best, null);
-  return resourceFailure(chosen.offset, chosen.dimension, chosen.limit, chosen.actual);
+  return resourceFailure(chosen!.offset, chosen!.dimension, chosen!.limit, chosen!.actual);
 };
 
-const stepFailure = (offset, actual, trace, state) => failure("resource-limit-exceeded", {
+const stepFailure = (offset: number, actual: number, trace: RuntimeDieSample[], state: unknown) => failure("resource-limit-exceeded", {
   kind: "resource",
   code: "resource-limit-exceeded",
   offset,
@@ -331,7 +413,13 @@ const stepFailure = (offset, actual, trace, state) => failure("resource-limit-ex
   nextState: state,
 });
 
-const evaluateAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
+const evaluateAst = (
+  ast: Ast,
+  state: unknown,
+  maximumAttempts: number,
+  trace: RuntimeDieSample[],
+  consumedSteps = 0,
+): RuntimeResult<Evaluated> => {
   if (ast.kind === "integer") {
     const steps = consumedSteps + 1;
     return steps > LIMITS.evaluationSteps
@@ -348,7 +436,7 @@ const evaluateAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
     let steps = consumedSteps + 1;
     if (steps > LIMITS.evaluationSteps) return stepFailure(ast.offset, steps, currentTrace, current);
     for (let index = 0; index < ast.count; index += 1) {
-      const sampled = sample(current, ast.sides, maximumAttempts);
+      const sampled = sampleRuntime(current, ast.sides, maximumAttempts);
       if (!sampled.ok) {
         if (sampled.code === "sampling-attempts-exhausted") {
           const attemptedSteps = steps + sampled.details.attempts + 1;
@@ -418,8 +506,8 @@ const evaluateAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
   });
 };
 
-const stateFailure = (state) => {
-  const probe = sample(state, 1, 0);
+const stateFailure = (state: unknown): RuntimeFailure | null => {
+  const probe = sampleRuntime(state, 1, 0);
   if (probe.ok || probe.code === "sampling-attempts-exhausted") return null;
   return failure(probe.code, {
     ...probe.details,
@@ -428,7 +516,7 @@ const stateFailure = (state) => {
   });
 };
 
-export const evaluate = (source, state, maximumAttempts = 5) => {
+const evaluateRuntime = (source: unknown, state: unknown, maximumAttempts = 5) => {
   if (typeof source !== "string") {
     return resourceFailure(0, "source-length", LIMITS.sourceLength, "widened");
   }
@@ -476,12 +564,28 @@ export const evaluate = (source, state, maximumAttempts = 5) => {
   });
 };
 
-const requireSuccess = (result) => {
+/** Parse and roll a Dice Expression using exactly the v3 semantics. */
+export const evaluate = evaluateRuntime as <
+  const Source extends string,
+  const State,
+  const MaximumAttempts extends number = 5,
+>(source: Source, state: State, maximumAttempts?: MaximumAttempts) => RuntimeEvaluate<Source, State, MaximumAttempts>;
+
+const requireSuccess = (result: { ok?: boolean; value?: unknown } | null | undefined): unknown => {
   if (!result?.ok) throw new TypeError("Cannot extract a value from a failed Dice result");
   return result.value;
 };
 
-export const payloadOf = (result) => requireSuccess(result);
-export const valueOf = (result) => requireSuccess(result).total;
-export const rollsOf = (result) => requireSuccess(result).rollTrace;
-export const stateOf = (result) => requireSuccess(result).nextState;
+export const payloadOf = requireSuccess as <const Payload>(result: Success<Payload>) => Payload;
+export const valueOf = ((result: Success<DiceEvaluation>) =>
+  (requireSuccess(result) as DiceEvaluation).total) as <const Payload extends DiceEvaluation>(
+    result: Success<Payload>,
+  ) => Payload["total"];
+export const rollsOf = ((result: Success<DiceEvaluation>) =>
+  (requireSuccess(result) as DiceEvaluation).rollTrace) as <const Payload extends DiceEvaluation>(
+    result: Success<Payload>,
+  ) => Payload["rollTrace"];
+export const stateOf = ((result: Success<DiceEvaluation>) =>
+  (requireSuccess(result) as DiceEvaluation).nextState) as <const Payload extends DiceEvaluation>(
+    result: Success<Payload>,
+  ) => Payload["nextState"];

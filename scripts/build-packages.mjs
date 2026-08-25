@@ -1,4 +1,5 @@
-import { copyFile, mkdir, rm } from "node:fs/promises";
+import { rm } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,13 +16,16 @@ for (const name of selected) {
 
 for (const name of selected) {
   const packageRoot = resolve(root, "packages", name);
-  const source = resolve(packageRoot, "src");
   const output = resolve(packageRoot, "dist");
   await rm(output, { recursive: true, force: true });
-  await mkdir(output, { recursive: true });
-  await Promise.all([
-    copyFile(resolve(source, "index.js"), resolve(output, "index.js")),
-    copyFile(resolve(source, "index.d.ts"), resolve(output, "index.d.ts")),
-  ]);
-  console.log(`[build] ${name}: src -> dist`);
+  const result = spawnSync(
+    "pnpm",
+    ["exec", "tsc", "--project", resolve(packageRoot, "tsconfig.build.json"), "--pretty", "false"],
+    { cwd: root, encoding: "utf8" },
+  );
+  if (result.status !== 0) {
+    throw new Error(`TypeScript build failed for ${name}\n${result.stdout}\n${result.stderr}`);
+  }
+  await rm(resolve(output, "types.js"), { force: true });
+  console.log(`[build] ${name}: TypeScript -> dist`);
 }

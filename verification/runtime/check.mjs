@@ -9,8 +9,8 @@ import {
   restoreState,
   sample,
   serializeState,
-} from "../../packages/prng/src/index.js";
-import { evaluate, payloadOf, rollsOf, stateOf, valueOf } from "../../packages/dice/src/index.js";
+} from "../../packages/prng/dist/index.js";
+import { evaluate, payloadOf, rollsOf, stateOf, valueOf } from "../../packages/dice/dist/index.js";
 import {
   oracleInitialize,
   oracleNext,

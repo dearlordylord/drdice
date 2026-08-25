@@ -7,8 +7,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (path) => readFile(resolve(root, path), "utf8");
 
 const [prngDeclaration, diceDeclaration, usability, release, versionSetter, packedCheck, cleanConsumerCheck, verifyWorkflow, budgetWorkflow, rootManifestText, prngManifestText, diceManifestText] = await Promise.all([
-  read("packages/prng/src/index.d.ts"),
-  read("packages/dice/src/index.d.ts"),
+  read("packages/prng/src/types.ts"),
+  read("packages/dice/src/types.ts"),
   read("verification/usability/check.mjs"),
   read("scripts/local_release.sh"),
   read("scripts/set-version.mjs"),
@@ -32,8 +32,8 @@ assert.match(packedCheck, /sourceManifest\.version/, "packed-artifact check does
 assert.match(cleanConsumerCheck, /record\.manifest\.version/, "consumer check does not derive package versions from manifests");
 assert.doesNotMatch(diceDeclaration, /StaticPreflightOriginal/, "dead static preflight remains shipped");
 assert.doesNotMatch(diceDeclaration, /continuation state|successor state/i, "declaration terminology drifted from the glossary");
-assert.match(usability, /packages\/prng\/src\/index\.js/, "usability gate does not import the production PRNG runtime source");
-assert.match(usability, /packages\/dice\/src\/index\.js/, "usability gate does not import the production Dice runtime source");
+assert.match(usability, /packages\/prng\/dist\/index\.js/, "usability gate does not import the built PRNG runtime");
+assert.match(usability, /packages\/dice\/dist\/index\.js/, "usability gate does not import the built Dice runtime");
 assert.doesNotMatch(usability, /oracle(?:Initialize|Sample|Evaluate)/, "usability gate still executes an oracle instead of production runtime");
 assert.match(release, /npm publish[^\n]+--tag "\$npm_dist_tag"/, "release publication does not use its derived npm dist-tag");
 assert.match(release, /git fetch origin "\$RELEASE_BRANCH" --tags/, "release does not fetch remote tags before preflight");

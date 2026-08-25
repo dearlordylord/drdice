@@ -1,14 +1,11 @@
 /**
  * @drdice/dice provides matching runtime and literal-computing Dice Expression evaluators.
  *
- * This declaration owns complete scanning/parsing, domain validation, static
+ * This module owns complete scanning/parsing, domain validation, static
  * preflight, and state-consuming Dice evaluation.  The evaluator composes
  * bounded sampling only through the public @drdice/prng Sample boundary.
  */
 import type { GeneratorState as PrngGeneratorState, Sample } from "@drdice/prng";
-
-export const DICE_SEMANTIC_PROFILE: "dice-v3/utf16-bounded-left-to-right-3";
-export const DICE_SEMANTIC_VERSION: 3;
 
 export type Success<Value> = { readonly ok: true; readonly value: Value };
 export type FailureCode =
@@ -739,7 +736,7 @@ export type Evaluate<
   MaximumAttempts extends number = 5,
 > = EvaluateParsed<Source, State, MaximumAttempts>;
 
-type RuntimeEvaluate<Source extends string, State, MaximumAttempts extends number> =
+export type RuntimeEvaluate<Source extends string, State, MaximumAttempts extends number> =
   string extends Source
     ? EvaluationResult
     : number extends MaximumAttempts
@@ -749,24 +746,5 @@ type RuntimeEvaluate<Source extends string, State, MaximumAttempts extends numbe
           ? EvaluationResult
           : Evaluate<Source, State, MaximumAttempts>
         : Evaluate<Source, State, MaximumAttempts>;
-
-/** Parse and roll a Dice Expression at runtime using exactly the v3 semantics. */
-export function evaluate<
-  const Source extends string,
-  const State,
-  const MaximumAttempts extends number = 5,
->(source: Source, state: State, maximumAttempts?: MaximumAttempts): RuntimeEvaluate<Source, State, MaximumAttempts>;
-
-/** Extract the complete payload from a successful runtime evaluation. */
-export function payloadOf<const Payload>(result: Success<Payload>): Payload;
-
-/** Extract the numeric value from a successful runtime evaluation. */
-export function valueOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["total"];
-
-/** Extract the consumed rolls from a successful runtime evaluation. */
-export function rollsOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["rollTrace"];
-
-/** Extract the Next Generator State from a successful runtime evaluation. */
-export function stateOf<const Payload extends DiceEvaluation>(result: Success<Payload>): Payload["nextState"];
 
 export type PackageMetadata = { readonly name: "@drdice/dice"; readonly declarationOnly: false };
