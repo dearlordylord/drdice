@@ -9,6 +9,7 @@ import {
   generateCases,
   selectReplay,
 } from "./cases.mjs";
+import { TYPE_WITNESS_SOURCE } from "./type-witness.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const valueAfter = (flag) => {
@@ -29,16 +30,7 @@ if (replay !== undefined) cases = [selectReplay(cases, replay)];
 const header = `/* GENERATED FILE. Run pnpm generate:property-parity; do not edit by hand. */
 import { evaluate } from "@drdice/dice";
 
-type Equal<Left, Right> =
-  [Left] extends [Right] ? [Right] extends [Left] ? true : false : false;
-type IsAny<Value> = 0 extends (1 & Value) ? true : false;
-type ContainsAny<Value> =
-  IsAny<Value> extends true ? true
-    : Value extends readonly unknown[] ? ContainsAny<Value[number]>
-      : Value extends object
-        ? true extends { [Key in keyof Value]: ContainsAny<Value[Key]> }[keyof Value] ? true : false
-        : false;
-type Assert<Value extends true> = Value;
+${TYPE_WITNESS_SOURCE}
 const deepEqual = (left: unknown, right: unknown): boolean => {
   if (Object.is(left, right)) return true;
   if (typeof left !== "object" || left === null || typeof right !== "object" || right === null) return false;

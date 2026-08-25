@@ -89,7 +89,7 @@ for (const checkers of [1, 4]) {
       "--moduleResolution",
       "NodeNext",
       "--lib",
-      "ES2020,DOM",
+      "ES2020",
       "--extendedDiagnostics",
       "--checkers",
       String(checkers),

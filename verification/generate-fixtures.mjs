@@ -2,7 +2,12 @@ import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { oracleSample, oracleStateFromWords } from "./prng-semantics/oracle.mjs";
+import {
+  MAX_ATTEMPTS,
+  MAX_BOUND,
+  oracleSample,
+  oracleStateFromWords,
+} from "./prng-semantics/oracle.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultOutput = resolve(here, "generated");
@@ -163,8 +168,8 @@ const replayFixture = [
 /* PRNG sampling coverage bounded-sampling fixtures                                       */
 /* -------------------------------------------------------------------------- */
 
-/* The fixture generator is the only place that consults the private numeric
- * oracle.  Generated declarations contain only literal inputs and expected
+/* The fixture generator consults the private numeric oracle for expected
+ * results. Generated declarations contain only literal inputs and expected
  * public results, so the package and its consumers never depend on runtime
  * verification code. */
 const samplingHeader = [
@@ -237,9 +242,11 @@ const stateWordsPool = [
 
 const makeState = (words) => oracleStateFromWords(words);
 const gridVectors = [];
-for (let bound = 1; bound <= 100; bound += 1) {
-  for (let maximumAttempts = 0; maximumAttempts <= 5; maximumAttempts += 1) {
-    const words = stateWordsPool[(bound * 6 + maximumAttempts) % stateWordsPool.length];
+for (let bound = 1; bound <= MAX_BOUND; bound += 1) {
+  for (let maximumAttempts = 0; maximumAttempts <= MAX_ATTEMPTS; maximumAttempts += 1) {
+    const words = stateWordsPool[
+      (bound * (MAX_ATTEMPTS + 1) + maximumAttempts) % stateWordsPool.length
+    ];
     const inputState = makeState(words);
     gridVectors.push({
       id: `grid-bound-${bound}-fuel-${maximumAttempts}`,

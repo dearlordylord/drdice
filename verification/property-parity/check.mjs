@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
 import { CASE_COUNT, DEFAULT_GENERATOR_SEED, generateCases, selectReplay, shrinkCase } from "./cases.mjs";
+import { TYPE_WITNESS_SOURCE } from "./type-witness.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
@@ -65,7 +66,7 @@ try {
       const directory = await mkdtemp(resolve(here, ".shrink-"));
       try {
         const stateLiteral = candidate.state === null ? "null" : `${JSON.stringify(candidate.state)} as const`;
-        const fixture = `/* failure-replay candidate */\nimport { evaluate } from "@drdice/dice";\nconst expected = ${JSON.stringify(candidate.expected)} as const;\nconst actual = evaluate(${JSON.stringify(candidate.source)}, ${stateLiteral}, ${candidate.maximumAttempts});\ntype Equal<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;\ntype IsAny<Value> = 0 extends (1 & Value) ? true : false;\ntype ContainsAny<Value> =\n  IsAny<Value> extends true ? true\n    : Value extends readonly unknown[] ? ContainsAny<Value[number]>\n      : Value extends object\n        ? true extends { [Key in keyof Value]: ContainsAny<Value[Key]> }[keyof Value] ? true : false\n        : false;\ntype Assert<T extends true> = T;\ntype Exact = Assert<Equal<typeof actual, typeof expected>>;\ntype NoAny = Assert<Equal<ContainsAny<typeof actual>, false>>;\nif (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(JSON.stringify({ actual, expected }));\n`;
+        const fixture = `/* failure-replay candidate */\nimport { evaluate } from "@drdice/dice";\nconst expected = ${JSON.stringify(candidate.expected)} as const;\nconst actual = evaluate(${JSON.stringify(candidate.source)}, ${stateLiteral}, ${candidate.maximumAttempts});\n${TYPE_WITNESS_SOURCE}\ntype Exact = Assert<Equal<typeof actual, typeof expected>>;\ntype NoAny = Assert<Equal<ContainsAny<typeof actual>, false>>;\nif (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(JSON.stringify({ actual, expected }));\n`;
         await import("node:fs/promises").then(({ writeFile }) => writeFile(resolve(directory, "candidate.ts"), fixture));
         const result = await compileAndRun(directory);
         if (!result.ok) smallestFailure = { candidate, result };
