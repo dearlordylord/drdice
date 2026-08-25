@@ -1,6 +1,6 @@
 {
   "name": "@drdice/dice",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Literal-computing dice expression evaluation for TypeScript",
   "scripts": {
     "build": "node ../../scripts/build-packages.mjs dice",
