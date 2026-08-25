@@ -18,6 +18,9 @@ const expectedMembers = new Set([
   "package/dist/index.js",
   "package/package.json",
 ]);
+const prngSourceManifest = JSON.parse(
+  await readFile(resolve(root, "packages/prng/package.json"), "utf8"),
+);
 
 const run = (command, args, cwd) => {
   const result = spawnSync(command, args, { cwd, encoding: "utf8" });
@@ -30,6 +33,7 @@ const run = (command, args, cwd) => {
 try {
   for (const packageInfo of packages) {
     const directory = resolve(root, packageInfo.directory);
+    const sourceManifest = JSON.parse(await readFile(resolve(directory, "package.json"), "utf8"));
     const output = run("pnpm", ["pack", "--pack-destination", temporary], directory);
     const archiveName = output.trim().split(/\r?\n/).at(-1);
     if (!archiveName) throw new Error(`pnpm pack returned no archive for ${packageInfo.name}`);
@@ -54,7 +58,7 @@ try {
 
     const manifestText = run("tar", ["-xOf", archive, "package/package.json"], root);
     const manifest = JSON.parse(manifestText);
-    if (manifest.name !== packageInfo.name || manifest.version !== "0.3.1") {
+    if (manifest.name !== packageInfo.name || manifest.version !== sourceManifest.version) {
       throw new Error(`${packageInfo.name} packed identity is incorrect`);
     }
     if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {
@@ -66,8 +70,11 @@ try {
     if (manifest.dependencies?.["@drdice/prng"]?.startsWith("workspace:")) {
       throw new Error("packed Dice dependency still contains the workspace protocol");
     }
-    if (packageInfo.dependency && manifest.dependencies?.["@drdice/prng"] !== "^0.3.1") {
-      throw new Error(`packed Dice dependency is not ^0.3.1: ${manifest.dependencies?.["@drdice/prng"]}`);
+    const expectedPrngRange = `^${prngSourceManifest.version}`;
+    if (packageInfo.dependency && manifest.dependencies?.["@drdice/prng"] !== expectedPrngRange) {
+      throw new Error(
+        `packed Dice dependency is not ${expectedPrngRange}: ${manifest.dependencies?.["@drdice/prng"]}`,
+      );
     }
     if (manifest.exports["."].default !== "./dist/index.js" || manifest.main !== "./dist/index.js") {
       throw new Error(`${packageInfo.name} does not expose its runtime entry point`);

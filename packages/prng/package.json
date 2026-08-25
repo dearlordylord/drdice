@@ -1,6 +1,6 @@
 {
   "name": "@drdice/prng",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Literal-computing seeded pseudorandom generation for TypeScript",
   "scripts": {
     "build": "node ../../scripts/build-packages.mjs prng",

@@ -35,7 +35,6 @@ const expectedExports = [
   "SCHEMA_VERSION",
   "SequenceProfile",
   "SchemaVersion",
-  "PackageVersion",
   "Word32Text",
   "SeedWords",
   "StateWords",

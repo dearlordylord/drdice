@@ -25,7 +25,14 @@ process per case as advisory migration evidence only; it does not repeat the
 blocking warm-up/five-run matrix. Its reported executable version may be
 `Version 6.0.3`; the package coordinate remains the requested `6.0.2`.
 
-After committing source changes, run from the repository root:
+Set the next release version once. This updates both publishable package
+manifests, which are the only release-version source:
+
+```sh
+pnpm version:set 1.2.3
+```
+
+Commit the source changes, then run from the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -46,6 +53,17 @@ report from an earlier declaration, script, fixture, package manifest, or
 budget file cannot be presented as current evidence. Editing the report,
 changing source after measurement, omitting a scored run, or changing the
 release gate inventory fails closed.
+
+After the qualification report is committed and pushed to `master`, publish
+from that clean checkout:
+
+```sh
+pnpm local-release
+```
+
+The publish command reads both versions from their package manifests, requires
+them to match, validates the release tag before publishing, rebuilds the
+generated package output, and waits for both npm packages to become visible.
 
 `release-candidate.json` is the release evidence. It records the measured
 source commit and digest, semantic corpus identities and counts, package and

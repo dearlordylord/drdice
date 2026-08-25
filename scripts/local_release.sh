@@ -88,7 +88,7 @@ CI=true pnpm install --frozen-lockfile --prod=false --force
   fail "lockfile installation changed the worktree"
 }
 
-git fetch origin "$RELEASE_BRANCH"
+git fetch origin "$RELEASE_BRANCH" --tags
 head_commit="$(git rev-parse HEAD)"
 remote_commit="$(git rev-parse "origin/$RELEASE_BRANCH")"
 [[ "$head_commit" == "$remote_commit" ]] ||
@@ -130,6 +130,14 @@ fi
 prng_archive="$release_directory/drdice-prng-$prng_version.tgz"
 dice_archive="$release_directory/drdice-dice-$dice_version.tgz"
 
+release_tag_exists=false
+if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+  tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
+  [[ "$tag_commit" == "$head_commit" ]] ||
+    fail "$RELEASE_TAG points to $tag_commit instead of $head_commit"
+  release_tag_exists=true
+fi
+
 [[ -f "$prng_archive" ]] || fail "PRNG tarball was not created"
 [[ -f "$dice_archive" ]] || fail "Dice tarball was not created"
 
@@ -161,11 +169,7 @@ fi
 wait_for_published_version "$PRNG_PACKAGE_NAME" "$prng_version"
 wait_for_published_version "$DICE_PACKAGE_NAME" "$dice_version"
 
-if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
-  tag_commit="$(git rev-list -n 1 "$RELEASE_TAG")"
-  [[ "$tag_commit" == "$head_commit" ]] ||
-    fail "$RELEASE_TAG points to $tag_commit instead of $head_commit"
-else
+if [[ "$release_tag_exists" == "false" ]]; then
   git tag -a "$RELEASE_TAG" -m "DRDice $RELEASE_TAG"
 fi
 

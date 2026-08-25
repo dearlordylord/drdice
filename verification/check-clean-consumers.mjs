@@ -14,6 +14,9 @@ const packageRecords = [
   { directory: "packages/prng", name: "@drdice/prng", archiveKey: "prng" },
   { directory: "packages/dice", name: "@drdice/dice", archiveKey: "dice" },
 ];
+for (const record of packageRecords) {
+  record.manifest = JSON.parse(await readFile(resolve(root, record.directory, "package.json"), "utf8"));
+}
 const expectedMembers = new Set([
   "package/LICENSE",
   "package/README.md",
@@ -60,7 +63,7 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} packed members differ: ${members.join(", ")}`);
   }
   const manifest = JSON.parse(run("tar", ["-xOf", archive, "package/package.json"], root));
-  if (manifest.name !== record.name || manifest.version !== "0.3.1") {
+  if (manifest.name !== record.name || manifest.version !== record.manifest.version) {
     throw new Error(`${record.name} packed identity is incorrect`);
   }
   if (JSON.stringify(Object.keys(manifest.exports ?? {})) !== JSON.stringify(["."])) {

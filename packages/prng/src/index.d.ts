@@ -16,9 +16,6 @@ export type SequenceProfile = typeof SEQUENCE_PROFILE;
 export const SCHEMA_VERSION: 1;
 export type SchemaVersion = typeof SCHEMA_VERSION;
 
-/** The package release identity is deliberately separate from schema/profile identity. */
-export type PackageVersion = "0.3.1";
-
 type HexDigit =
   | "0"
   | "1"
@@ -1402,6 +1399,5 @@ export function stateOf<const State extends GeneratorState>(
 /* Package boundary metadata is retained for the workspace's generated checks. */
 export type PackageMetadata = {
   readonly name: "@drdice/prng";
-  readonly version: PackageVersion;
   readonly declarationOnly: false;
 };

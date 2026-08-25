@@ -60,7 +60,6 @@ const packageEvidence = async () => {
       declarationBytes: Buffer.byteLength(declaration),
       identities: name === "prng"
         ? {
-            packageType: extract(declaration, /export type PackageVersion = "([^"]+)"/, "PRNG package version"),
             schemaVersion: Number(extract(declaration, /export const SCHEMA_VERSION: (\d+)/, "PRNG schema version")),
             sequenceProfile: extract(declaration, /export const SEQUENCE_PROFILE: "([^"]+)"/, "PRNG Sequence Profile"),
           }

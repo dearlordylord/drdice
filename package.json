@@ -36,6 +36,7 @@
     "check:budgets:one-checker": "node verification/check-budgets.mjs --policy one-checker",
     "check:budgets:four-checker": "node verification/check-budgets.mjs --policy four-checker",
     "release:measure": "node verification/release/release.mjs --measure",
+    "version:set": "node scripts/set-version.mjs",
     "local-release": "bash scripts/local_release.sh",
     "check:release": "node verification/release/check.mjs",
     "verify": "pnpm typecheck && pnpm check:build && pnpm check:parity && pnpm check:usability && pnpm check:runtime && pnpm check:architecture && pnpm check:budgets",
