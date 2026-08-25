@@ -17,6 +17,6 @@
   "exclude": [
     "node_modules",
     "verification/generated/**/*.d.ts",
-    "verification/issue-25/generated/**/*.ts"
+    "verification/property-parity/generated/**/*.ts"
   ]
 }

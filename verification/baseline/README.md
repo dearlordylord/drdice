@@ -1,4 +1,4 @@
-# Issue #16 scaffold baseline
+# workspace scaffold scaffold baseline
 
 `scaffold.json` records cold TypeScript 7 checks of the declaration-only
 workspace scaffold under both supported checker policies. The artifact is a
@@ -12,5 +12,5 @@ pass the blocking budget gate. Re-run `pnpm check:budgets:one-checker` and
 `pnpm check:budgets:four-checker` when changing package declarations or checker
 configuration, then update the baseline only with reviewed measurements. The
 The v1 release declaration set raises the portable scaffold instantiation
-ceiling to 60,000; the historical Issue #16 measurements above remain
+ceiling to 60,000; the historical workspace scaffold measurements above remain
 unchanged and are retained for comparison.

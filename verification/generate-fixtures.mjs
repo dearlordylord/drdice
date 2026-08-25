@@ -2,7 +2,7 @@ import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { oracleSample, oracleStateFromWords } from "./issue-17/oracle.mjs";
+import { oracleSample, oracleStateFromWords } from "./prng-semantics/oracle.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const defaultOutput = resolve(here, "generated");
@@ -32,7 +32,7 @@ export type DiceScaffoldAssertion = Assert<Equal<
 >>;
 `;
 
-const golden = JSON.parse(await readFile(resolve(here, "issue-17/golden-vectors.json"), "utf8"));
+const golden = JSON.parse(await readFile(resolve(here, "prng-semantics/golden-vectors.json"), "utf8"));
 const tuple = (words) => `readonly [${words.map((word) => JSON.stringify(word)).join(", ")}]`;
 const state = (words) => `GeneratorState<${tuple(words)}>`;
 const expectedStep = (transition) =>
@@ -160,7 +160,7 @@ const replayFixture = [
 ].join("\n");
 
 /* -------------------------------------------------------------------------- */
-/* Issue #19 bounded-sampling fixtures                                       */
+/* PRNG sampling coverage bounded-sampling fixtures                                       */
 /* -------------------------------------------------------------------------- */
 
 /* The fixture generator is the only place that consults the private numeric
@@ -211,7 +211,7 @@ const sampleExpected = (vector) => {
   if (result.code === "invalid-state-zero") {
     return `Failure<"invalid-state-zero", { readonly state: ${inputState} }>`;
   }
-  throw new Error(`unsupported issue-19 fixture result: ${JSON.stringify(result)}`);
+  throw new Error(`unsupported prng-sampling-coverage fixture result: ${JSON.stringify(result)}`);
 };
 
 const sampleAssertion = (vector) => {
@@ -324,14 +324,14 @@ const chunk = (values, size) => Array.from(
 );
 const samplingShards = chunk(gridVectors, samplingShardSize);
 const samplingFixtureFiles = samplingShards.map((vectors, shardIndex) => [
-  `prng-issue19-grid-${String(shardIndex).padStart(3, "0")}.d.ts`,
+  `prng-sampling-coverage-grid-${String(shardIndex).padStart(3, "0")}.d.ts`,
   `${samplingHeader}${vectors.map((vector, vectorIndex) => sampleAssertion({
     ...vector,
     alias: `Grid${shardIndex}_${vectorIndex}`,
   })).join("")}`,
 ]);
 const specialFixtureFiles = chunk(specialVectors, 3).map((vectors, shardIndex) => [
-  `prng-issue19-special-${String(shardIndex).padStart(3, "0")}.d.ts`,
+  `prng-sampling-coverage-special-${String(shardIndex).padStart(3, "0")}.d.ts`,
   `${samplingHeader}${vectors.map((vector, vectorIndex) => sampleAssertion({
     ...vector,
     alias: `Special${shardIndex}_${vectorIndex}`,
@@ -341,8 +341,8 @@ const specialFixtureFiles = chunk(specialVectors, 3).map((vectors, shardIndex) =
 /* Keep each exact transition and the replay assertions in separate artifacts.
  * The budget gate checks every artifact under both TypeScript 7 checker policies. */
 const fixtureFiles = [
-  ...prngAssertions.map((contents, index) => [`prng-issue18-transitions-${index}.d.ts`, contents]),
-  ["prng-issue18-replay.d.ts", replayFixture],
+  ...prngAssertions.map((contents, index) => [`prng-type-parity-transitions-${index}.d.ts`, contents]),
+  ["prng-type-parity-replay.d.ts", replayFixture],
   ...samplingFixtureFiles,
   ...specialFixtureFiles,
 ];
@@ -355,8 +355,8 @@ for (const [filename, contents] of fixtureFiles) {
 
 await mkdir(output, { recursive: true });
 const generatedNames = new Set(fixtureFiles.map(([filename]) => filename).concat("scaffold.d.ts"));
-const staleIssue19 = (await readdir(output))
-  .filter((filename) => /^prng-issue19-.*\.d\.ts$/.test(filename) && !generatedNames.has(filename));
-await Promise.all(staleIssue19.map((filename) => unlink(resolve(output, filename))));
+const staleSamplingCoverage = (await readdir(output))
+  .filter((filename) => /^prng-sampling-coverage-.*\.d\.ts$/.test(filename) && !generatedNames.has(filename));
+await Promise.all(staleSamplingCoverage.map((filename) => unlink(resolve(output, filename))));
 await writeFile(resolve(output, "scaffold.d.ts"), scaffold, "utf8");
 await Promise.all(fixtureFiles.map(([filename, contents]) => writeFile(resolve(output, filename), contents, "utf8")));

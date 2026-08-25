@@ -1,4 +1,4 @@
-/* Complete normal-change verification gate for issue #23. */
+/* Complete normal-change verification gate for complete parity. */
 
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

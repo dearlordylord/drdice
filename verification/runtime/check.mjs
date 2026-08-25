@@ -18,11 +18,11 @@ import {
   oracleRestoreState,
   oracleSample,
   oracleSerializeState,
-} from "../issue-17/oracle.mjs";
-import { oracleEvaluate } from "../issue-20/oracle.mjs";
+} from "../prng-semantics/oracle.mjs";
+import { oracleEvaluate } from "../dice-semantics/oracle.mjs";
 
 const here = new URL(".", import.meta.url);
-const golden = JSON.parse(await readFile(new URL("../issue-20/golden-vectors.json", here), "utf8"));
+const golden = JSON.parse(await readFile(new URL("../dice-semantics/golden-vectors.json", here), "utf8"));
 const equal = (actual, expected, label) => assert.deepStrictEqual(actual, expected, label);
 const state = (words) => ({ kind: "GeneratorState", words: [...words] });
 

@@ -24,7 +24,7 @@ type Expected = Success<{
   readonly nextState: GeneratorState;
 }>;
 
-/* Keep this assertion structural: the exact values are covered by issue-owned
+/* Keep this assertion structural: the exact values are covered by suite-owned
  * golden vectors, while this lane measures the public package query shape. */
 type Assert<Value extends true> = Value;
 type IsResult = Result extends Expected ? true : false;

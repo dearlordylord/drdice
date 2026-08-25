@@ -10,10 +10,10 @@ The generators remain the source of committed shards:
 
 - `verification/generate-fixtures.mjs` owns the PRNG transition and bounded
   sampling shards;
-- `verification/issue-21/generate.mjs` owns arithmetic/static Dice shards;
-- `verification/issue-22/generate.mjs` owns complete-evaluation and `d1`–`d100`
+- `verification/dice-arithmetic-parity/generate.mjs` owns arithmetic/static Dice shards;
+- `verification/dice-evaluation-parity/generate.mjs` owns complete-evaluation and `d1`–`d100`
   shards;
-- `verification/issue-25/generate.mjs` owns executable property shards whose
+- `verification/property-parity/generate.mjs` owns executable property shards whose
   oracle literal is both the exact inferred type witness and runtime expected
   result.
 

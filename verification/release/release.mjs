@@ -73,9 +73,9 @@ const packageEvidence = async () => {
 };
 
 const semanticEvidence = async () => {
-  const prng = JSON.parse(await readFile(resolve(ROOT, "verification/issue-17/golden-vectors.json"), "utf8"));
-  const dice = JSON.parse(await readFile(resolve(ROOT, "verification/issue-20/golden-vectors.json"), "utf8"));
-  const cases = JSON.parse(await readFile(resolve(ROOT, "verification/issue-22/cases.json"), "utf8"));
+  const prng = JSON.parse(await readFile(resolve(ROOT, "verification/prng-semantics/golden-vectors.json"), "utf8"));
+  const dice = JSON.parse(await readFile(resolve(ROOT, "verification/dice-semantics/golden-vectors.json"), "utf8"));
+  const cases = JSON.parse(await readFile(resolve(ROOT, "verification/dice-evaluation-parity/cases.json"), "utf8"));
   return {
     prng: {
       schemaVersion: prng.schemaVersion,

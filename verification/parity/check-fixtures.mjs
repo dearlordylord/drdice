@@ -1,7 +1,7 @@
 /*
  * Normal-change parity gate.
  *
- * The PRNG and Dice fixture suites deliberately remain owned by the issue that
+ * The PRNG and Dice fixture suites deliberately remain owned by the suite that
  * established each contract.  This entry point is the single normal-change
  * gate: it runs every owner checker, checks the oracle boundary once more, and
  * fails closed if a suite is omitted or a child checker exits unsuccessfully.
@@ -30,19 +30,19 @@ const run = (script) => {
   }
 };
 
-/* Keep the list explicit.  Adding an issue-owned parity suite without adding
+/* Keep the list explicit. Adding a parity suite without adding
  * it here must make the review diff obvious instead of silently weakening the
  * normal gate. */
 const suites = [
   "verification/check-generated-fixtures.mjs",
-  "verification/issue-17/check.mjs",
-  "verification/issue-17/check-boundary.mjs",
-  "verification/issue-18/check.mjs",
-  "verification/issue-19/check.mjs",
-  "verification/issue-20/check.mjs",
-  "verification/issue-21/check.mjs",
-  "verification/issue-22/check.mjs",
-  "verification/issue-25/check.mjs",
+  "verification/prng-semantics/check.mjs",
+  "verification/prng-semantics/check-boundary.mjs",
+  "verification/prng-type-parity/check.mjs",
+  "verification/prng-sampling-coverage/check.mjs",
+  "verification/dice-semantics/check.mjs",
+  "verification/dice-arithmetic-parity/check.mjs",
+  "verification/dice-evaluation-parity/check.mjs",
+  "verification/property-parity/check.mjs",
 ];
 
 const oracleFiles = [];
@@ -57,7 +57,7 @@ const visit = async (directory) => {
 
 const checkOracleBoundary = async () => {
   await visit(verification);
-  if (oracleFiles.length !== 2) fail(`expected the issue #17/#20 oracle chain, found ${oracleFiles.length} oracle files`);
+  if (oracleFiles.length !== 2) fail(`expected the PRNG semantics/Dice semantics oracle chain, found ${oracleFiles.length} oracle files`);
   for (const file of oracleFiles.sort()) {
     const source = await readFile(file, "utf8");
     const executableSource = source
@@ -99,21 +99,21 @@ const checkShardAssertions = async () => {
   const shardGroups = [
     {
       directory: resolve(verification, "generated"),
-      pattern: /^(?:dice-issue21|dice-issue22)-\d{3}\.d\.ts$/,
+      pattern: /^(?:dice-arithmetic-parity|dice-evaluation-parity)-\d{3}\.d\.ts$/,
       label: "Dice parity",
     },
     {
-      directory: resolve(verification, "issue-22/generated"),
-      pattern: /^dice-issue22-(?:\d{3}|side-\d{3})\.d\.ts$/,
+      directory: resolve(verification, "dice-evaluation-parity/generated"),
+      pattern: /^dice-evaluation-parity-(?:\d{3}|side-\d{3})\.d\.ts$/,
       label: "complete Dice parity",
     },
     {
       directory: resolve(verification, "generated"),
-      pattern: /^prng-issue(?:18|19)-.*\.d\.ts$/,
+      pattern: /^prng-(?:type-parity|sampling-coverage)-.*\.d\.ts$/,
       label: "PRNG parity",
     },
     {
-      directory: resolve(verification, "issue-25/generated"),
+      directory: resolve(verification, "property-parity/generated"),
       pattern: /^parity-\d{3}\.ts$/,
       label: "Executable property parity",
     },
@@ -135,8 +135,8 @@ const checkShardAssertions = async () => {
 };
 
 const checkCompleteDiceCorpus = async () => {
-  const golden = JSON.parse(await readFile(resolve(verification, "issue-20/golden-vectors.json"), "utf8"));
-  const ids = JSON.parse(await readFile(resolve(verification, "issue-22/cases.json"), "utf8"));
+  const golden = JSON.parse(await readFile(resolve(verification, "dice-semantics/golden-vectors.json"), "utf8"));
+  const ids = JSON.parse(await readFile(resolve(verification, "dice-evaluation-parity/cases.json"), "utf8"));
   const literalIds = golden.cases.filter((vector) => typeof vector.source === "string").map((vector) => vector.id).sort();
   const selectedIds = [...ids].sort();
   if (JSON.stringify(literalIds) !== JSON.stringify(selectedIds)) {

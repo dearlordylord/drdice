@@ -83,4 +83,4 @@ for (const [name, settings] of selected) {
   }
   results.push({ policy: name, ...observed });
 }
-console.log(JSON.stringify({ schemaVersion: 1, issue: 16, results }, null, 2));
+console.log(JSON.stringify({ schemaVersion: 1, suite: "compiler-budgets", results }, null, 2));

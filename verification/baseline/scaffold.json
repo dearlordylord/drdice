@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "issue": 16,
+  "suite": "workspace-baseline",
   "artifact": "verification/budget-scaffold.ts",
   "blockingCompiler": {
     "package": "typescript@7.0.2",
