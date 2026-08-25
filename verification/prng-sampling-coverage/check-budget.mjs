@@ -3,6 +3,8 @@ import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
+import { MAX_ATTEMPTS, MAX_BOUND } from "../prng-semantics/oracle.mjs";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../..");
 const compiler = resolve(root, "node_modules/typescript/lib/tsc.js");
@@ -12,7 +14,10 @@ const generatedNames = (await readdir(generatedDirectory)).filter(
   (name) => /^prng-sampling-coverage-(?:grid-\d{3}|special-\d{3})\.d\.ts$/.test(name),
 ).sort();
 const expectedNames = [
-  ...Array.from({ length: 500 }, (_, index) => `prng-sampling-coverage-grid-${String(index).padStart(3, "0")}.d.ts`),
+  ...Array.from(
+    { length: MAX_BOUND * (MAX_ATTEMPTS + 1) },
+    (_, index) => `prng-sampling-coverage-grid-${String(index).padStart(3, "0")}.d.ts`,
+  ),
   ...Array.from({ length: 3 }, (_, index) => `prng-sampling-coverage-special-${String(index).padStart(3, "0")}.d.ts`),
 ].sort();
 if (JSON.stringify(generatedNames) !== JSON.stringify(expectedNames)) {
@@ -84,7 +89,7 @@ for (const checkers of [1, 4]) {
       "--moduleResolution",
       "NodeNext",
       "--lib",
-      "ES2020",
+      "ES2020,DOM",
       "--extendedDiagnostics",
       "--checkers",
       String(checkers),

@@ -31,6 +31,13 @@ import { evaluate } from "@drdice/dice";
 
 type Equal<Left, Right> =
   [Left] extends [Right] ? [Right] extends [Left] ? true : false : false;
+type IsAny<Value> = 0 extends (1 & Value) ? true : false;
+type ContainsAny<Value> =
+  IsAny<Value> extends true ? true
+    : Value extends readonly unknown[] ? ContainsAny<Value[number]>
+      : Value extends object
+        ? true extends { [Key in keyof Value]: ContainsAny<Value[Key]> }[keyof Value] ? true : false
+        : false;
 type Assert<Value extends true> = Value;
 const deepEqual = (left: unknown, right: unknown): boolean => {
   if (Object.is(left, right)) return true;
@@ -57,6 +64,7 @@ const render = (item, index) => {
   return `const expected${index} = ${JSON.stringify(item.expected)} as const;
 const actual${index} = evaluate(${JSON.stringify(item.source)}, ${stateLiteral}, ${item.maximumAttempts});
 type ExactParity${index} = Assert<Equal<typeof actual${index}, typeof expected${index}>>;
+type NoAnyParity${index} = Assert<Equal<ContainsAny<typeof actual${index}>, false>>;
 if (!deepEqual(actual${index}, expected${index})) {
   throw new Error("property parity failure: " + ${JSON.stringify(JSON.stringify(descriptor))} + "\\nactual=" + JSON.stringify(actual${index}) + "\\nexpected=" + JSON.stringify(expected${index}));
 }

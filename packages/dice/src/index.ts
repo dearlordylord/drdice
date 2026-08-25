@@ -1,5 +1,5 @@
 import { sample } from "@drdice/prng";
-import type { GeneratorState as PrngGeneratorState } from "@drdice/prng";
+import type { BoundedResult } from "@drdice/prng";
 import type { DiceEvaluation, RuntimeEvaluate, Success } from "./types.js";
 
 export type {
@@ -89,24 +89,6 @@ type Evaluated = {
   nextState: unknown;
   steps: number;
 };
-type PrngSampleResult = {
-  ok: true;
-  value: { value: number; state: unknown; attempts: number };
-} | {
-  ok: false;
-  code: string;
-  details: {
-    attempts: number;
-    state: unknown;
-    maximumAttempts: number;
-  } & Record<string, unknown>;
-};
-
-const sampleRuntime = sample as unknown as (
-  state: unknown,
-  bound: number,
-  maximumAttempts: number,
-) => PrngSampleResult;
 const success = <Value>(value: Value): { ok: true; value: Value } => ({ ok: true, value });
 const failure = (code: string, details: Record<string, unknown>): RuntimeFailure => ({ ok: false, code, details });
 const whitespace = (char: string | undefined) => char === " " || char === "\t" || char === "\n" || char === "\r";
@@ -399,7 +381,8 @@ const staticPreflight = (ast: Ast): RuntimeFailure | null => {
     || (candidate.offset === best.offset && rank(candidate.dimension) < rank(best.dimension))
     ? candidate
     : best, null);
-  return resourceFailure(chosen!.offset, chosen!.dimension, chosen!.limit, chosen!.actual);
+  if (!chosen) throw new Error("resource candidate selection failed");
+  return resourceFailure(chosen.offset, chosen.dimension, chosen.limit, chosen.actual);
 };
 
 const stepFailure = (offset: number, actual: number, trace: RuntimeDieSample[], state: unknown) => failure("resource-limit-exceeded", {
@@ -436,7 +419,7 @@ const evaluateAst = (
     let steps = consumedSteps + 1;
     if (steps > LIMITS.evaluationSteps) return stepFailure(ast.offset, steps, currentTrace, current);
     for (let index = 0; index < ast.count; index += 1) {
-      const sampled = sampleRuntime(current, ast.sides, maximumAttempts);
+      const sampled: BoundedResult = sample(current, ast.sides, maximumAttempts);
       if (!sampled.ok) {
         if (sampled.code === "sampling-attempts-exhausted") {
           const attemptedSteps = steps + sampled.details.attempts + 1;
@@ -507,7 +490,9 @@ const evaluateAst = (
 };
 
 const stateFailure = (state: unknown): RuntimeFailure | null => {
-  const probe = sampleRuntime(state, 1, 0);
+  const bound: number = 1;
+  const maximumAttempts: number = 0;
+  const probe: BoundedResult = sample(state, bound, maximumAttempts);
   if (probe.ok || probe.code === "sampling-attempts-exhausted") return null;
   return failure(probe.code, {
     ...probe.details,
