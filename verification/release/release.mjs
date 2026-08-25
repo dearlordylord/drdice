@@ -47,7 +47,11 @@ const packageEvidence = async () => {
   for (const name of ["prng", "dice"]) {
     const directory = resolve(ROOT, "packages", name);
     const manifest = JSON.parse(await readFile(resolve(directory, "package.json"), "utf8"));
-    const declaration = await readFile(resolve(directory, "dist/index.d.ts"), "utf8");
+    const declarations = await Promise.all([
+      readFile(resolve(directory, "dist/index.d.ts"), "utf8"),
+      readFile(resolve(directory, "dist/types.d.ts"), "utf8"),
+    ]);
+    const declaration = declarations.join("\n");
     records.push({
       name: manifest.name,
       version: manifest.version,
@@ -57,15 +61,15 @@ const packageEvidence = async () => {
       dependencies: manifest.dependencies ?? {},
       sideEffects: manifest.sideEffects,
       declarationOnly: /declaration-only/i.test(await readFile(resolve(directory, "README.md"), "utf8")),
-      declarationBytes: Buffer.byteLength(declaration),
+      declarationBytes: declarations.reduce((total, source) => total + Buffer.byteLength(source), 0),
       identities: name === "prng"
         ? {
-            schemaVersion: Number(extract(declaration, /export const SCHEMA_VERSION: (\d+)/, "PRNG schema version")),
-            sequenceProfile: extract(declaration, /export const SEQUENCE_PROFILE: "([^"]+)"/, "PRNG Sequence Profile"),
+            schemaVersion: Number(extract(declaration, /export declare const SCHEMA_VERSION: (\d+)/, "PRNG schema version")),
+            sequenceProfile: extract(declaration, /export declare const SEQUENCE_PROFILE: "([^"]+)"/, "PRNG Sequence Profile"),
           }
         : {
-            semanticVersion: Number(extract(declaration, /export const DICE_SEMANTIC_VERSION: (\d+)/, "Dice semantic version")),
-            semanticProfile: extract(declaration, /export const DICE_SEMANTIC_PROFILE: "([^"]+)"/, "Dice semantic profile"),
+            semanticVersion: Number(extract(declaration, /export declare const DICE_SEMANTIC_VERSION: (\d+)/, "Dice semantic version")),
+            semanticProfile: extract(declaration, /export declare const DICE_SEMANTIC_PROFILE: "([^"]+)"/, "Dice semantic profile"),
           },
     });
   }
