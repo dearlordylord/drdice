@@ -43,15 +43,16 @@ to continue a sequence, or reuse an earlier state to replay it.
 
 - `randomSeed()` creates a fresh four-word seed using host entropy.
 - `initialize(seed)` creates a generator state.
+- `validateState(state)` validates a generator state without advancing it.
 - `next(state)` returns a raw 32-bit word and the next state.
 - `sample(state, bound, maximumAttempts?)` returns an unbiased integer in
   `[0, bound)` for bounds from 1 through 100.
 - `serializeState` and `restoreState` save and resume the current position.
 - `payloadOf`, `valueOf`, `wordOf`, and `stateOf` extract successful results.
 
-The matching type-level API uses capitalized names: `Initialize`, `Next`,
-`Sample`, `SerializeState`, `RestoreState`, `PayloadOf`, `ValueOf`, `WordOf`,
-and `StateOf`.
+The matching type-level API uses capitalized names: `Initialize`,
+`ValidateState`, `Next`, `Sample`, `SerializeState`, `RestoreState`, `PayloadOf`,
+`ValueOf`, `WordOf`, and `StateOf`.
 
 Operations return structured failures for malformed seeds or states, invalid
 bounds, and exhausted sampling attempts. Check `result.ok` before using an

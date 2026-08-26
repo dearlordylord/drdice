@@ -61,6 +61,12 @@ const stateFailure = (state) => {
   return null;
 };
 
+/** Validate a current Generator State without consuming a transition. */
+export const oracleValidateState = (state) => {
+  const invalid = stateFailure(state);
+  return invalid ?? success(makeState(state.words));
+};
+
 const transitionStateWords = ([s0, s1, s2, s3]) => {
   const t = asWord32(s1 << 9);
   const next2 = asWord32(s2 ^ s0);

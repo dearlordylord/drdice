@@ -9,6 +9,7 @@
 
 import {
   oracleSample,
+  oracleValidateState,
 } from "../prng-semantics/oracle.mjs";
 
 /**
@@ -506,10 +507,10 @@ const evalAst = (ast, state, maximumAttempts, trace, consumedSteps = 0) => {
 };
 
 const stateFailureWithContext = (state) => {
-  const probe = oracleSample(state, 1, 0);
-  if (probe.ok || probe.code === "sampling-attempts-exhausted") return null;
-  return failure(probe.code, {
-    ...probe.details,
+  const validated = oracleValidateState(state);
+  if (validated.ok) return null;
+  return failure(validated.code, {
+    ...validated.details,
     partialTrace: [],
     nextState: null,
   });

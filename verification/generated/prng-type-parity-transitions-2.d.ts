@@ -12,6 +12,7 @@ import type {
   SerializedGeneratorState,
   SerializeState,
   Success,
+  ValidateState,
 } from "@drdice/prng";
 
 type Equal<Left, Right> =

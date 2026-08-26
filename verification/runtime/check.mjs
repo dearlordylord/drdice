@@ -9,6 +9,7 @@ import {
   restoreState,
   sample,
   serializeState,
+  validateState,
 } from "../../packages/prng/dist/index.js";
 import { evaluate, payloadOf, rollsOf, stateOf, valueOf } from "../../packages/dice/dist/index.js";
 import {
@@ -18,6 +19,7 @@ import {
   oracleRestoreState,
   oracleSample,
   oracleSerializeState,
+  oracleValidateState,
 } from "../prng-semantics/oracle.mjs";
 import { oracleEvaluate } from "../dice-semantics/oracle.mjs";
 
@@ -47,6 +49,24 @@ const seeds = Array.from({ length: 32 }, () => {
 seeds.unshift(["00000001", "00000002", "00000003", "00000004"]);
 
 let prngComparisons = 0;
+const validationInputs = [
+  null,
+  {},
+  { kind: "Seed", words: seeds[0] },
+  { kind: "GeneratorState", words: seeds[0].slice(0, 3) },
+  { kind: "GeneratorState", words: ["0000000A", ...seeds[0].slice(1)] },
+  { kind: "GeneratorState", words: [1, ...seeds[0].slice(1)] },
+  { kind: "GeneratorState", words: ["00000000", "00000000", "00000000", "00000000"] },
+  { kind: "GeneratorState", words: seeds[0], ignored: true },
+  ...seeds.map((words) => state(words)),
+  ...seeds.map((words) => state([`${words[0].slice(0, 7)}z`, ...words.slice(1)])),
+];
+
+for (const input of validationInputs) {
+  equal(validateState(input), oracleValidateState(input), `validate-state parity for ${JSON.stringify(input)}`);
+  prngComparisons += 1;
+}
+
 for (const seed of seeds) {
   const runtimeInitial = initialize(seed);
   const oracleInitial = oracleInitialize(seed);

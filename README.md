@@ -60,9 +60,9 @@ the extractor functions when an evaluation can fail.
 
 ## Core API
 
-`@drdice/prng` exposes `randomSeed`, `initialize`, `next`, `sample`, and
-state/replay helpers, with compile-time counterparts `Initialize`, `Next`, and
-`Sample`.
+`@drdice/prng` exposes `randomSeed`, `initialize`, `validateState`, `next`,
+`sample`, and state/replay helpers, with compile-time counterparts `Initialize`,
+`ValidateState`, `Next`, and `Sample`.
 
 `@drdice/dice` exposes `evaluate` for expressions such as `d20`, `4d6 + 3`, and
 `d6 + (2d6 - 1)`. Use `valueOf`, `rollsOf`, and `stateOf` after a successful

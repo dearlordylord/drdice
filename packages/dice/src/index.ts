@@ -1,5 +1,5 @@
-import { sample } from "@drdice/prng";
-import type { BoundedResult } from "@drdice/prng";
+import { sample, validateState } from "@drdice/prng";
+import type { BoundedResult, ValidateStateResult } from "@drdice/prng";
 import type { DiceEvaluation, RuntimeEvaluate, Success } from "./types.js";
 
 export type {
@@ -490,12 +490,10 @@ const evaluateAst = (
 };
 
 const stateFailure = (state: unknown): RuntimeFailure | null => {
-  const bound: number = 1;
-  const maximumAttempts: number = 0;
-  const probe: BoundedResult = sample(state, bound, maximumAttempts);
-  if (probe.ok || probe.code === "sampling-attempts-exhausted") return null;
-  return failure(probe.code, {
-    ...probe.details,
+  const validated: ValidateStateResult = validateState(state);
+  if (validated.ok) return null;
+  return failure(validated.code, {
+    ...validated.details,
     partialTrace: [],
     nextState: null,
   });

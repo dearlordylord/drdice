@@ -32,7 +32,10 @@ type HexDigit =
   | "e"
   | "f";
 
-/** A Word32 is represented by exactly eight lowercase hexadecimal characters. */
+/**
+ * Runtime-facing Word32 text. PRNG operations validate inputs as exactly eight
+ * lowercase hexadecimal characters; the broad alias preserves dynamic input.
+ */
 export type Word32Text = string;
 export type SeedWords = readonly [string, string, string, string];
 export type StateWords = readonly [string, string, string, string];
@@ -544,6 +547,16 @@ type StateWordsResult<Words, Original> =
         : Failure<"invalid-state-word", { readonly state: Original }>
       : Failure<"invalid-state-word", { readonly state: Original }>
     : Failure<"invalid-state-shape", { readonly state: Original }>;
+
+/** Validate a current Generator State without consuming a transition. */
+export type ValidateState<Input> = Input extends {
+  readonly kind: "GeneratorState";
+  readonly words: infer Words;
+}
+  ? StateWordsResult<Words, Input>
+  : Failure<"invalid-state-shape", { readonly state: Input }>;
+
+export type ValidateStateResult = Success<GeneratorState> | InvalidStateFailure;
 
 /**
  * Initialize from canonical Seed words. A tagged Seed is accepted as a
@@ -1336,6 +1349,12 @@ export type RuntimeInitialize<Input> = Input extends Seed<infer Words>
   : Input extends SeedWords
     ? BroadWords<Input> extends true ? InitializeResult : Initialize<Input>
     : Initialize<Input>;
+
+export type RuntimeValidateState<Input> = unknown extends Input
+  ? ValidateStateResult
+  : Input extends GeneratorState<infer Words>
+    ? BroadWords<Words> extends true ? ValidateStateResult : ValidateState<Input>
+    : ValidateState<Input>;
 
 export type RuntimeNext<Input> = Input extends GeneratorState<infer Words>
   ? BroadWords<Words> extends true ? StepResult : Next<Input>

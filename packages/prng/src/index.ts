@@ -5,6 +5,7 @@ import type {
   RuntimeInitialize,
   RuntimeNext,
   RuntimeSample,
+  RuntimeValidateState,
   SeedWords,
   SerializeState,
   Success,
@@ -38,6 +39,8 @@ export type {
   BoundedResult,
   Initialize,
   InitializeResult,
+  ValidateState,
+  ValidateStateResult,
   Next,
   Sample,
   ReplayToken,
@@ -89,7 +92,7 @@ const generatorState = (words: readonly string[]): RuntimeGeneratorState => ({
   words: [words[0], words[1], words[2], words[3]],
 });
 
-const validateState = (state: unknown): RuntimeFailure | null => {
+const stateFailure = (state: unknown): RuntimeFailure | null => {
   const words = wordsFromState(state);
   if (!Array.isArray(words) || words.length !== 4) {
     return failure("invalid-state-shape", { state });
@@ -98,6 +101,15 @@ const validateState = (state: unknown): RuntimeFailure | null => {
   if (allZero(words)) return failure("invalid-state-zero", { state });
   return null;
 };
+
+const validateStateRuntime = (state: unknown) => {
+  const invalid = stateFailure(state);
+  if (invalid) return invalid;
+  return success(generatorState(wordsFromState(state) as WordTuple));
+};
+
+/** Validate a current Generator State without consuming a transition. */
+export const validateState = validateStateRuntime as <const Input>(state: Input) => RuntimeValidateState<Input>;
 
 const transition = ([s0, s1, s2, s3]: NumericState): NumericState => {
   const shifted = uint32(s1 << 9);
@@ -137,7 +149,7 @@ const initializeRuntime = (seed: unknown) => {
 export const initialize = initializeRuntime as <const Input>(seed: Input) => RuntimeInitialize<Input>;
 
 const nextRuntime = (state: unknown) => {
-  const invalid = validateState(state);
+  const invalid = stateFailure(state);
   if (invalid) return invalid;
   const words = wordsFromState(state) as WordTuple;
   const numericWords = words.map(fromWord) as NumericState;
@@ -164,7 +176,7 @@ const widthForBound = (bound: number) => {
 };
 
 const sampleRuntime = (state: unknown, bound: number, maximumAttempts = MAX_ATTEMPTS) => {
-  const invalid = validateState(state);
+  const invalid = stateFailure(state);
   if (invalid) return invalid;
   if (!Number.isInteger(bound) || bound < 1 || bound > MAX_BOUND) {
     return failure("invalid-bound", { bound });
@@ -204,7 +216,7 @@ export const sample = sampleRuntime as <
 >(state: Input, bound: Bound, maximumAttempts?: MaximumAttempts) => RuntimeSample<Input, Bound, MaximumAttempts>;
 
 const serializeStateRuntime = (state: unknown) => {
-  const invalid = validateState(state);
+  const invalid = stateFailure(state);
   if (invalid) return invalid;
   return success({
     schemaVersion: SCHEMA_VERSION,
@@ -225,7 +237,7 @@ const restoreStateRuntime = (snapshot: unknown) => {
     return failure("invalid-state-shape", { state: snapshot });
   }
   const restored = generatorState(snapshot.state);
-  return validateState(restored) ?? success(restored);
+  return stateFailure(restored) ?? success(restored);
 };
 
 /** Restore a serialized current state without advancing it. */

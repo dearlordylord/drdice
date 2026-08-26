@@ -12,6 +12,7 @@ import type {
   SerializedGeneratorState,
   SerializeState,
   Success,
+  ValidateState,
 } from "@drdice/prng";
 
 type Equal<Left, Right> =
@@ -33,6 +34,10 @@ type ExpectedReplay = {
 };
 type _Replay = Assert<Equal<Replay, ExpectedReplay>>;
 type _TaggedInitialize = Assert<Equal<Initialize<TaggedCanonicalSeed>, Success<GeneratorState<readonly ["e83c194b", "b7818bc1", "fb0d50b6", "8369c2d9"]>>>>;
+type _ValidState = Assert<Equal<ValidateState<FirstSuccessorState>, Success<FirstSuccessorState>>>;
+type _ValidateStateShape = Assert<Equal<ValidateState<null>, Failure<"invalid-state-shape", { readonly state: null }>>>;
+type _ValidateStateWord = Assert<Equal<ValidateState<InvalidStateWordInput>, Failure<"invalid-state-word", { readonly state: InvalidStateWordInput }>>>;
+type _ValidateStateZero = Assert<Equal<ValidateState<InvalidStateZeroInput>, Failure<"invalid-state-zero", { readonly state: InvalidStateZeroInput }>>>;
 type Restarted = RestoreReplay<Replay>;
 type _Restarted = Assert<Equal<Restarted, Success<GeneratorState<readonly ["e83c194b", "b7818bc1", "fb0d50b6", "8369c2d9"]>>>>;
 type RestartedStep = Next<GeneratorState<readonly ["e83c194b", "b7818bc1", "fb0d50b6", "8369c2d9"]>>;
