@@ -1,4 +1,4 @@
-# DRDice
+# Doctor Dice: Deterministic Random Dice
 
 Deterministic pseudo-random generation and dice-expression evaluation with
 matching runtime and literal-computing TypeScript APIs.
