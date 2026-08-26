@@ -66,8 +66,9 @@ them to match, validates the release tag before publishing, rebuilds the
 generated package output, and waits for both npm packages to become visible.
 
 `release-candidate.json` is the release evidence. It records the measured
-source commit and digest, semantic corpus identities and counts, package and
-declaration identities, packed/package gate outputs, the complete compiler
+source commit and digest, PRNG, Dice Expression, and Dice Group Sampling
+semantic corpus identities and counts, package and declaration identities,
+packed/package gate outputs, the complete compiler
 budget matrix, host details, warm-up/scored-run policy, advisory diagnostics,
 and an explicit `ready` or failure verdict. A report is not valid until it is
 committed and `pnpm check:release` passes from a clean checkout.

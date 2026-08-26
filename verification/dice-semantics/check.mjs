@@ -13,17 +13,23 @@ import { fileURLToPath } from "node:url";
 import {
   DICE_SEMANTIC_PROFILE,
   DICE_SEMANTIC_VERSION,
+  DICE_GROUP_LIMITS,
+  DICE_GROUP_SEMANTIC_PROFILE,
+  DICE_GROUP_SEMANTIC_VERSION,
   LIMITS,
   PRNG_SEQUENCE_PROFILE,
   RESOURCE_DIMENSIONS,
   STATIC_RESOURCE_TIE_ORDER,
   oracleEvaluate,
+  oracleSampleDiceGroups,
 } from "./oracle.mjs";
 import { oracleSample, oracleStateFromWords } from "../prng-semantics/oracle.mjs";
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const defaultGoldenFile = path.join(directory, "golden-vectors.json");
 const goldenFile = process.env.DRDICE_DICE_GOLDEN_FILE ?? process.argv[2] ?? defaultGoldenFile;
+const groupGoldenFile = process.env.DRDICE_DICE_GROUP_GOLDEN_FILE
+  ?? path.join(directory, "group-golden-vectors.json");
 
 const PINNED_SEMANTIC_PROFILE = "dice-v3/utf16-bounded-left-to-right-3";
 const PINNED_SEMANTIC_VERSION = 3;
@@ -53,6 +59,16 @@ const PINNED_FIRST_SUCCESSOR = ["00000007", "00000000", "00000402", "00003000"];
 const PINNED_FORCED_STATE = ["00000000", "00000000", "ffffffff", "00000000"];
 const PINNED_REJECTION_STATE = ["b0e8eac3", "f2d79146", "a51937ed", "21243868"];
 const PINNED_DYNAMIC_STEP_STATE = ["f6d4d22f", "179359c2", "e89fce39", "dc482244"];
+const PINNED_GROUP_SEMANTIC_PROFILE =
+  "dice-groups-v1/ordered-atomic-rejection-5-blocks-x-5-attempts";
+const PINNED_GROUP_SEMANTIC_VERSION = 1;
+const PINNED_GROUP_LIMITS = {
+  groupCount: 10_000,
+  dieSampleCount: 10_000,
+  supportedSideCount: 100,
+  rejectionSamplingBlocks: 5,
+  rejectionSamplingAttemptsPerBlock: 5,
+};
 
 const fail = (message) => {
   throw new Error(`[dice-semantics] ${message}`);
@@ -72,6 +88,14 @@ const readGolden = () => {
     return JSON.parse(fs.readFileSync(goldenFile, "utf8"));
   } catch (error) {
     fail(`cannot read or parse golden corpus ${goldenFile}: ${error.message}`);
+  }
+};
+
+const readGroupGolden = () => {
+  try {
+    return JSON.parse(fs.readFileSync(groupGoldenFile, "utf8"));
+  } catch (error) {
+    fail(`cannot read or parse Dice Group corpus ${groupGoldenFile}: ${error.message}`);
   }
 };
 
@@ -107,6 +131,21 @@ const projectResult = (result) => {
   const details = { ...result.details };
   if (Object.hasOwn(details, "state")) details.state = projectState(details.state);
   if (Object.hasOwn(details, "nextState")) details.nextState = projectState(details.nextState);
+  return { ok: false, code: result.code, details };
+};
+
+const projectGroupResult = (result) => {
+  if (result.ok) {
+    return {
+      ok: true,
+      value: {
+        groups: result.value.groups,
+        nextState: projectState(result.value.nextState),
+      },
+    };
+  }
+  const details = { ...result.details };
+  if (Object.hasOwn(details, "state")) details.state = projectState(details.state);
   return { ok: false, code: result.code, details };
 };
 
@@ -390,7 +429,69 @@ const checkPrivateBoundary = () => {
   assert(path.join(directory, "oracle.mjs").includes(`${path.sep}verification${path.sep}dice-semantics${path.sep}`), "Dice oracle escaped its private verification directory");
 };
 
+const checkGroupGolden = (groupGolden) => {
+  equal(DICE_GROUP_SEMANTIC_PROFILE, PINNED_GROUP_SEMANTIC_PROFILE,
+    "oracle Dice Group Semantic Profile changed without reviewed vectors");
+  equal(DICE_GROUP_SEMANTIC_VERSION, PINNED_GROUP_SEMANTIC_VERSION,
+    "oracle Dice Group semantic version changed without reviewed vectors");
+  equal(DICE_GROUP_LIMITS, PINNED_GROUP_LIMITS, "oracle Dice Group limits changed without reviewed vectors");
+  equal(groupGolden.semanticProfile, PINNED_GROUP_SEMANTIC_PROFILE,
+    "Dice Group golden profile changed without review");
+  equal(groupGolden.semanticVersion, PINNED_GROUP_SEMANTIC_VERSION,
+    "Dice Group golden version changed without review");
+  equal(groupGolden.prngSequenceProfile, PINNED_PRNG_SEQUENCE_PROFILE,
+    "Dice Group golden PRNG profile changed without review");
+  equal(groupGolden.limits, PINNED_GROUP_LIMITS, "Dice Group golden limits changed without review");
+  assert(Array.isArray(groupGolden.cases), "Dice Group golden cases are missing");
+
+  const ids = new Set();
+  for (const vector of groupGolden.cases) {
+    assert(typeof vector.id === "string" && !ids.has(vector.id), `Dice Group case id is missing or duplicated: ${vector.id}`);
+    ids.add(vector.id);
+    const inputState = vector.stateWords
+      ? oracleStateFromWords([...words(vector.stateWords, `${vector.id}.stateWords`)])
+      : vector.stateInput;
+    const actual = oracleSampleDiceGroups(vector.groups, inputState);
+    equal(projectGroupResult(actual), vector.expected, `${vector.id} Dice Group oracle result disagrees with golden data`);
+    if (!actual.ok) {
+      assert(!Object.hasOwn(actual.details, "nextState"), `${vector.id} failure exposes a Next Generator State`);
+      if (actual.code === "sampling-attempts-exhausted") {
+        assert(!Object.hasOwn(actual.details, "state"), `${vector.id} exhaustion exposes a committable state`);
+        equal(actual.details.attempts, 25, `${vector.id} terminal exhaustion did not consume exactly five blocks`);
+      }
+    }
+  }
+  for (const id of [
+    "ordered-success",
+    "retry-after-one-block",
+    "empty-request",
+    "invalid-count",
+    "side-count-one-beyond",
+    "sample-count-one-beyond",
+    "invalid-state-shape",
+  ]) assert(ids.has(id), `required Dice Group golden case ${id} is missing`);
+
+  const tooManyGroups = Array.from(
+    { length: DICE_GROUP_LIMITS.groupCount + 1 },
+    () => ({ count: 1, sideCount: 6 }),
+  );
+  equal(
+    oracleSampleDiceGroups(tooManyGroups, oracleStateFromWords(PINNED_CANONICAL_STATE)),
+    {
+      ok: false,
+      code: "resource-limit-exceeded",
+      details: {
+        dimension: "group-count",
+        limit: DICE_GROUP_LIMITS.groupCount,
+        actual: DICE_GROUP_LIMITS.groupCount + 1,
+      },
+    },
+    "Dice Group count one-beyond boundary changed",
+  );
+};
+
 const golden = readGolden();
+const groupGolden = readGroupGolden();
 checkPinnedProfile(golden);
 assert(Array.isArray(golden.cases) && golden.cases.length >= 60, "golden case corpus is unexpectedly small");
 const byId = new Map();
@@ -400,4 +501,5 @@ checkBoundaries(byId);
 checkSideGrid(golden);
 checkNoConsumption(byId);
 checkPrivateBoundary();
-console.log(`[dice-semantics] Dice semantic profile, independent oracle, ${golden.cases.length} literal cases, all-side grid, and private-boundary checks passed`);
+checkGroupGolden(groupGolden);
+console.log(`[dice-semantics] Dice Expression and Dice Group semantic profiles, independent oracle, ${golden.cases.length + groupGolden.cases.length} literal cases, all-side grid, and private-boundary checks passed`);

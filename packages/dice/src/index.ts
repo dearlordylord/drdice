@@ -2,6 +2,23 @@ import { sample, validateState } from "@drdice/prng";
 import type { BoundedResult, ValidateStateResult } from "@drdice/prng";
 import type { DiceEvaluation, RuntimeEvaluate, Success } from "./types.js";
 
+export {
+  DICE_GROUP_LIMITS,
+  DICE_GROUP_SEMANTIC_PROFILE,
+  DICE_GROUP_SEMANTIC_VERSION,
+  sampleDiceGroups,
+} from "./groups.js";
+export type {
+  DiceGroup,
+  SampledDiceGroup,
+  DiceGroupSampling,
+  DiceGroupInputFailure,
+  DiceGroupResourceFailure,
+  DiceGroupSamplingExhausted,
+  DiceGroupSamplingFailure,
+  DiceGroupSamplingResult,
+} from "./groups.js";
+
 export type {
   Success,
   FailureCode,

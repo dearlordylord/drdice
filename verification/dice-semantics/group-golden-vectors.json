@@ -1,0 +1,107 @@
+{
+  "semanticProfile": "dice-groups-v1/ordered-atomic-rejection-5-blocks-x-5-attempts",
+  "semanticVersion": 1,
+  "prngSequenceProfile": "xoshiro128ss-1.1/warmup16-msb-chunk-rejection-2",
+  "limits": {
+    "groupCount": 10000,
+    "dieSampleCount": 10000,
+    "supportedSideCount": 100,
+    "rejectionSamplingBlocks": 5,
+    "rejectionSamplingAttemptsPerBlock": 5
+  },
+  "cases": [
+    {
+      "id": "ordered-success",
+      "groups": [
+        { "count": 2, "sideCount": 6 },
+        { "count": 1, "sideCount": 20 }
+      ],
+      "stateWords": ["00000001", "00000002", "00000003", "00000004"],
+      "expected": {
+        "ok": true,
+        "value": {
+          "groups": [
+            { "sideCount": 6, "faces": [1, 1] },
+            { "sideCount": 20, "faces": [1] }
+          ],
+          "nextState": ["01803402", "00003007", "00083e02", "0020280c"]
+        }
+      }
+    },
+    {
+      "id": "retry-after-one-block",
+      "groups": [{ "count": 1, "sideCount": 65 }],
+      "stateWords": ["8615d1a1", "16f6c103", "cbc1fbff", "055c3220"],
+      "expected": {
+        "ok": true,
+        "value": {
+          "groups": [{ "sideCount": 65, "faces": [12] }],
+          "nextState": ["a15ecd1d", "5e047675", "c4240159", "69327c6d"]
+        }
+      }
+    },
+    {
+      "id": "empty-request",
+      "groups": [],
+      "stateWords": ["00000001", "00000002", "00000003", "00000004"],
+      "expected": {
+        "ok": false,
+        "code": "invalid-dice-groups",
+        "details": { "reason": "expected-non-empty-array" }
+      }
+    },
+    {
+      "id": "invalid-count",
+      "groups": [{ "count": 0, "sideCount": 6 }],
+      "stateWords": ["00000001", "00000002", "00000003", "00000004"],
+      "expected": {
+        "ok": false,
+        "code": "invalid-dice-group",
+        "details": { "groupIndex": 0, "reason": "count-must-be-positive-integer" }
+      }
+    },
+    {
+      "id": "side-count-one-beyond",
+      "groups": [{ "count": 1, "sideCount": 101 }],
+      "stateWords": ["00000001", "00000002", "00000003", "00000004"],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "dimension": "supported-side-count",
+          "limit": 100,
+          "actual": 101,
+          "groupIndex": 0
+        }
+      }
+    },
+    {
+      "id": "sample-count-one-beyond",
+      "groups": [
+        { "count": 10000, "sideCount": 6 },
+        { "count": 1, "sideCount": 6 }
+      ],
+      "stateWords": ["00000001", "00000002", "00000003", "00000004"],
+      "expected": {
+        "ok": false,
+        "code": "resource-limit-exceeded",
+        "details": {
+          "dimension": "die-sample-count",
+          "limit": 10000,
+          "actual": 10001,
+          "groupIndex": 1
+        }
+      }
+    },
+    {
+      "id": "invalid-state-shape",
+      "groups": [{ "count": 1, "sideCount": 6 }],
+      "stateInput": null,
+      "expected": {
+        "ok": false,
+        "code": "invalid-state-shape",
+        "details": { "state": null }
+      }
+    }
+  ]
+}

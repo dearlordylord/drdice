@@ -11,7 +11,16 @@ import {
   serializeState,
   validateState,
 } from "../../packages/prng/dist/index.js";
-import { evaluate, payloadOf, rollsOf, stateOf, valueOf } from "../../packages/dice/dist/index.js";
+import {
+  DICE_GROUP_SEMANTIC_PROFILE,
+  evaluate,
+  payloadOf,
+  rollsOf,
+  sampleDiceGroups,
+  stateOf,
+  valueOf,
+} from "../../packages/dice/dist/index.js";
+import { sampleGroupFaceInBlocks } from "../../packages/dice/dist/groups.js";
 import {
   oracleInitialize,
   oracleNext,
@@ -21,7 +30,7 @@ import {
   oracleSerializeState,
   oracleValidateState,
 } from "../prng-semantics/oracle.mjs";
-import { oracleEvaluate } from "../dice-semantics/oracle.mjs";
+import { oracleEvaluate, oracleSampleDiceGroups } from "../dice-semantics/oracle.mjs";
 
 const here = new URL(".", import.meta.url);
 const golden = JSON.parse(await readFile(new URL("../dice-semantics/golden-vectors.json", here), "utf8"));
@@ -154,4 +163,141 @@ equal(
   "ordinary evaluation state threading",
 );
 
-console.log(`[runtime] ${prngComparisons} PRNG and ${diceComparisons} Dice oracle-parity comparisons passed`);
+assert.equal(
+  DICE_GROUP_SEMANTIC_PROFILE,
+  "dice-groups-v1/ordered-atomic-rejection-5-blocks-x-5-attempts",
+);
+
+let groupInvariantChecks = 0;
+let groupOracleComparisons = 0;
+for (const seedWords of seeds) {
+  const initial = initialize(seedWords);
+  assert(initial.ok);
+  for (let sideCount = 1; sideCount <= 100; sideCount += 1) {
+    const request = [
+      { count: 2, sideCount },
+      { count: 1, sideCount: 101 - sideCount },
+    ];
+    const sampled = sampleDiceGroups(request, initial.value);
+    equal(sampled, oracleSampleDiceGroups(request, initial.value), "group sampling oracle parity");
+    groupOracleComparisons += 1;
+    assert(sampled.ok, `group sampling should succeed for d${sideCount}`);
+    equal(sampled.value.groups.map((group) => group.faces.length), [2, 1], "group boundaries");
+    for (const group of sampled.value.groups) {
+      assert(group.faces.every((face) => Number.isInteger(face) && face >= 1 && face <= group.sideCount));
+    }
+    groupInvariantChecks += 1;
+  }
+}
+
+const splitInitial = initialize(seeds[0]);
+assert(splitInitial.ok);
+const combinedGroups = sampleDiceGroups([
+  { count: 5, sideCount: 65 },
+  { count: 4, sideCount: 20 },
+], splitInitial.value);
+const firstGroups = sampleDiceGroups([{ count: 5, sideCount: 65 }], splitInitial.value);
+assert(combinedGroups.ok && firstGroups.ok);
+const secondGroups = sampleDiceGroups([{ count: 4, sideCount: 20 }], firstGroups.value.nextState);
+assert(secondGroups.ok);
+equal(
+  combinedGroups.value.groups,
+  [...firstGroups.value.groups, ...secondGroups.value.groups],
+  "splitting a request preserves ordered faces",
+);
+equal(combinedGroups.value.nextState, secondGroups.value.nextState, "splitting a request preserves next state");
+
+const rejectionState = state(["8615d1a1", "16f6c103", "cbc1fbff", "055c3220"]);
+assert.equal(sample(rejectionState, 65, 5).ok, false, "crafted state exhausts one PRNG sampling block");
+const retriedGroups = sampleDiceGroups([{ count: 1, sideCount: 65 }], rejectionState);
+equal(retriedGroups, oracleSampleDiceGroups([{ count: 1, sideCount: 65 }], rejectionState),
+  "group sampling retry oracle parity");
+groupOracleComparisons += 1;
+assert.equal(retriedGroups.ok, true,
+  "group sampling continues through a bounded exhausted block");
+
+const exhaustedSuccessors = [
+  state(["00000001", "00000002", "00000003", "00000004"]),
+  state(["00000005", "00000006", "00000007", "00000008"]),
+  state(["00000009", "0000000a", "0000000b", "0000000c"]),
+  state(["0000000d", "0000000e", "0000000f", "00000010"]),
+  state(["00000011", "00000012", "00000013", "00000014"]),
+];
+const exhaustedInputs = [];
+const exhaustedFuels = [];
+const terminalExhaustion = sampleGroupFaceInBlocks(
+  2,
+  3,
+  rejectionState,
+  65,
+  (current, _bound, maximumAttempts) => {
+    exhaustedInputs.push(current);
+    exhaustedFuels.push(maximumAttempts);
+    return {
+      ok: false,
+      code: "sampling-attempts-exhausted",
+      details: {
+        maximumAttempts,
+        attempts: maximumAttempts,
+        state: exhaustedSuccessors[exhaustedInputs.length - 1],
+      },
+    };
+  },
+);
+equal(terminalExhaustion, {
+  ok: false,
+  code: "sampling-attempts-exhausted",
+  details: { groupIndex: 2, sampleIndex: 3, attempts: 25 },
+}, "five exhausted blocks fail atomically with exact attempt accounting");
+equal(exhaustedFuels, [5, 5, 5, 5, 5], "each Dice Group sampling block receives five attempts");
+equal(exhaustedInputs, [rejectionState, ...exhaustedSuccessors.slice(0, 4)],
+  "exhausted Dice Group blocks thread their private successor states");
+assert(!Object.hasOwn(terminalExhaustion.details, "state"),
+  "terminal Dice Group exhaustion does not expose a committable state");
+
+for (const invalidGroups of [
+  [],
+  [{ count: 0, sideCount: 6 }],
+  [{ count: 1, sideCount: 0 }],
+  [{ count: 1, sideCount: 101 }],
+  [{ count: 10_001, sideCount: 6 }],
+]) {
+  const actual = sampleDiceGroups(invalidGroups, splitInitial.value);
+  equal(actual, oracleSampleDiceGroups(invalidGroups, splitInitial.value), "invalid group oracle parity");
+  assert.equal(actual.ok, false);
+  groupOracleComparisons += 1;
+}
+
+let countReads = 0;
+let sideCountReads = 0;
+const getterGroup = {
+  get count() {
+    countReads += 1;
+    return countReads === 1 ? 1 : 0;
+  },
+  get sideCount() {
+    sideCountReads += 1;
+    return sideCountReads === 1 ? 6 : 101;
+  },
+};
+const getterSample = sampleDiceGroups([getterGroup], splitInitial.value);
+assert(getterSample.ok, "validated groups are sampled from a captured numeric snapshot");
+equal([countReads, sideCountReads], [1, 1], "group fields are read exactly once during validation");
+
+const replayedGroups = sampleDiceGroups([{ count: 10_000, sideCount: 100 }], splitInitial.value);
+assert(replayedGroups.ok);
+equal(
+  replayedGroups,
+  oracleSampleDiceGroups([{ count: 10_000, sideCount: 100 }], splitInitial.value),
+  "maximum-size group sampling oracle parity",
+);
+groupOracleComparisons += 1;
+equal(
+  replayedGroups,
+  sampleDiceGroups([{ count: 10_000, sideCount: 100 }], splitInitial.value),
+  "maximum-size sampling is deterministic and does not mutate its input state",
+);
+
+console.log(
+  `[runtime] ${prngComparisons} PRNG, ${diceComparisons} Dice Expression oracle-parity, ${groupOracleComparisons} Dice Group Sampling oracle-parity, and ${groupInvariantChecks} group invariant checks passed`,
+);

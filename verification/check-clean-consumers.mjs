@@ -4,6 +4,8 @@ import { basename, dirname, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
+import { PACKAGE_ARTIFACTS } from "./package-artifacts.mjs";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const temporary = await mkdtemp(resolve(tmpdir(), "drdice-consumer-"));
@@ -17,14 +19,6 @@ const packageRecords = [
 for (const record of packageRecords) {
   record.manifest = JSON.parse(await readFile(resolve(root, record.directory, "package.json"), "utf8"));
 }
-const expectedMembers = new Set([
-  "package/LICENSE",
-  "package/README.md",
-  "package/dist/index.d.ts",
-  "package/dist/index.js",
-  "package/dist/types.d.ts",
-  "package/package.json",
-]);
 const isWithin = (candidate, directory) => (
   candidate === directory || candidate.startsWith(`${directory}${sep}`)
 );
@@ -60,6 +54,10 @@ const inspectArchive = (record, archive) => {
     .filter(Boolean)
     .map((member) => member.replace(/\/$/, ""));
   const actualMembers = new Set(members);
+  const expectedMembers = new Set([
+    ...PACKAGE_ARTIFACTS[record.archiveKey].packed.map((entry) => `package/${entry}`),
+    "package/package.json",
+  ]);
   if (actualMembers.size !== expectedMembers.size || [...expectedMembers].some((member) => !actualMembers.has(member))) {
     throw new Error(`${record.name} packed members differ: ${members.join(", ")}`);
   }
@@ -74,10 +72,11 @@ const inspectArchive = (record, archive) => {
     throw new Error(`${record.name} does not expose its declaration root`);
   }
   const declaredMembers = new Set((manifest.files ?? []).map((entry) => `package/${String(entry).replaceAll("\\", "/")}`));
-  if (declaredMembers.size !== 5 || !declaredMembers.has("package/dist/index.d.ts")
-    || !declaredMembers.has("package/dist/index.js")
-    || !declaredMembers.has("package/dist/types.d.ts")
-    || !declaredMembers.has("package/README.md") || !declaredMembers.has("package/LICENSE")) {
+  const expectedDeclaredMembers = new Set(
+    PACKAGE_ARTIFACTS[record.archiveKey].packed.map((entry) => `package/${entry}`),
+  );
+  if (declaredMembers.size !== expectedDeclaredMembers.size
+    || [...expectedDeclaredMembers].some((member) => !declaredMembers.has(member))) {
     throw new Error(`${record.name} does not declare the curated runtime/declaration/documentation allowlist`);
   }
   if (manifest.exports["."].default !== "./dist/index.js" || manifest.main !== "./dist/index.js") {
@@ -215,11 +214,13 @@ export type DiceReferencesPrngState = Assert<Equal<
     process.execPath,
     ["--input-type=module", "--eval", `
       import { initialize } from "@drdice/prng";
-      import { evaluate } from "@drdice/dice";
+      import { evaluate, sampleDiceGroups } from "@drdice/dice";
       const initialized = initialize(["00000001", "00000002", "00000003", "00000004"]);
       if (!initialized.ok) throw new Error(JSON.stringify(initialized));
       const rolled = evaluate("d20", initialized.value);
       if (!rolled.ok || rolled.value.total !== 12) throw new Error(JSON.stringify(rolled));
+      const groups = sampleDiceGroups([{ count: 2, sideCount: 6 }], rolled.value.nextState);
+      if (!groups.ok || groups.value.groups[0].faces.length !== 2) throw new Error(JSON.stringify(groups));
     `],
     { cwd: consumerRoot, encoding: "utf8" },
   );

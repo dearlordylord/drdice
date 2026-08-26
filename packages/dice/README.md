@@ -1,7 +1,8 @@
 # DRDice
 
-Deterministic pseudo-random generation and dice-expression evaluation with
-matching runtime and literal-computing TypeScript APIs.
+Deterministic pseudo-random generation and Dice Expression evaluation with
+matching runtime and literal-computing TypeScript APIs, plus runtime Dice Group
+Sampling for large dynamic requests.
 
 ## Quick start
 
@@ -13,7 +14,7 @@ npm install @drdice/prng @drdice/dice
 
 ```ts
 import { initialize, stateOf as prngStateOf } from "@drdice/prng";
-import { evaluate, rollsOf, stateOf, valueOf } from "@drdice/dice";
+import { evaluate, rollsOf, sampleDiceGroups, stateOf, valueOf } from "@drdice/dice";
 
 // A fixed seed makes the sequence reproducible.
 const initialized = initialize([
@@ -36,6 +37,15 @@ console.log({
   rolls: rollsOf(combinedRoll), // faces 5, 6, 6, 5
   nextState: stateOf(combinedRoll),
 });
+
+const groups = sampleDiceGroups([
+  { count: 2, sideCount: 20 },
+  { count: 6, sideCount: 6 },
+], stateOf(combinedRoll));
+
+if (groups.ok) {
+  console.log(groups.value.groups, groups.value.nextState);
+}
 ```
 
 Both calls roll at runtime. Because the seed and expressions are literals,
@@ -47,6 +57,10 @@ The lowercase functions run at runtime. Their type counterparts—`Initialize`,
 `Sample`, and `Evaluate`—follow the same deterministic rules in TypeScript.
 Inputs known only at runtime still roll normally and use broader result types
 such as `number` and `EvaluationResult`.
+
+`sampleDiceGroups` is intentionally runtime-only: it serves large dynamic
+requests and returns the broad `DiceGroupSamplingResult` type rather than
+performing literal computation in the TypeScript checker.
 
 ## Seeds and replay
 
@@ -69,15 +83,23 @@ the extractor functions when an evaluation can fail.
 evaluation; `ValueOf`, `RollsOf`, and `StateOf` provide the matching type-level
 projections.
 
+For dynamic application requests, `sampleDiceGroups` accepts ordered
+`{ count, sideCount }` groups and an explicit Generator State. It validates the
+whole request first and returns all grouped faces with one Next Generator State.
+Sampling is transactional: failures do not expose a state for callers to commit.
+The structured API supports up to 10,000 Die Samples with side counts through
+100 and retries bounded rejection-sampling exhaustion in deterministic blocks.
+
 Invalid or overly complex expressions return structured failures. Each die gets
 up to five rejection-sampling attempts by default; ordinary game code can omit
 this option.
 
 ## Reproducibility and safety
 
-The runtime and type-level implementations are checked against the same
-deterministic examples. Reproducing a result requires the same package versions,
-seed or generator state, dice expression, and options.
+The matching PRNG and Dice Expression implementations, and the runtime Dice
+Group Sampling implementation, are checked against independent deterministic
+oracles. Reproducing a result requires the same package versions, seed or
+Generator State, request, and options.
 
 DRDice is deterministic, not cryptographic randomness. Use it for games,
 simulations, and tests—not secrets, security decisions, or wagering.

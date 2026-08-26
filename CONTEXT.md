@@ -33,6 +33,15 @@ _Avoid_: Seed
 A literal program describing dice samples and integer arithmetic.
 _Avoid_: Dice string, roll string
 
+**Dice Group**:
+An ordered request for a positive count of Die Samples sharing one side count.
+_Avoid_: Dice Expression, roll group
+
+**Dice Group Sampling**:
+An atomic deterministic operation containing ordered sampled Dice Groups and the
+Next Generator State. A failure does not expose a committable state.
+_Avoid_: Dice Evaluation, partial roll
+
 **Die Sample**:
 One unbiased integer outcome in the inclusive range from one through a die's side
 count.
@@ -70,3 +79,8 @@ _Avoid_: package version, random number generator
 The immutable Dice grammar, UTF-16, resource, arithmetic, evaluation, sampling,
 failure, and result rules.
 _Avoid_: package version, Roll Trace
+
+**Dice Group Semantic Profile**:
+The immutable validation, ordering, resource, rejection-retry, atomicity, and
+state-consumption rules for Dice Group Sampling.
+_Avoid_: Dice Semantic Profile, package version

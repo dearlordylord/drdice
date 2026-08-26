@@ -12,6 +12,17 @@ import {
   oracleValidateState,
 } from "../prng-semantics/oracle.mjs";
 
+export const DICE_GROUP_SEMANTIC_PROFILE =
+  "dice-groups-v1/ordered-atomic-rejection-5-blocks-x-5-attempts";
+export const DICE_GROUP_SEMANTIC_VERSION = 1;
+export const DICE_GROUP_LIMITS = Object.freeze({
+  groupCount: 10_000,
+  dieSampleCount: 10_000,
+  supportedSideCount: 100,
+  rejectionSamplingBlocks: 5,
+  rejectionSamplingAttemptsPerBlock: 5,
+});
+
 /**
  * A Dice semantic identity is separate from the package version, PRNG
  * Sequence Profile, and PRNG schema version.  Any value/consumption/failure
@@ -58,6 +69,99 @@ export const STATIC_RESOURCE_TIE_ORDER = Object.freeze([
 
 const failure = (code, details) => ({ ok: false, code, details });
 const success = (value) => ({ ok: true, value });
+
+const record = (value) => typeof value === "object" && value !== null;
+
+const validateDiceGroups = (input) => {
+  if (!Array.isArray(input) || input.length === 0) {
+    return failure("invalid-dice-groups", { reason: "expected-non-empty-array" });
+  }
+  if (input.length > DICE_GROUP_LIMITS.groupCount) {
+    return failure("resource-limit-exceeded", {
+      dimension: "group-count",
+      limit: DICE_GROUP_LIMITS.groupCount,
+      actual: input.length,
+    });
+  }
+
+  const groups = [];
+  let dieSampleCount = 0;
+  for (const [groupIndex, inputGroup] of input.entries()) {
+    if (!record(inputGroup)) {
+      return failure("invalid-dice-group", { groupIndex, reason: "expected-object" });
+    }
+    const count = inputGroup.count;
+    const sideCount = inputGroup.sideCount;
+    if (!Number.isInteger(count) || count < 1) {
+      return failure("invalid-dice-group", { groupIndex, reason: "count-must-be-positive-integer" });
+    }
+    if (!Number.isInteger(sideCount) || sideCount < 1) {
+      return failure("invalid-dice-group", { groupIndex, reason: "side-count-must-be-positive-integer" });
+    }
+    if (sideCount > DICE_GROUP_LIMITS.supportedSideCount) {
+      return failure("resource-limit-exceeded", {
+        dimension: "supported-side-count",
+        limit: DICE_GROUP_LIMITS.supportedSideCount,
+        actual: sideCount,
+        groupIndex,
+      });
+    }
+    dieSampleCount += count;
+    if (dieSampleCount > DICE_GROUP_LIMITS.dieSampleCount) {
+      return failure("resource-limit-exceeded", {
+        dimension: "die-sample-count",
+        limit: DICE_GROUP_LIMITS.dieSampleCount,
+        actual: dieSampleCount,
+        groupIndex,
+      });
+    }
+    groups.push({ count, sideCount });
+  }
+  return success(groups);
+};
+
+/** Independent runtime oracle for ordered atomic Dice Group Sampling. */
+export const oracleSampleDiceGroups = (groupsInput, stateInput) => {
+  const validatedGroups = validateDiceGroups(groupsInput);
+  if (!validatedGroups.ok) return validatedGroups;
+  const validatedState = oracleValidateState(stateInput);
+  if (!validatedState.ok) return validatedState;
+
+  let current = validatedState.value;
+  const groups = [];
+  for (const [groupIndex, group] of validatedGroups.value.entries()) {
+    const faces = [];
+    for (let sampleIndex = 0; sampleIndex < group.count; sampleIndex += 1) {
+      let blocks = 0;
+      let sampled;
+      do {
+        sampled = oracleSample(
+          current,
+          group.sideCount,
+          DICE_GROUP_LIMITS.rejectionSamplingAttemptsPerBlock,
+        );
+        blocks += 1;
+        if (!sampled.ok && sampled.code === "sampling-attempts-exhausted") {
+          current = sampled.details.state;
+        }
+      } while (!sampled.ok
+        && sampled.code === "sampling-attempts-exhausted"
+        && blocks < DICE_GROUP_LIMITS.rejectionSamplingBlocks);
+
+      if (!sampled.ok) {
+        return failure("sampling-attempts-exhausted", {
+          groupIndex,
+          sampleIndex,
+          attempts: blocks * DICE_GROUP_LIMITS.rejectionSamplingAttemptsPerBlock,
+        });
+      }
+      current = sampled.value.state;
+      faces.push(sampled.value.value + 1);
+    }
+    groups.push({ sideCount: group.sideCount, faces });
+  }
+  return success({ groups, nextState: current });
+};
 
 const whitespace = (char) => char === " "
   || char === "\t"

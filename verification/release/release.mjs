@@ -47,10 +47,10 @@ const packageEvidence = async () => {
   for (const name of ["prng", "dice"]) {
     const directory = resolve(ROOT, "packages", name);
     const manifest = JSON.parse(await readFile(resolve(directory, "package.json"), "utf8"));
-    const declarations = await Promise.all([
-      readFile(resolve(directory, "dist/index.d.ts"), "utf8"),
-      readFile(resolve(directory, "dist/types.d.ts"), "utf8"),
-    ]);
+    const declarationFiles = manifest.files.filter((file) => file.startsWith("dist/") && file.endsWith(".d.ts"));
+    const declarations = await Promise.all(
+      declarationFiles.map((file) => readFile(resolve(directory, file), "utf8")),
+    );
     const declaration = declarations.join("\n");
     records.push({
       name: manifest.name,
@@ -61,6 +61,7 @@ const packageEvidence = async () => {
       dependencies: manifest.dependencies ?? {},
       sideEffects: manifest.sideEffects,
       declarationOnly: /declaration-only/i.test(await readFile(resolve(directory, "README.md"), "utf8")),
+      declarationFiles,
       declarationBytes: declarations.reduce((total, source) => total + Buffer.byteLength(source), 0),
       identities: name === "prng"
         ? {
@@ -70,6 +71,8 @@ const packageEvidence = async () => {
         : {
             semanticVersion: Number(extract(declaration, /export declare const DICE_SEMANTIC_VERSION: (\d+)/, "Dice semantic version")),
             semanticProfile: extract(declaration, /export declare const DICE_SEMANTIC_PROFILE: "([^"]+)"/, "Dice semantic profile"),
+            diceGroupSemanticVersion: Number(extract(declaration, /export declare const DICE_GROUP_SEMANTIC_VERSION: (\d+)/, "Dice Group semantic version")),
+            diceGroupSemanticProfile: extract(declaration, /export declare const DICE_GROUP_SEMANTIC_PROFILE: "([^"]+)"/, "Dice Group Semantic Profile"),
           },
     });
   }
@@ -79,6 +82,7 @@ const packageEvidence = async () => {
 const semanticEvidence = async () => {
   const prng = JSON.parse(await readFile(resolve(ROOT, "verification/prng-semantics/golden-vectors.json"), "utf8"));
   const dice = JSON.parse(await readFile(resolve(ROOT, "verification/dice-semantics/golden-vectors.json"), "utf8"));
+  const diceGroups = JSON.parse(await readFile(resolve(ROOT, "verification/dice-semantics/group-golden-vectors.json"), "utf8"));
   const cases = JSON.parse(await readFile(resolve(ROOT, "verification/dice-evaluation-parity/cases.json"), "utf8"));
   return {
     prng: {
@@ -96,6 +100,13 @@ const semanticEvidence = async () => {
       tieOrder: dice.staticResourceTieOrder,
       goldenCaseCount: dice.cases.length,
       completeParityCaseCount: cases.length,
+    },
+    diceGroups: {
+      semanticProfile: diceGroups.semanticProfile,
+      semanticVersion: diceGroups.semanticVersion,
+      prngSequenceProfile: diceGroups.prngSequenceProfile,
+      limits: diceGroups.limits,
+      goldenCaseCount: diceGroups.cases.length,
     },
   };
 };
@@ -132,13 +143,13 @@ const budgetVerdict = validateBudgetResults(benchmark, budgets);
 if (budgetVerdict.failures.length > 0) fail(`blocking compiler budgets failed:\n${budgetVerdict.failures.join("\n")}`);
 
 const report = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   qualification: "release",
   verdict: {
     status: "ready",
     blockingFailures: budgetVerdict.failures,
     advisories: budgetVerdict.advisories,
-    statement: "Release candidate meets the declared TypeScript 7.0.2 semantic, usability, package, packed-boundary, and compiler-budget gates.",
+    statement: "Release candidate meets the declared TypeScript 7.0.2 PRNG, Dice Expression, Dice Group Sampling, usability, package, packed-boundary, and compiler-budget gates.",
   },
   source: {
     qualifiedCommit: measuredCommit,

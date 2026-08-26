@@ -1,7 +1,8 @@
 # Doctor Dice: Deterministic Random Type-level Dice
 
-Deterministic pseudo-random generation and dice-expression evaluation with
-matching runtime and literal-computing TypeScript APIs.
+Deterministic pseudo-random generation and Dice Expression evaluation with
+matching runtime and literal-computing TypeScript APIs, plus runtime Dice Group
+Sampling for large dynamic requests.
 
 ## Quick start
 
@@ -69,15 +70,21 @@ the extractor functions when an evaluation can fail.
 evaluation; `ValueOf`, `RollsOf`, and `StateOf` provide the matching type-level
 projections.
 
+For dynamic application requests, the runtime-only `sampleDiceGroups` API
+validates and samples ordered `{ count, sideCount }` groups atomically. It
+supports up to 10,000 Die Samples and returns grouped faces with one Next
+Generator State; failures expose no state for callers to commit.
+
 Invalid or overly complex expressions return structured failures. Each die gets
 up to five rejection-sampling attempts by default; ordinary game code can omit
 this option.
 
 ## Reproducibility and safety
 
-The runtime and type-level implementations are checked against the same
-deterministic examples. Reproducing a result requires the same package versions,
-seed or generator state, dice expression, and options.
+The matching PRNG and Dice Expression implementations, and the runtime Dice
+Group Sampling implementation, are checked against independent deterministic
+oracles. Reproducing a result requires the same package versions, seed or
+Generator State, request, and options.
 
 DRDice is deterministic, not cryptographic randomness. Use it for games,
 simulations, and tests—not secrets, security decisions, or wagering.
@@ -89,9 +96,9 @@ pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Runtime source lives in `packages/*/src/index.ts`, and compile-time computation
-lives in `packages/*/src/types.ts`. `pnpm build` compiles both into the ignored
-`packages/*/dist` output. Package packing runs that build automatically.
+Runtime source lives in `packages/*/src/*.ts`, and compile-time computation
+lives in each package's `src/types.ts`. `pnpm build` compiles both into the
+ignored `packages/*/dist` output. Package packing runs that build automatically.
 
 Maintainer qualification and publishing steps are documented in the
 [release guide](verification/release/README.md).

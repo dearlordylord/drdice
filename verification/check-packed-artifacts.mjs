@@ -4,21 +4,15 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
+import { PACKAGE_ARTIFACTS } from "./package-artifacts.mjs";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const temporary = await mkdtemp(resolve(tmpdir(), "drdice-packed-"));
 const packages = [
-  { directory: "packages/prng", name: "@drdice/prng", dependency: false },
-  { directory: "packages/dice", name: "@drdice/dice", dependency: true },
+  { key: "prng", directory: "packages/prng", name: "@drdice/prng", dependency: false },
+  { key: "dice", directory: "packages/dice", name: "@drdice/dice", dependency: true },
 ];
-const expectedMembers = new Set([
-  "package/LICENSE",
-  "package/README.md",
-  "package/dist/index.d.ts",
-  "package/dist/index.js",
-  "package/dist/types.d.ts",
-  "package/package.json",
-]);
 const prngSourceManifest = JSON.parse(
   await readFile(resolve(root, "packages/prng/package.json"), "utf8"),
 );
@@ -44,6 +38,15 @@ try {
       .filter(Boolean)
       .map((member) => member.replace(/\/$/, ""));
     const actualMembers = new Set(members);
+    const expectedMembers = new Set([
+      ...PACKAGE_ARTIFACTS[packageInfo.key].packed.map((entry) => `package/${entry}`),
+      "package/package.json",
+    ]);
+    const allowedRuntimeMembers = new Set(
+      PACKAGE_ARTIFACTS[packageInfo.key].packed
+        .filter((entry) => entry.endsWith(".js"))
+        .map((entry) => `package/${entry}`),
+    );
     if (actualMembers.size !== expectedMembers.size || [...expectedMembers].some((member) => !actualMembers.has(member))) {
       throw new Error(`${packageInfo.name} tarball members differ: ${members.join(", ")}`);
     }
@@ -51,7 +54,7 @@ try {
       const privateDirectory = /(?:^|\/)(?:src|fixtures?|generators?|benchmarks?|oracles?)(?:\/|$)/.test(member);
       const unsupportedRuntimeFile = /\.(?:js|mjs|cjs|ts|map)$/.test(member)
         && !member.endsWith(".d.ts")
-        && member !== "package/dist/index.js";
+        && !allowedRuntimeMembers.has(member);
       return privateDirectory || unsupportedRuntimeFile;
     })) {
       throw new Error(`${packageInfo.name} tarball contains a private or runtime file: ${members.join(", ")}`);
@@ -81,7 +84,7 @@ try {
       throw new Error(`${packageInfo.name} does not expose its runtime entry point`);
     }
     const declaredFiles = new Set((manifest.files ?? []).map((entry) => String(entry).replaceAll("\\", "/")));
-    const expectedAllowlist = new Set(["dist/index.d.ts", "dist/index.js", "dist/types.d.ts", "README.md", "LICENSE"]);
+    const expectedAllowlist = new Set(PACKAGE_ARTIFACTS[packageInfo.key].packed);
     if (declaredFiles.size !== expectedAllowlist.size || [...expectedAllowlist].some((entry) => !declaredFiles.has(entry))) {
       throw new Error(`${packageInfo.name} does not declare exactly its packed allowlist: ${JSON.stringify(manifest.files)}`);
     }
@@ -89,6 +92,9 @@ try {
     const declaration = [
       await readFile(resolve(directory, "dist/index.d.ts"), "utf8"),
       await readFile(resolve(directory, "dist/types.d.ts"), "utf8"),
+      ...(packageInfo.name === "@drdice/dice"
+        ? [await readFile(resolve(directory, "dist/groups.d.ts"), "utf8")]
+        : []),
     ].join("\n");
     if (packageInfo.name === "@drdice/dice") {
       const prngDeclaration = [

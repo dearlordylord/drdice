@@ -4,13 +4,14 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { PACKAGE_ARTIFACTS } from "../verification/package-artifacts.mjs";
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const temporary = await mkdtemp(resolve(tmpdir(), "drdice-build-check-"));
-const sourceFiles = ["index.ts", "types.ts"];
-const outputFiles = ["index.d.ts", "index.js", "types.d.ts"];
-
 try {
   for (const name of ["prng", "dice"]) {
+    const sourceFiles = PACKAGE_ARTIFACTS[name].source;
+    const outputFiles = PACKAGE_ARTIFACTS[name].output;
     const packageRoot = resolve(root, "packages", name);
     const source = resolve(packageRoot, "src");
     const output = resolve(packageRoot, "dist");
